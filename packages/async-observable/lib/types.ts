@@ -1,4 +1,4 @@
-import { AsyncObservable, Subscription } from "./observable";
+import { AsyncObservable } from "./observable";
 
 declare global {
   interface SymbolConstructor {
@@ -41,24 +41,12 @@ export interface Unsubscribable {
   unsubscribe(): Promise<void>;
 }
 
-export interface SubscriptionLike extends Unsubscribable {
-  unsubscribe(): Promise<void>;
-  readonly closed: boolean;
+export interface AsyncObserver<T> {
+  (value: T): PromiseOrValue<void>;
 }
 
-export type Disposer = Subscription | Unsubscribable | Promise<any> | (() => void) | void;
-
-/** Observer Interfaces */
-
-/**
- * An object interface that describes a set of callback functions a user can use to get
- * notified of any events emitted by an {@link AsyncObservable}.
- */
-export interface AsyncObserver<T> {
-  /**
-   * A callback function that is called when the {@link AsyncObservable} emits a new value.
-   */
-  push(value: T): PromiseOrValue<void>;
+export interface SubscriptionLike extends Unsubscribable {
+  unsubscribe(): Promise<void>;
 }
 
 /** Observable Interfaces */
@@ -78,3 +66,19 @@ export type AsyncObservableInput<T> =
 export interface InteropAsyncObservable<T> {
   [Symbol.asyncObservable](): Subscribable<T>;
 }
+
+/** Other Interfaces */
+
+/**
+ * Extracts the type from an `AsyncObservableInput<any>`. If you have
+ * `O extends AsyncObservableInput<any>` and you pass in `AsyncObservable<number>`, or
+ * `Promise<number>`, etc, it will type as `number`.
+ */
+export type ObservedValueOf<O> = O extends AsyncObservableInput<infer T> ? T : never;
+
+/**
+ * The base signature eventkit will look for to identify and use
+ * a [ReadableStream](https://streams.spec.whatwg.org/#rs-class)
+ * as an {@link AsyncObservableInput} source.
+ */
+export type ReadableStreamLike<T> = Pick<ReadableStream<T>, "getReader">;

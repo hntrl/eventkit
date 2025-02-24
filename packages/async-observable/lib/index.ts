@@ -1,15 +1,17 @@
-export { AsyncObservable, Subscriber, Subscription, ObservableError, operate } from "./observable";
+export { AsyncObservableInputType, getAsyncObservableInputType, isAsyncObservable, from } from "./from";
+
+export { Subscriber, AsyncObservable } from "./observable";
 
 export {
   UnaryFunction,
   OperatorFunction,
   MonoTypeOperatorFunction,
   Unsubscribable,
-  SubscriptionLike,
-  Disposer,
-  ObservableOutput,
   AsyncObserver,
+  SubscriptionLike,
   Subscribable,
   AsyncObservableInput,
   InteropAsyncObservable,
+  ObservedValueOf,
+  ReadableStreamLike,
 } from "./types";
