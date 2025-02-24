@@ -1,0 +1,31 @@
+# Editor-specific
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+.settings
+.vscode
+
+# Installed libs
+node_modules/
+typings/
+
+# Generated
+dist/
+.wireit
+tsup.config.bundled_*.mjs
+
+# Copied Package Files
+packages/**/LICENSE.txt
+packages/**/CODE_OF_CONDUCT.md
+
+# Misc
+npm-debug.log
+.DS_STORE
+*.tgz
+.eslintcache
+package-lock.json
+.tmp
+/.env
+/NOTES.md
+

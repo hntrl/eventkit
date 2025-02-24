@@ -1,0 +1,4 @@
+/fixtures/
+node_modules/
+pnpm-lock.yaml
+packages/**/dist/

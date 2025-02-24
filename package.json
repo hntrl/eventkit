@@ -1,0 +1,39 @@
+{
+  "name": "eventkit",
+  "private": true,
+  "scripts": {
+    "build": "pnpm run --filter=\"./packages/[^_]**/*\" build",
+    "watch": "pnpm build && pnpm run --filter=\"./packages/[^_]**/*\" --parallel build --watch",
+    "clean": "git clean -fdX .",
+    "clean:build": "git clean -fdx -e node_modules .",
+    "format": "prettier --ignore-path .eslintignore --check .",
+    "format:check": "prettier --ignore-path .eslintignore --check .",
+    "lint": "eslint --cache .",
+    "prerelease": "pnpm build",
+    "release": "changeset publish",
+    "test": "vitest",
+    "test:inspect": "node --inspect-brk node_modules/.bin/vitest",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "publish": "node scripts/publish.js",
+    "version": "node scripts/version.js"
+  },
+  "packageManager": "pnpm@10.4.0",
+  "dependencies": {
+    "@changesets/cli": "^2.28.1",
+    "@types/semver": "^7.5.8",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "chalk": "^4.1.2",
+    "eslint": "^9.20.1",
+    "eslint-plugin-import-helpers": "^2.0.1",
+    "jsonfile": "^6.1.0",
+    "prettier": "^3.5.1",
+    "semver": "^7.7.1",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.6"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
