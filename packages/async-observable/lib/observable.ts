@@ -216,17 +216,17 @@ export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
    * will be passed the value as an argument.
    * @returns A new Subscriber that can be used to unsubscribe from the AsyncObservable.
    */
-  subscribe(callback: (value: T) => PromiseOrValue<any>): Subscriber<T> {
+  subscribe(callback?: (value: T) => PromiseOrValue<any>): Subscriber<T> {
     const subscriber = new Subscriber(this._generator());
     this._subscribers.set(subscriber, this._tryGeneratorWithCallback(subscriber, callback));
     return subscriber;
   }
 
   /** @internal */
-  protected async _tryGeneratorWithCallback(subscriber: Subscriber<T>, callback: (value: T) => PromiseOrValue<any>): Promise<void> {
+  protected async _tryGeneratorWithCallback(subscriber: Subscriber<T>, callback?: (value: T) => PromiseOrValue<any>): Promise<void> {
     try {
       for await (const value of subscriber) {
-        await callback(value);
+        if (callback) await callback(value);
       }
     } finally {
       this._subscribers.delete(subscriber);
