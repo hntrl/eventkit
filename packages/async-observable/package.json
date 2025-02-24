@@ -1,0 +1,76 @@
+{
+  "name": "@eventkit/async-observable",
+  "version": "0.0.1-alpha.0",
+  "license": "MIT",
+  "author": "Hunter Lovell <hunter@hntrl.io>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hntrl/eventkit",
+    "directory": "packages/async-observable"
+  },
+  "bugs": {
+    "url": "https://github.com/hntrl/eventkit/issues"
+  },
+  "keywords": [
+    "event",
+    "streams",
+    "streaming",
+    "reactive",
+    "readable",
+    "pipeline",
+    "Observable",
+    "AsyncObservable"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "wireit": {
+    "build": {
+      "command": "rimraf dist && tsup",
+      "files": [
+        "lib/**",
+        "tsconfig.json",
+        "package.json"
+      ],
+      "output": [
+        "dist/**"
+      ]
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "node": {
+        "types": "./dist/index.d.ts",
+        "module-sync": "./dist/index.mjs",
+        "default": "./dist/index.js"
+      },
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3"
+  },
+  "files": [
+    "dist/",
+    "CHANGELOG.md",
+    "LICENSE.md",
+    "NOTICE.md",
+    "README.md"
+  ],
+  "dependencies": {
+    "rxjs": "^7.8.2"
+  }
+}
