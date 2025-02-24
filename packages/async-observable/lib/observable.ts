@@ -1,3 +1,4 @@
+import { from } from "./from";
 import { SubscriptionLike, PromiseOrValue, UnaryFunction } from "./types";
 
 export class Subscriber<T> implements SubscriptionLike, AsyncIterable<T>, PromiseLike<void> {
@@ -182,6 +183,9 @@ export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
   pipe(...operations: UnaryFunction<any, any>[]): unknown {
     return operations.reduce(pipeReducer, this as any);
   }
+
+  /** Static Methods */
+  static from = from;
 }
 
 function pipeReducer(prev: any, fn: UnaryFunction<any, any>) {
