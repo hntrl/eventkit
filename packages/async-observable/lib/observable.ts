@@ -1,5 +1,5 @@
 import { from } from "./from";
-import { SubscriptionLike, PromiseOrValue, UnaryFunction } from "./types";
+import { SubscriptionLike, PromiseOrValue, UnaryFunction, OperatorFunction } from "./types";
 
 /**
  * Represents an active execution and consumer of an async generator (like AsyncObservable). A
@@ -238,6 +238,25 @@ export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
     return;
   }
 
+  /**
+   * Used to stitch together functional operators into a chain.
+   *
+   * @returns The AsyncObservable of all the operators having been called
+   * in the order they were passed in.
+   */
+  pipe(...operations: UnaryFunction<any, any>[]): unknown {
+    return operations.reduce(pipeReducer, this as any);
+  }
+
+  /**
+   * Method to expose the utility function {@link #from} as a static method on AsyncObservable.
+   * This is useful for creating an AsyncObservable from a common iterable or stream-like type.
+   *
+   * @param source The source to create an AsyncObservable from
+   * @returns An AsyncObservable that emits the values from the source
+   */
+  static from = from;
+
   /** AsyncGenerator<T> */
   [Symbol.asyncIterator](): AsyncGenerator<T> {
     const subscriber = new Subscriber(this._generator());
@@ -315,8 +334,9 @@ export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
       .then(() => undefined)
       .finally(onfinally);
   }
+}
 
-  /** Pipe utility */
+export interface AsyncObservable<T> {
   pipe(): AsyncObservable<T>;
   pipe<A>(op1: UnaryFunction<AsyncObservable<T>, A>): A;
   pipe<A, B>(op1: UnaryFunction<AsyncObservable<T>, A>, op2: UnaryFunction<A, B>): B;
@@ -327,27 +347,75 @@ export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
     op3: UnaryFunction<B, C>,
     op4: UnaryFunction<C, D>
   ): D;
-
-  /**
-   * Used to stitch together functional operators into a chain.
-   *
-   * @returns The AsyncObservable of all the operators having been called
-   * in the order they were passed in.
-   */
-  pipe(...operations: UnaryFunction<any, any>[]): unknown {
-    return operations.reduce(pipeReducer, this as any);
-  }
-
-  /** Static Methods */
-
-  /**
-   * Method to expose the utility function {@link #from} as a static method on AsyncObservable.
-   * This is useful for creating an AsyncObservable from a common iterable or stream-like type.
-   *
-   * @param source The source to create an AsyncObservable from
-   * @returns An AsyncObservable that emits the values from the source
-   */
-  static from = from;
+  pipe<A, B, C, D, E>(
+    op1: UnaryFunction<AsyncObservable<T>, A>,
+    op2: UnaryFunction<A, B>,
+    op3: UnaryFunction<B, C>,
+    op4: UnaryFunction<C, D>,
+    op5: UnaryFunction<D, E>
+  ): E;
+  pipe<A, B, C, D, E, F>(
+    op1: UnaryFunction<AsyncObservable<T>, A>,
+    op2: UnaryFunction<A, B>,
+    op3: UnaryFunction<B, C>,
+    op4: UnaryFunction<C, D>,
+    op5: UnaryFunction<D, E>,
+    op6: UnaryFunction<E, F>
+  ): F;
+  pipe<A, B, C, D, E, F, G>(
+    op1: UnaryFunction<AsyncObservable<T>, A>,
+    op2: UnaryFunction<A, B>,
+    op3: UnaryFunction<B, C>,
+    op4: UnaryFunction<C, D>,
+    op5: UnaryFunction<D, E>,
+    op6: UnaryFunction<E, F>,
+    op7: UnaryFunction<F, G>
+  ): G;
+  pipe<A, B, C, D, E, F, G, H>(
+    op1: UnaryFunction<AsyncObservable<T>, A>,
+    op2: UnaryFunction<A, B>,
+    op3: UnaryFunction<B, C>,
+    op4: UnaryFunction<C, D>,
+    op5: UnaryFunction<D, E>,
+    op6: UnaryFunction<E, F>,
+    op7: UnaryFunction<F, G>,
+    op8: UnaryFunction<G, H>
+  ): H;
+  pipe<A, B, C, D, E, F, G, H, I>(
+    op1: UnaryFunction<AsyncObservable<T>, A>,
+    op2: UnaryFunction<A, B>,
+    op3: UnaryFunction<B, C>,
+    op4: UnaryFunction<C, D>,
+    op5: UnaryFunction<D, E>,
+    op6: UnaryFunction<E, F>,
+    op7: UnaryFunction<F, G>,
+    op8: UnaryFunction<G, H>,
+    op9: UnaryFunction<H, I>
+  ): I;
+  pipe<A, B, C, D, E, F, G, H, I>(
+    op1: UnaryFunction<AsyncObservable<T>, A>,
+    op2: UnaryFunction<A, B>,
+    op3: UnaryFunction<B, C>,
+    op4: UnaryFunction<C, D>,
+    op5: UnaryFunction<D, E>,
+    op6: UnaryFunction<E, F>,
+    op7: UnaryFunction<F, G>,
+    op8: UnaryFunction<G, H>,
+    op9: UnaryFunction<H, I>,
+    ...operations: OperatorFunction<any, any>[]
+  ): AsyncObservable<unknown>;
+  pipe<A, B, C, D, E, F, G, H, I>(
+    op1: UnaryFunction<AsyncObservable<T>, A>,
+    op2: UnaryFunction<A, B>,
+    op3: UnaryFunction<B, C>,
+    op4: UnaryFunction<C, D>,
+    op5: UnaryFunction<D, E>,
+    op6: UnaryFunction<E, F>,
+    op7: UnaryFunction<F, G>,
+    op8: UnaryFunction<G, H>,
+    op9: UnaryFunction<H, I>,
+    ...operations: UnaryFunction<any, any>[]
+  ): unknown;
 }
 
 function pipeReducer(prev: any, fn: UnaryFunction<any, any>) {
