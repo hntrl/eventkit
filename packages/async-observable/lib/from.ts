@@ -90,6 +90,13 @@ export function isAsyncObservable(obj: any): obj is AsyncObservable<unknown> {
   return !!obj && (obj instanceof AsyncObservable || isFunction(obj.subscribe));
 }
 
+/**
+ * Creates an AsyncObservable from an Array, an array-like object, a Promise, an iterable object,
+ * or an AsyncObservable-like object.
+ *
+ * @param input The source to create an AsyncObservable from
+ * @returns An AsyncObservable that emits the values from the source
+ */
 export function from<O extends AsyncObservableInput<any>>(input: O): AsyncObservable<ObservedValueOf<O>>;
 export function from<T>(input: AsyncObservableInput<T>): AsyncObservable<T> {
   const type = getAsyncObservableInputType(input);
@@ -112,7 +119,7 @@ export function from<T>(input: AsyncObservableInput<T>): AsyncObservable<T> {
 }
 
 /**
- * Creates an eventkit Observable from an object that implements `Symbol.asyncObservable`.
+ * Creates an eventkit AsyncObservable from an object that implements `Symbol.asyncObservable`.
  * @param obj An object that properly implements `Symbol.asyncObservable`.
  */
 function fromInteropAsyncObservable<T>(obj: any) {
@@ -129,7 +136,7 @@ function fromInteropAsyncObservable<T>(obj: any) {
 }
 
 /**
- * Synchronously emits the values of an array like and completes.
+ * Emits the values of an array like and completes.
  * This is exported because there are creation functions and operators that need to
  * make direct use of the same logic, and there's no reason to make them run through
  * `from` conditionals because we *know* they're dealing with an array.
