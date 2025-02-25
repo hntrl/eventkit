@@ -65,6 +65,16 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
   /** PromiseLike<void> */
 
   /**
+   * Chains the return promise with another promise to wait for additional cleanup work to
+   * complete before resolving. Used to remove the tracked subscriber from the AsyncObservable
+   * once the generator has completed execution.
+   * @internal
+   */
+  _chainReturnPromise(promise: Promise<void>) {
+    this._returnPromise.promise = this._returnPromise.promise.then(() => promise);
+  }
+
+  /**
    * Returns a promise that resolves when the generator has completed execution and cleaned
    * up, or rejects if an error occurs during execution. This allows AsyncObservable instances
    * to be used with await expressions and Promise methods like then(), catch(), and finally().
@@ -168,22 +178,6 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
   }
 }
 
-// Even though Subscriber only conditionally implements disposer symbols
-// if it's available, we still need to declare it here so that TypeScript
-// knows that it exists on the prototype when it is available.
-export interface Subscriber<T> {
-  [Symbol.dispose](): void;
-  [Symbol.asyncDispose](): Promise<void>;
-}
-
-if (typeof Symbol.dispose === "symbol") {
-  Subscriber.prototype[Symbol.dispose] = Subscriber.prototype.unsubscribe;
-}
-
-if (typeof Symbol.asyncDispose === "symbol") {
-  Subscriber.prototype[Symbol.asyncDispose] = Subscriber.prototype.unsubscribe;
-}
-
 /**
  * Represents any number of values over any amount of time by way of an async generator
  * that can be subscribed to and unsubscribed from.
@@ -204,9 +198,13 @@ if (typeof Symbol.asyncDispose === "symbol") {
  * AsyncObservable instances can be created from common iterable and stream-like types
  * by using the {@link AsyncObservable.from} method.
  */
-export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
+export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, PromiseLike<void> {
   /** @internal */
-  _subscribers: Map<Subscriber<T>, Promise<void>> = new Map();
+  _subscribers: Set<Subscriber<T>> = new Set();
+
+  get subscribers(): Subscriber<T>[] {
+    return Array.from(this._subscribers.values());
+  }
 
   /**
    * @param generator The function that returns the async generator that will be used to emit
@@ -247,8 +245,27 @@ export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
    */
   subscribe(callback?: AsyncObserver<T>): Subscriber<T> {
     const subscriber = new Subscriber(this._generator());
-    this._subscribers.set(subscriber, this._tryGeneratorWithCallback(subscriber, callback));
+    subscriber._chainReturnPromise(this._tryGeneratorWithCallback(subscriber, callback));
+    this._subscribers.add(subscriber);
     return subscriber;
+  }
+
+  /**
+   * Unsubscribes all subscribers from this AsyncObservable. This will stop the execution of all
+   * active subscribers and remove them from the internal subscriber list. While {@link #then}
+   * will resolve when all subscribers have completed, this method will send an early interrupt
+   * signal to all subscribers, causing them to exit their generator prematurely.
+   *
+   * This is useful when you want to clean up all subscriptions at once, rather than unsubscribing
+   * from each subscriber individually. This method is also the implementation of the standard
+   * disposer symbols, which means that it will be called when the AsyncObservable is disposed
+   * either by calling the dispose method directly or using explicit resource management.
+   *
+   * @returns A Promise that resolves when all subscribers have been unsubscribed.
+   */
+  unsubscribe(): Promise<void> {
+    const unsubscribePromises = Array.from(this.subscribers).map((subscriber) => subscriber.unsubscribe());
+    return Promise.all(unsubscribePromises).then(() => undefined);
   }
 
   /** @internal */
@@ -290,10 +307,15 @@ export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
   [Symbol.asyncIterator](): AsyncGenerator<T> {
     const subscriber = new Subscriber(this._generator());
     const iter = subscriber[Symbol.asyncIterator]();
-    this._subscribers.set(subscriber, subscriber._returnPromise.promise);
+    this._subscribers.add(subscriber);
 
     return {
-      next: iter.next,
+      next: () => {
+        return iter.next().then((result) => {
+          if (result.done) this._subscribers.delete(subscriber);
+          return result;
+        });
+      },
       throw: (error?: any) => {
         return iter.throw(error).finally(() => {
           this._subscribers.delete(subscriber);
@@ -331,7 +353,7 @@ export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
     onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
   ): PromiseLike<TResult1 | TResult2> {
-    return Promise.all(Array.from(this._subscribers.values()))
+    return Promise.all(this._subscribers.values())
       .then(() => onfulfilled?.() as any)
       .catch(onrejected);
   }
@@ -342,27 +364,50 @@ export class AsyncObservable<T> implements AsyncIterable<T>, PromiseLike<void> {
    * any subscriber errors.
    *
    * @param onrejected - Optional callback to execute if any subscriber errors
-   * @returns A Promise that resolves with the result of the catch handler or rejects if the handler throws
+   * @returns A Promise that resolves when all subscribers have completed or rejects if any error occurs
    */
   catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null): PromiseLike<TResult> {
-    return Promise.all(Array.from(this._subscribers.values()))
+    return Promise.all(this._subscribers.values())
       .then(() => undefined as any)
       .catch(onrejected);
   }
 
   /**
-   * Implements the finally method of the PromiseLike interface. This allows executing cleanup
-   * logic when the AsyncObservable completes or errors when used as a Promise. The finally
-   * handler will be called after all subscribers complete or error.
+   * Returns a Promise that resolves when all subscribers have either completed or errored.
+   * This is useful to implement cleanup logic after all subscribers have completed or errored.
    *
    * @param onfinally - Optional callback to execute after subscribers complete or error
    * @returns A Promise that resolves when all subscribers and the finally handler complete
    */
   finally(onfinally?: (() => void) | null): PromiseLike<void> {
-    return Promise.all(Array.from(this._subscribers.values()))
+    return Promise.all(this._subscribers.values())
       .then(() => undefined)
       .finally(onfinally);
   }
+}
+
+// Even though Subscriber and AsyncObservable only conditionally implements
+// disposer symbols if it's available, we still need to declare it here so
+// that TypeScript knows that it exists on the prototype when it is available.
+
+export interface Subscriber<T> {
+  [Symbol.dispose](): void;
+  [Symbol.asyncDispose](): Promise<void>;
+}
+
+export interface AsyncObservable<T> {
+  [Symbol.dispose](): void;
+  [Symbol.asyncDispose](): Promise<void>;
+}
+
+if (typeof Symbol.dispose === "symbol") {
+  Subscriber.prototype[Symbol.dispose] = Subscriber.prototype.unsubscribe;
+  AsyncObservable.prototype[Symbol.dispose] = AsyncObservable.prototype.unsubscribe;
+}
+
+if (typeof Symbol.asyncDispose === "symbol") {
+  Subscriber.prototype[Symbol.asyncDispose] = Subscriber.prototype.unsubscribe;
+  AsyncObservable.prototype[Symbol.asyncDispose] = AsyncObservable.prototype.unsubscribe;
 }
 
 export interface AsyncObservable<T> {
