@@ -2,10 +2,13 @@ import { from } from "./from";
 import { SubscriptionLike, UnaryFunction, OperatorFunction, AsyncObserver } from "./types";
 
 /**
- * Represents an active execution and consumer of an async generator (like AsyncObservable). A
- * Subscriber is both an AsyncIterable and a PromiseLike, allowing it to be used in for-await-of
- * loops and with await. When used as a Promise, it resolves when the generator
- * completes or errors.
+ * Represents an active execution and consumer of an async generator (like AsyncObservable).
+ *
+ * A Subscriber is both an AsyncIterable and a PromiseLike, allowing it to be used in for-await-of
+ * loops and with await. When used as a Promise, it resolves when the generator completes or errors.
+ * If any errors occur during the execution or cleanup of the generator, they will always be sent
+ * to the promise's rejection handler. This means that you should always `await` the Subscriber
+ * somewhere to tack any errors that occur onto a different closure as to avoid uncaught errors.
  *
  * The Subscriber also implements SubscriptionLike, providing an unsubscribe() method that can
  * be used to cancel the execution of the generator. When unsubscribed, the Subscriber
@@ -15,15 +18,15 @@ import { SubscriptionLike, UnaryFunction, OperatorFunction, AsyncObserver } from
  * It's worth noting that when using Subscriber as an async iterator (i.e. in a for-await-of
  * loop), Subscriber does not attempt to clone the values of the generator across multiple
  * accesses of the iterator object. This means that if you use Subscriber in multiple
- * for-await-of loops (or by calling the [Symbol.asyncIterator]() method in multiple places),
- * the sequence of values returned by the `next()` method won't be consistent with the sequence
- * of values emitted by the generator.
+ * for-await-of loops that run in parallel (i.e. by calling the [Symbol.asyncIterator]()
+ * method in multiple places), the sequence of values returned by the `next()` method won't
+ * be consistent with the sequence of values emitted by the generator.
  *
  * Subscribers are a common type in eventkit, but is rarely used as a public interface. They
  * should be initialized using the {@link AsyncObservable.subscribe} method or by using
  * the AsyncObservable like an async iterator.
  */
-export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, AsyncIterable<T> {
+export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, AsyncIterable<T, void, void> {
   /** @internal */
   _generator: AsyncGenerator<T>;
   /** @internal */
@@ -54,18 +57,26 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
    * @returns A promise that resolves when the generator has been cleaned up.
    */
   unsubscribe(): Promise<void> {
-    return this._generator
-      .return(null)
-      .then(() => this._returnPromise.resolve())
-      .catch((error) => this._returnPromise.reject(error));
+    return this[Symbol.asyncIterator]()
+      .return()
+      .then(() => Promise.resolve());
   }
 
   /** PromiseLike<void> */
 
   /**
-   * Returns a promise that resolves when the generator has completed execution, or rejects
-   * if an error occurs during execution. This allows AsyncObservable instances to be used
-   * with await expressions and Promise methods like then(), catch(), and finally().
+   * Returns a promise that resolves when the generator has completed execution and cleaned
+   * up, or rejects if an error occurs during execution. This allows AsyncObservable instances
+   * to be used with await expressions and Promise methods like then(), catch(), and finally().
+   *
+   * It's worth noting that while the Promise returned by this object is representative of
+   * the execution of the generator, that doesn't mean that this is the only place where errors
+   * will be thrown. When using control flow statements like `next()` or for-await-of loops,
+   * errors that occur either in evaluating the next value or in the cleanup when there are
+   * no more values will also be thrown there. In those cases, you can still use the promise
+   * returned here as a "catch all" for any errors that occur during the execution of the
+   * generator. This is helpful when you don't have visibility into the logic that iterates
+   * over the generator, but you still want to be notified of any errors that occur.
    *
    * @param onfulfilled Optional callback to execute when the promise resolves successfully
    * @param onrejected Optional callback to execute when the promise rejects with an error
@@ -107,30 +118,48 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
     return this._returnPromise.promise.then(() => undefined).finally(onfinally);
   }
 
-  /** AsyncIterable<T> */
+  /** AsyncIterable<T, void, void> */
+
+  next(): Promise<IteratorResult<T>> {
+    return this[Symbol.asyncIterator]().next();
+  }
 
   [Symbol.asyncIterator]() {
     const generator = this._generator;
     const returnPromise = this._returnPromise;
 
-    const resolveWithIteratorResult = (value: IteratorResult<T>) => {
+    const resolveWithIteratorResult = (value: IteratorResult<T>): IteratorResult<T> => {
       returnPromise.resolve();
       return value;
     };
-    const rejectWithIteratorResult = (error: any) => {
+    const throwWithIteratorResult = (error: any): IteratorResult<T> => {
+      // generator encountered an error, and we do want to propagate it
+      // reject the promise and throw the error
       returnPromise.reject(error);
-      return { done: true as const, value: undefined };
+      throw error;
     };
 
     return {
       next: () => {
-        return generator.next().catch(rejectWithIteratorResult);
+        return generator
+          .next()
+          .then((result) => (result.done ? resolveWithIteratorResult(result) : result))
+          .catch(throwWithIteratorResult);
       },
       throw: (err?: any) => {
-        return generator.throw(err).then(rejectWithIteratorResult).catch(rejectWithIteratorResult);
+        return generator.throw(err).then(throwWithIteratorResult);
       },
-      return: () => {
-        return generator.return(null).then(resolveWithIteratorResult).catch(rejectWithIteratorResult);
+      return: (value?: any) => {
+        // We intentionally don't propagate the error back to the return promise here;
+        // this is what lets us differentiate between an "execution error" and a "cleanup error".
+        // Return will only be called when the generator has a premature exit (i.e.
+        // .unsubscribe() is called), whereas any cleanup errors that occur as a result of the
+        // generator completing will be thrown in the `next` method, and propagated to the
+        // return promise.
+        // If we did propagate the error back to the return promise here, and given that the
+        // subscriber isn't awaited anywhere, we would always get an uncaught error since the
+        // return promise isn't being handled anywhere.
+        return generator.return(value).then(resolveWithIteratorResult);
       },
       [Symbol.asyncIterator]() {
         return this;
