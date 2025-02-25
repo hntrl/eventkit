@@ -29,3 +29,6 @@ package-lock.json
 /.env
 /NOTES.md
 
+# Docs
+docs/.vitepress/dist
+docs/.vitepress/cache

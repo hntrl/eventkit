@@ -16,7 +16,10 @@
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "publish": "node scripts/publish.js",
-    "version": "node scripts/version.js"
+    "version": "node scripts/version.js",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "packageManager": "pnpm@10.4.0",
   "dependencies": {
@@ -31,6 +34,7 @@
     "prettier": "^3.5.1",
     "semver": "^7.7.1",
     "typescript": "^5.7.3",
+    "vitepress": "^1.6.3",
     "vitest": "^3.0.6"
   },
   "engines": {
