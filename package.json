@@ -13,6 +13,7 @@
     "release": "changeset publish",
     "test": "vitest",
     "test:inspect": "node --inspect-brk node_modules/.bin/vitest",
+    "typecheck": "pnpm run --recursive --parallel typecheck",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "publish": "node scripts/publish.js",
