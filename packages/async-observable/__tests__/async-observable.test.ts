@@ -61,10 +61,10 @@ describe("AsyncObservable", () => {
 
       expect(observable._subscribers.size).toBe(2);
 
-      await sub1.unsubscribe();
+      await sub1.cancel();
       expect(observable._subscribers.size).toBe(1);
 
-      await sub2.unsubscribe();
+      await sub2.cancel();
       expect(observable._subscribers.size).toBe(0);
     });
 
@@ -93,7 +93,7 @@ describe("AsyncObservable", () => {
       expect(observable._subscribers.size).toBe(0);
     });
 
-    it("should remove unsubscribed subscribers", async () => {
+    it("should remove cancelled subscribers", async () => {
       const observable = new AsyncObservable<number>(async function* () {
         yield 1;
         await new Promise((resolve) => setTimeout(resolve, 0)); // Force async
@@ -103,7 +103,7 @@ describe("AsyncObservable", () => {
       const subscriber = observable.subscribe();
       expect(observable._subscribers.size).toBe(1);
 
-      await subscriber.unsubscribe();
+      await subscriber.cancel();
       expect(observable._subscribers.size).toBe(0);
     });
 
@@ -577,7 +577,7 @@ describe("AsyncObservable", () => {
       expect(cleanupFn).toHaveBeenCalled();
     });
 
-    it("should cleanup unsubscribed subscribers", async () => {
+    it("should cleanup cancelled subscribers", async () => {
       const cleanupFn = vi.fn();
       const observable = new AsyncObservable<number>(async function* () {
         try {
@@ -590,7 +590,7 @@ describe("AsyncObservable", () => {
       });
 
       const subscriber = observable.subscribe();
-      await subscriber.unsubscribe();
+      await subscriber.cancel();
       expect(cleanupFn).toHaveBeenCalled();
     });
 
@@ -608,7 +608,7 @@ describe("AsyncObservable", () => {
 
       const subscribers = [observable.subscribe(), observable.subscribe(), observable.subscribe()];
 
-      await Promise.all(subscribers.map((s) => s.unsubscribe()));
+      await Promise.all(subscribers.map((s) => s.cancel()));
       expect(cleanupFn).toHaveBeenCalledTimes(3);
     });
 
@@ -634,7 +634,7 @@ describe("AsyncObservable", () => {
 
       // Unsubscribe
       const sub = observable.subscribe();
-      await sub.unsubscribe();
+      await sub.cancel();
 
       expect(cleanupFn).toHaveBeenCalledTimes(3);
       expect(observable._subscribers.size).toBe(0);

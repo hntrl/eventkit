@@ -10,8 +10,8 @@ import { SubscriptionLike, UnaryFunction, OperatorFunction, AsyncObserver } from
  * to the promise's rejection handler. This means that you should always `await` the Subscriber
  * somewhere to tack any errors that occur onto a different closure as to avoid uncaught errors.
  *
- * The Subscriber also implements SubscriptionLike, providing an unsubscribe() method that can
- * be used to cancel the execution of the generator. When unsubscribed, the Subscriber
+ * The Subscriber also implements SubscriptionLike, providing an cancel() method that can
+ * be used to cancel the execution of the generator. When cancelled, the Subscriber
  * will call the generator's return() method and resolve any pending promises associated with
  * the generator.
  *
@@ -40,7 +40,7 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
   /** SubscriptionLike */
 
   /**
-   * Unsubscribes from the generator, meaning that the generator will be disposed of,
+   * Cancels the generator, meaning that the generator will be disposed of,
    * and any resources held by the generator will be released.
    *
    * Calling this method starts an immediate cleanup of the Subscriber. In the case that you
@@ -56,7 +56,7 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
    *
    * @returns A promise that resolves when the generator has been cleaned up.
    */
-  unsubscribe(): Promise<void> {
+  cancel(): Promise<void> {
     return this[Symbol.asyncIterator]()
       .return()
       .then(() => Promise.resolve());
@@ -251,21 +251,21 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   }
 
   /**
-   * Unsubscribes all subscribers from this AsyncObservable. This will stop the execution of all
+   * Cancels all subscribers from this AsyncObservable. This will stop the execution of all
    * active subscribers and remove them from the internal subscriber list. While {@link #then}
    * will resolve when all subscribers have completed, this method will send an early interrupt
    * signal to all subscribers, causing them to exit their generator prematurely.
    *
-   * This is useful when you want to clean up all subscriptions at once, rather than unsubscribing
+   * This is useful when you want to clean up all subscriptions at once, rather than cancelling
    * from each subscriber individually. This method is also the implementation of the standard
    * disposer symbols, which means that it will be called when the AsyncObservable is disposed
    * either by calling the dispose method directly or using explicit resource management.
    *
-   * @returns A Promise that resolves when all subscribers have been unsubscribed.
+   * @returns A Promise that resolves when all subscribers have been cancelled.
    */
-  unsubscribe(): Promise<void> {
-    const unsubscribePromises = Array.from(this.subscribers).map((subscriber) => subscriber.unsubscribe());
-    return Promise.all(unsubscribePromises).then(() => undefined);
+  cancel(): Promise<void> {
+    const cancelPromises = Array.from(this.subscribers).map((subscriber) => subscriber.cancel());
+    return Promise.all(cancelPromises).then(() => undefined);
   }
 
   /** @internal */
@@ -330,7 +330,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
         return this;
       },
       [Symbol.asyncDispose]: async () => {
-        await subscriber.unsubscribe();
+        await subscriber.cancel();
         this._subscribers.delete(subscriber);
       },
     };
@@ -401,13 +401,13 @@ export interface AsyncObservable<T> {
 }
 
 if (typeof Symbol.dispose === "symbol") {
-  Subscriber.prototype[Symbol.dispose] = Subscriber.prototype.unsubscribe;
-  AsyncObservable.prototype[Symbol.dispose] = AsyncObservable.prototype.unsubscribe;
+  Subscriber.prototype[Symbol.dispose] = Subscriber.prototype.cancel;
+  AsyncObservable.prototype[Symbol.dispose] = AsyncObservable.prototype.cancel;
 }
 
 if (typeof Symbol.asyncDispose === "symbol") {
-  Subscriber.prototype[Symbol.asyncDispose] = Subscriber.prototype.unsubscribe;
-  AsyncObservable.prototype[Symbol.asyncDispose] = AsyncObservable.prototype.unsubscribe;
+  Subscriber.prototype[Symbol.asyncDispose] = Subscriber.prototype.cancel;
+  AsyncObservable.prototype[Symbol.asyncDispose] = AsyncObservable.prototype.cancel;
 }
 
 export interface AsyncObservable<T> {

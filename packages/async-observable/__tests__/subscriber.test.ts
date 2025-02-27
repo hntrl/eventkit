@@ -160,12 +160,12 @@ describe("Subscriber", () => {
   });
 
   describe("SubscriptionLike behavior", () => {
-    it("should resolve cleanup promise after unsubscribe", async () => {
+    it("should resolve cleanup promise after cancel", async () => {
       const subscriber = new Subscriber(createMockGenerator());
-      await expect(subscriber.unsubscribe()).resolves.toBeUndefined();
+      await expect(subscriber.cancel()).resolves.toBeUndefined();
     });
 
-    it("should handle errors during unsubscribe gracefully", async () => {
+    it("should handle errors during cancel gracefully", async () => {
       async function* generator() {
         try {
           yield* createMockGenerator();
@@ -176,12 +176,12 @@ describe("Subscriber", () => {
 
       const subscriber = new Subscriber(generator());
       await subscriber.next();
-      // subscriber.unsubscribe();
-      // console.log(await subscriber.unsubscribe());
-      await expect(subscriber.unsubscribe()).rejects.toThrow("Cleanup error");
+      // subscriber.cancel();
+      // console.log(await subscriber.cancel());
+      await expect(subscriber.cancel()).rejects.toThrow("Cleanup error");
     });
 
-    it("should prevent further value emission after unsubscribe", async () => {
+    it("should prevent further value emission after cancel", async () => {
       const values: number[] = [];
       const subscriber = new Subscriber(createMockGenerator());
 
@@ -189,7 +189,7 @@ describe("Subscriber", () => {
         for await (const value of subscriber) {
           values.push(value);
           if (value === 2) {
-            await subscriber.unsubscribe();
+            await subscriber.cancel();
           }
         }
       })();
@@ -198,7 +198,7 @@ describe("Subscriber", () => {
       expect(values).toEqual([1, 2]);
     });
 
-    it("should properly cleanup resources after unsubscribe", async () => {
+    it("should properly cleanup resources after cancel", async () => {
       const cleanupFn = vi.fn();
       async function* generator() {
         try {
@@ -210,7 +210,7 @@ describe("Subscriber", () => {
 
       const subscriber = new Subscriber(generator());
       await subscriber.next();
-      await subscriber.unsubscribe();
+      await subscriber.cancel();
       expect(cleanupFn).toHaveBeenCalled();
     });
   });
@@ -410,7 +410,7 @@ describe("Subscriber", () => {
 
       const subscriber = new Subscriber(generator());
       await subscriber.next();
-      await subscriber.unsubscribe();
+      await subscriber.cancel();
 
       expect(cleanupFn).toHaveBeenCalledTimes(1);
     });
@@ -426,7 +426,7 @@ describe("Subscriber", () => {
       }
 
       const subscriber = new Subscriber(generator());
-      await subscriber.unsubscribe();
+      await subscriber.cancel();
 
       expect(cleanupFn).not.toHaveBeenCalled();
     });
@@ -453,7 +453,7 @@ describe("Subscriber", () => {
       for await (const value of subscriber) {
         values.push(value);
         if (value === 2) {
-          await subscriber.unsubscribe();
+          await subscriber.cancel();
           break;
         }
       }
@@ -466,7 +466,7 @@ describe("Subscriber", () => {
       const subscriber = new Subscriber(createMockGenerator());
 
       // Create multiple concurrent operations
-      const operations = [subscriber[Symbol.asyncIterator]().next(), subscriber.unsubscribe(), subscriber[Symbol.asyncIterator]().next()];
+      const operations = [subscriber[Symbol.asyncIterator]().next(), subscriber.cancel(), subscriber[Symbol.asyncIterator]().next()];
 
       // All operations should complete without throwing
       await expect(Promise.all(operations)).resolves.toBeDefined();

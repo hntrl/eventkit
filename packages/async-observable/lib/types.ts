@@ -38,7 +38,7 @@ export interface MonoTypeOperatorFunction<T, R> extends OperatorFunction<T, R> {
 /** Subscription Interfaces */
 
 export interface Unsubscribable {
-  unsubscribe(): Promise<void>;
+  cancel(): Promise<void>;
 }
 
 export interface AsyncObserver<T> {
@@ -46,7 +46,7 @@ export interface AsyncObserver<T> {
 }
 
 export interface SubscriptionLike extends Unsubscribable {
-  unsubscribe(): Promise<void>;
+  cancel(): Promise<void>;
 }
 
 /** Observable Interfaces */
