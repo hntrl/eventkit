@@ -31,10 +31,16 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
   _generator: AsyncGenerator<T>;
   /** @internal */
   _returnPromise: PromiseWithResolvers<void>;
+  /** @internal */
+  _nextHasBeenCalled: boolean;
+  /** @internal */
+  _finalizers: PromiseLike<void>[];
 
   constructor(generator: AsyncGenerator<T>) {
     this._generator = generator;
     this._returnPromise = Promise.withResolvers<void>();
+    this._nextHasBeenCalled = false;
+    this._finalizers = [];
   }
 
   /** SubscriptionLike */
@@ -58,20 +64,30 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
    */
   cancel(): Promise<void> {
     return this[Symbol.asyncIterator]()
-      .return()
-      .then(() => Promise.resolve());
+      .return(null)
+      .then(() => Promise.resolve())
+      .finally(this._finalizerPromise.bind(this));
+  }
   }
 
   /** PromiseLike<void> */
 
   /**
-   * Chains the return promise with another promise to wait for additional cleanup work to
-   * complete before resolving. Used to remove the tracked subscriber from the AsyncObservable
-   * once the generator has completed execution.
+   * Adds a promise to the list of promises that will interrupt the return promise from resolving
+   * until all of those promises have been resolved. This is used as a sort of internal "finally"
+   * hatch that will tack on additional work to the promise interface implemented by Subscriber.
+   *
+   * This is used in {@link AsyncObservable._trySubscriberWithCallback} to wrap the work of removing
+   * the tracked subscriber from the observable once the generator has completed execution.
    * @internal
    */
-  _chainReturnPromise(promise: Promise<void>) {
-    this._returnPromise.promise = this._returnPromise.promise.then(() => promise);
+  _addFinalizer(promise: PromiseLike<void>) {
+    this._finalizers.push(promise);
+  }
+
+  /** @internal */
+  _finalizerPromise(): Promise<void> {
+    return Promise.all(this._finalizers).then(() => undefined);
   }
 
   /**
@@ -96,7 +112,8 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
     onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
   ): PromiseLike<TResult1 | TResult2> {
-    return this._returnPromise.promise.then(onfulfilled, onrejected);
+    const promise = this._nextHasBeenCalled ? this._returnPromise.promise : Promise.resolve();
+    return promise.then(onfulfilled, onrejected).finally(this._finalizerPromise.bind(this));
   }
 
   /**
@@ -110,7 +127,8 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
    * throws or returns a rejected Promise, the returned Promise will reject with that reason.
    */
   catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null): PromiseLike<TResult> {
-    return this._returnPromise.promise.then(() => undefined as never, onrejected);
+    const promise = this._nextHasBeenCalled ? this._returnPromise.promise : Promise.resolve();
+    return promise.then(() => undefined as never, onrejected).finally(this._finalizerPromise.bind(this));
   }
 
   /**
@@ -125,7 +143,8 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
    * will be rejected if the callback throws an error or returns a rejected Promise.
    */
   finally(onfinally?: (() => void) | null): PromiseLike<void> {
-    return this._returnPromise.promise.then(() => undefined).finally(onfinally);
+    const promise = this._nextHasBeenCalled ? this._returnPromise.promise : Promise.resolve();
+    return promise.finally(this._finalizerPromise.bind(this)).finally(onfinally);
   }
 
   /** AsyncIterable<T, void, void> */
@@ -135,44 +154,42 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
   }
 
   [Symbol.asyncIterator]() {
-    const generator = this._generator;
-    const returnPromise = this._returnPromise;
-
-    const resolveWithIteratorResult = (value: IteratorResult<T>): IteratorResult<T> => {
-      returnPromise.resolve();
-      return value;
-    };
-    const throwWithIteratorResult = (error: any): IteratorResult<T> => {
-      // generator encountered an error, and we do want to propagate it
-      // reject the promise and throw the error
-      returnPromise.reject(error);
-      throw error;
-    };
-
+    // We return iterator methods like this so we don't expose those private control
+    // flow methods to the outside world.
     return {
-      next: () => {
-        return generator
+      next: (): Promise<IteratorResult<T>> => {
+        return this._generator
           .next()
-          .then((result) => (result.done ? resolveWithIteratorResult(result) : result))
-          .catch(throwWithIteratorResult);
+          .then((result) => {
+            this._nextHasBeenCalled = true;
+            if (result.done) this._returnPromise.resolve();
+            return result;
+          })
+          .catch((error) => {
+            this._returnPromise.reject(error);
+            throw error;
+          });
       },
-      throw: (err?: any) => {
-        return generator.throw(err).then(throwWithIteratorResult);
+      throw: (error?: any): Promise<IteratorResult<T>> => {
+        return this._generator.throw(error).then((value) => {
+          this._returnPromise.reject(value);
+          throw value;
+        });
       },
-      return: (value?: any) => {
+      return: (value?: any): Promise<IteratorResult<T>> => {
         // We intentionally don't propagate the error back to the return promise here;
         // this is what lets us differentiate between an "execution error" and a "cleanup error".
         // Return will only be called when the generator has a premature exit (i.e.
-        // .unsubscribe() is called), whereas any cleanup errors that occur as a result of the
+        // .cancel() is called), whereas any cleanup errors that occur as a result of the
         // generator completing will be thrown in the `next` method, and propagated to the
         // return promise.
         // If we did propagate the error back to the return promise here, and given that the
         // subscriber isn't awaited anywhere, we would always get an uncaught error since the
         // return promise isn't being handled anywhere.
-        return generator.return(value).then(resolveWithIteratorResult);
-      },
-      [Symbol.asyncIterator]() {
-        return this;
+        return this._generator.return(value).then((value) => {
+          this._returnPromise.resolve();
+          return value;
+        });
       },
     };
   }
@@ -244,8 +261,8 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
    * @returns A new Subscriber that can be used to unsubscribe from the AsyncObservable.
    */
   subscribe(callback?: AsyncObserver<T>): Subscriber<T> {
-    const subscriber = new Subscriber(this._generator());
-    subscriber._chainReturnPromise(this._tryGeneratorWithCallback(subscriber, callback));
+    const subscriber = new Subscriber(this._generator);
+    subscriber._addFinalizer(this._trySubscriberWithCallback(subscriber, callback));
     this._subscribers.add(subscriber);
     return subscriber;
   }
@@ -269,7 +286,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   }
 
   /** @internal */
-  protected async _tryGeneratorWithCallback(subscriber: Subscriber<T>, callback?: AsyncObserver<T>): Promise<void> {
+  protected async _trySubscriberWithCallback(subscriber: Subscriber<T>, callback?: AsyncObserver<T>): Promise<void> {
     try {
       for await (const value of subscriber) {
         if (callback) await callback(value);
