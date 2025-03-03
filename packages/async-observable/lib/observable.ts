@@ -1,6 +1,8 @@
 import { from } from "./from";
 import { SubscriptionLike, UnaryFunction, OperatorFunction, AsyncObserver } from "./types";
 
+export const kCancelSignal = Symbol("cancelSignal");
+
 /**
  * Represents an active execution and consumer of an async generator (like AsyncObservable).
  *
@@ -35,12 +37,15 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
   _nextHasBeenCalled: boolean;
   /** @internal */
   _finalizers: PromiseLike<void>[];
+  /** @internal */
+  _cancelPromise: PromiseWithResolvers<typeof kCancelSignal>;
 
-  constructor(generator: AsyncGenerator<T>) {
-    this._generator = generator;
+  constructor(generator: (sub: Subscriber<T>) => AsyncGenerator<T>) {
+    this._generator = generator(this);
     this._returnPromise = Promise.withResolvers<void>();
     this._nextHasBeenCalled = false;
     this._finalizers = [];
+    this._cancelPromise = Promise.withResolvers<typeof kCancelSignal>();
   }
 
   /** SubscriptionLike */
@@ -63,11 +68,23 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
    * @returns A promise that resolves when the generator has been cleaned up.
    */
   cancel(): Promise<void> {
+    // Generators have a synchronous queue of all the operations it receives (next/throw/return)
+    // which if we're waiting on a next() call that never comes, we'll never be able to break out
+    // of the generator and perform an early return since the first next() call is perpertually
+    // blocked. To solve this, we resolve the cancel signal which can be read off of the Subscriber
+    // to indicate when the subscriber has been cancelled, and in turn break out of the generator.
+    // This should only really be applicable to generators that don't have an affixed execution
+    // context with potentially never-ending operations like a Stream. In every other scenario we
+    // should rely on the generator state to determine when the generator has completed.
+    this._cancelPromise.resolve(kCancelSignal);
     return this[Symbol.asyncIterator]()
       .return(null)
       .then(() => Promise.resolve())
       .finally(this._finalizerPromise.bind(this));
   }
+
+  get [kCancelSignal]() {
+    return this._cancelPromise.promise;
   }
 
   /** PromiseLike<void> */
@@ -92,8 +109,8 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
 
   /**
    * Returns a promise that resolves when the generator has completed execution and cleaned
-   * up, or rejects if an error occurs during execution. This allows AsyncObservable instances
-   * to be used with await expressions and Promise methods like then(), catch(), and finally().
+   * up, or rejects if an error occurs during. This allows AsyncObservable instances to be
+   * used with await expressions and Promise methods like then(), catch(), and finally().
    *
    * It's worth noting that while the Promise returned by this object is representative of
    * the execution of the generator, that doesn't mean that this is the only place where errors
@@ -197,19 +214,19 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
 
 /**
  * Represents any number of values over any amount of time by way of an async generator
- * that can be subscribed to and unsubscribed from.
+ * that can be subscribed to and cancelled from.
  *
  * AsyncObservable implements PromiseLike<void>, which means it can used in await expressions.
- * When awaited, it will resolve once all current subscribers have completed or unsubscribed.
+ * When awaited, it will resolve once all current subscribers have completed or cancelled.
  * This makes it useful for waiting for all current executions of an AsyncObservable to complete,
  * for instance making sure that all subscribers have finished before continuing with some other work.
  *
  * AsyncObservable also implements AsyncIterable<T>, which means it can be used in for-await-of loops.
  * Doing so will create a new Subscriber and register it with the AsyncObservable. The Subscriber will
- * be unregistered (and have `unsubscribe()` called) from the AsyncObservable once the for-await-of
+ * be unregistered (and have `cancel()` called) from the AsyncObservable once the for-await-of
  * loop has returned (either by a terminating statement like return or throw), or once the observable
  * generator has completed. While you can't access the internal Subscriber object that gets created
- * when using this syntax, you can still 'unsubscribe' by exiting the loop early, and you can still
+ * when using this syntax, you can still 'cancel' by exiting the loop early, and you can still
  * wait for the loop to complete externally by awaiting the AsyncObservable.
  *
  * AsyncObservable instances can be created from common iterable and stream-like types
@@ -227,8 +244,8 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
    * @param generator The function that returns the async generator that will be used to emit
    * values. This function will be called every time a new subscriber is created.
    */
-  constructor(generator: (this: AsyncObservable<T>) => AsyncGenerator<T>) {
-    if (generator) this._generator = generator;
+  constructor(generator?: (this: AsyncObservable<T>, sub: Subscriber<T>) => AsyncGenerator<T>) {
+    if (generator) this._generator = generator.bind(this);
   }
 
   /**
@@ -297,7 +314,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   }
 
   /** @internal */
-  protected async *_generator(): AsyncGenerator<T> {
+  protected async *_generator(_: Subscriber<T>): AsyncGenerator<T> {
     return;
   }
 
@@ -322,7 +339,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
 
   /** AsyncGenerator<T> */
   [Symbol.asyncIterator](): AsyncGenerator<T> {
-    const subscriber = new Subscriber(this._generator());
+    const subscriber = new Subscriber(this._generator);
     const iter = subscriber[Symbol.asyncIterator]();
     this._subscribers.add(subscriber);
 
