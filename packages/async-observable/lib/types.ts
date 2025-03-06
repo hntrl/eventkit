@@ -42,7 +42,7 @@ export interface Unsubscribable {
 }
 
 export interface AsyncObserver<T> {
-  (value: T): PromiseOrValue<any>;
+  (this: Subscriber<T>, value: T): PromiseOrValue<any>;
 }
 
 export interface SubscriptionLike extends Unsubscribable {

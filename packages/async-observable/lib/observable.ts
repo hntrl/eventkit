@@ -456,7 +456,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
     try {
       for await (const value of subscriber) {
         if (callback) {
-          this._scheduler.schedule(subscriber, () => callback(value));
+          this._scheduler.schedule(subscriber, () => callback.bind(subscriber)(value));
         }
       }
     } finally {
