@@ -397,6 +397,24 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   }
 
   /**
+   * Returns a class that is bound to the current instance. Any work done by subscribers created
+   * from this class will be pinned to the scheduler of the current instance. This is useful for
+   * creating a new AsyncObservable that is a composition of the current AsyncObservable and
+   * another AsyncObservable (i.e. any operator function).
+   *
+   * @returns A new AsyncObservable that is bound to the current instance.
+   */
+  get AsyncObservable() {
+    const other = this;
+    return class<BT> extends AsyncObservable<BT> {
+      constructor(generator: (this: AsyncObservable<BT>, sub: Subscriber<BT>) => AsyncGenerator<BT>) {
+        super(generator);
+        this._scheduler = other._scheduler;
+      }
+    };
+  }
+
+  /**
    * Invokes an execution of an AsyncObservable and registers a new Subscriber that will call
    * the provided callback for each value emitted by the generator. The callback will be passed
    * the value of the current value as an argument.
@@ -465,7 +483,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   }
 
   /** @internal */
-  protected async *_generator(_: Subscriber<T>): AsyncGenerator<T> {
+  async *_generator(_: Subscriber<T>): AsyncGenerator<T> {
     return;
   }
 

@@ -1,4 +1,4 @@
-import { AsyncObservable } from "./observable";
+import { AsyncObservable, Subscriber } from "./observable";
 
 declare global {
   interface SymbolConstructor {
