@@ -49,6 +49,14 @@ export interface SubscriptionLike extends Unsubscribable {
   cancel(): Promise<void>;
 }
 
+/** Scheduler Interfaces */
+
+export interface SchedulerLike {
+  add(subscriber: Subscriber<any>, execution: Promise<void>): void;
+  schedule(subscriber: Subscriber<any>, callback: () => Promise<void>): void;
+  promise(sub?: Subscriber<any>): Promise<void>;
+}
+
 /** Observable Interfaces */
 
 export interface Subscribable<T> {

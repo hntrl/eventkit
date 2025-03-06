@@ -1,6 +1,6 @@
 export { AsyncObservableInputType, getAsyncObservableInputType, isAsyncObservable, from } from "./from";
 
-export { Subscriber, AsyncObservable } from "./observable";
+export { Subscriber, Scheduler, AsyncObservable, kCancelSignal } from "./observable";
 
 export {
   UnaryFunction,
@@ -9,6 +9,7 @@ export {
   Unsubscribable,
   AsyncObserver,
   SubscriptionLike,
+  SchedulerLike,
   Subscribable,
   AsyncObservableInput,
   InteropAsyncObservable,
