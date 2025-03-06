@@ -2,6 +2,7 @@ import { from } from "./from";
 import { SubscriptionLike, UnaryFunction, OperatorFunction, AsyncObserver, SchedulerLike } from "./types";
 
 export const kCancelSignal = Symbol("cancelSignal");
+export const kSubscriberType = Symbol("subscriberType");
 
 /**
  * Represents an active execution and consumer of an async generator (like AsyncObservable).
@@ -91,6 +92,8 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
       .then(() => Promise.resolve())
       .finally(() => this.scheduler.promise(this));
   }
+
+  [kSubscriberType]: "callback" | "iterator" | null = null;
 
   get [kCancelSignal]() {
     return this._cancelPromise.promise;
@@ -424,7 +427,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
    */
   subscribe(callback?: AsyncObserver<T>): Subscriber<T> {
     const subscriber = new Subscriber(this);
-    subscriber._addFinalizer(this._trySubscriberWithCallback(subscriber, callback));
+    subscriber[kSubscriberType] = "callback";
     this._subscribers.add(subscriber);
     this._scheduler.add(subscriber, this._trySubscriberWithCallback(subscriber, callback));
     return subscriber;
@@ -488,6 +491,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   /** AsyncGenerator<T> */
   [Symbol.asyncIterator](): AsyncGenerator<T> {
     const subscriber = new Subscriber(this);
+    subscriber[kSubscriberType] = "iterator";
     const iter = subscriber[Symbol.asyncIterator]();
     this._subscribers.add(subscriber);
 
