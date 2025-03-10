@@ -22,11 +22,11 @@
     "AsyncObservable"
   ],
   "scripts": {
-    "build": "tsup"
+    "build": "wireit"
   },
   "wireit": {
     "build": {
-      "command": "rimraf dist && tsup",
+      "command": "tsup",
       "files": [
         "lib/**",
         "tsconfig.json",
@@ -58,11 +58,6 @@
     },
     "./package.json": "./package.json"
   },
-  "devDependencies": {
-    "rimraf": "^6.0.1",
-    "tsup": "^8.3.6",
-    "typescript": "^5.7.3"
-  },
   "files": [
     "dist/",
     "CHANGELOG.md",
@@ -70,7 +65,12 @@
     "NOTICE.md",
     "README.md"
   ],
-  "dependencies": {
-    "rxjs": "^7.8.2"
+  "devDependencies": {
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "wireit": "^0.14.11"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
