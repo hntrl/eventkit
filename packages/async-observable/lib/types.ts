@@ -1,4 +1,4 @@
-import { AsyncObservable, Subscriber } from "./observable";
+import { type AsyncObservable, type Subscriber } from "./observable";
 
 declare global {
   interface SymbolConstructor {
@@ -26,14 +26,14 @@ export interface UnaryFunction<T, R> {
   (value: T): R;
 }
 
-export interface OperatorFunction<T, R> extends UnaryFunction<AsyncObservable<T>, AsyncObservable<R>> {}
+export type OperatorFunction<T, R> = UnaryFunction<AsyncObservable<T>, AsyncObservable<R>>;
 
 /**
  * A function type interface that describes a function that accepts and returns a parameter of the same type.
  *
  * Used to describe {@link OperatorFunction} with the only one type: `OperatorFunction<T, T>`.
  */
-export interface MonoTypeOperatorFunction<T, R> extends OperatorFunction<T, R> {}
+export type MonoTypeOperatorFunction<T, R> = OperatorFunction<T, R>;
 
 /** Subscription Interfaces */
 

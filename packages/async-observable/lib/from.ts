@@ -1,5 +1,10 @@
 import { AsyncObservable } from "./observable";
-import { InteropAsyncObservable, AsyncObservableInput, ObservedValueOf, ReadableStreamLike } from "./types";
+import {
+  type InteropAsyncObservable,
+  type AsyncObservableInput,
+  type ObservedValueOf,
+  type ReadableStreamLike,
+} from "./types";
 
 export enum AsyncObservableInputType {
   Own,
@@ -97,7 +102,9 @@ export function isAsyncObservable(obj: any): obj is AsyncObservable<unknown> {
  * @param input The source to create an AsyncObservable from
  * @returns An AsyncObservable that emits the values from the source
  */
-export function from<O extends AsyncObservableInput<any>>(input: O): AsyncObservable<ObservedValueOf<O>>;
+export function from<O extends AsyncObservableInput<any>>(
+  input: O
+): AsyncObservable<ObservedValueOf<O>>;
 export function from<T>(input: AsyncObservableInput<T>): AsyncObservable<T> {
   const type = getAsyncObservableInputType(input);
   switch (type) {
@@ -177,7 +184,9 @@ function fromReadableStreamLike<T>(readableStream: ReadableStreamLike<T>) {
   return fromAsyncIterable(readableStreamLikeToAsyncGenerator(readableStream));
 }
 
-export async function* readableStreamLikeToAsyncGenerator<T>(readableStream: ReadableStreamLike<T>): AsyncGenerator<T> {
+export async function* readableStreamLikeToAsyncGenerator<T>(
+  readableStream: ReadableStreamLike<T>
+): AsyncGenerator<T> {
   const reader = readableStream.getReader();
   try {
     while (true) {

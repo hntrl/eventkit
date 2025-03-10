@@ -1,5 +1,11 @@
 import { from } from "./from";
-import { SubscriptionLike, UnaryFunction, OperatorFunction, AsyncObserver, SchedulerLike } from "./types";
+import {
+  type SubscriptionLike,
+  type UnaryFunction,
+  type OperatorFunction,
+  type AsyncObserver,
+  type SchedulerLike,
+} from "./types";
 
 export const kCancelSignal = Symbol("cancelSignal");
 export const kSubscriberType = Symbol("subscriberType");
@@ -29,7 +35,9 @@ export const kSubscriberType = Symbol("subscriberType");
  * should be initialized using the {@link AsyncObservable.subscribe} method or by using
  * the AsyncObservable like an async iterator.
  */
-export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, AsyncIterable<T, void, void> {
+export class Subscriber<T>
+  implements SubscriptionLike, PromiseLike<void>, AsyncIterable<T, void, void>
+{
   /** @internal */
   _generator: AsyncGenerator<T> | null = null;
   /** @internal */
@@ -137,9 +145,13 @@ export class Subscriber<T> implements SubscriptionLike, PromiseLike<void>, Async
    * Promise that resolves, the returned Promise will resolve with that value. If the callback
    * throws or returns a rejected Promise, the returned Promise will reject with that reason.
    */
-  catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null): PromiseLike<TResult> {
+  catch<TResult = never>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
+  ): PromiseLike<TResult> {
     const promise = this._nextHasBeenCalled ? this._returnPromise.promise : Promise.resolve();
-    return promise.then(() => undefined as never, onrejected).finally(() => this.scheduler.promise(this));
+    return promise
+      .then(() => undefined as never, onrejected)
+      .finally(() => this.scheduler.promise(this));
   }
 
   /**
@@ -405,11 +417,13 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
    * @returns A new AsyncObservable that is bound to the current instance.
    */
   get AsyncObservable() {
-    const other = this;
+    const { _scheduler: otherScheduler } = this;
     return class<BT> extends AsyncObservable<BT> {
-      constructor(generator: (this: AsyncObservable<BT>, sub: Subscriber<BT>) => AsyncGenerator<BT>) {
+      constructor(
+        generator: (this: AsyncObservable<BT>, sub: Subscriber<BT>) => AsyncGenerator<BT>
+      ) {
         super(generator);
-        this._scheduler = other._scheduler;
+        this._scheduler = otherScheduler;
       }
     };
   }
@@ -470,7 +484,10 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   }
 
   /** @internal */
-  async _trySubscriberWithCallback(subscriber: Subscriber<T>, callback?: AsyncObserver<T>): Promise<void> {
+  async _trySubscriberWithCallback(
+    subscriber: Subscriber<T>,
+    callback?: AsyncObserver<T>
+  ): Promise<void> {
     try {
       for await (const value of subscriber) {
         if (callback) {
@@ -483,6 +500,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   }
 
   /** @internal */
+  // eslint-disable-next-line require-yield
   async *_generator(_: Subscriber<T>): AsyncGenerator<T> {
     return;
   }
@@ -568,7 +586,9 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
    * @param onrejected - Optional callback to execute if any subscriber errors
    * @returns A Promise that resolves when all subscribers have completed or rejects if any error occurs
    */
-  catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null): PromiseLike<TResult> {
+  catch<TResult = never>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
+  ): PromiseLike<TResult> {
     return this._scheduler.promise().then(() => undefined as any, onrejected);
   }
 
@@ -612,7 +632,11 @@ export interface AsyncObservable<T> {
   pipe(): AsyncObservable<T>;
   pipe<A>(op1: UnaryFunction<AsyncObservable<T>, A>): A;
   pipe<A, B>(op1: UnaryFunction<AsyncObservable<T>, A>, op2: UnaryFunction<A, B>): B;
-  pipe<A, B, C>(op1: UnaryFunction<AsyncObservable<T>, A>, op2: UnaryFunction<A, B>, op3: UnaryFunction<B, C>): C;
+  pipe<A, B, C>(
+    op1: UnaryFunction<AsyncObservable<T>, A>,
+    op2: UnaryFunction<A, B>,
+    op3: UnaryFunction<B, C>
+  ): C;
   pipe<A, B, C, D>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,
