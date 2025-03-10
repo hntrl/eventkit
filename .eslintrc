@@ -1,7 +1,0 @@
-{
-  "rules": {
-    "import/first": "off",
-    "@typescript-eslint/consistent-type-imports": "error"
-  },
-  "reportUnusedDisableDirectives": true
-}
