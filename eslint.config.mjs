@@ -14,16 +14,25 @@ export default tseslint.config(
       "**/pnpm-lock.yaml",
       "packages/**/dist/",
       "packages/**/.wireit/",
+      "packages/**/eslint.config.mjs",
+      "eslint.config.mjs",
     ],
   },
   {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     plugins: {
       "import-helpers": importHelpersPlugin,
     },
     rules: {
-      "@typescript-eslint/consistent-type-imports": [
+      "@typescript-eslint/consistent-type-imports": ["error", { fixStyle: "inline-type-imports" }],
+      "@typescript-eslint/consistent-type-exports": [
         "error",
-        { fixStyle: "inline-type-imports" },
+        { fixMixedExportsWithInlineTypeSpecifier: true },
       ],
       "import/no-unresolved": "off",
       "import-helpers/order-imports": [
@@ -39,5 +48,5 @@ export default tseslint.config(
         },
       ],
     },
-  },
+  }
 );
