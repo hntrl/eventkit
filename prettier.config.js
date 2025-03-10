@@ -4,7 +4,7 @@
 module.exports = {
   trailingComma: "es5",
   singleQuote: false,
-  printWidth: 140,
+  printWidth: 100,
   overrides: [
     {
       files: ["__tests__/**/*.ts"],
