@@ -16,8 +16,8 @@ export type PromiseOrValue<T> = T | Promise<T>;
 /** Operator Interfaces */
 
 /**
- * A function type interface that describes a function that accepts one parameter `T`
- * and returns another parameter `R`.
+ * A function type interface that describes a function that accepts one
+ * parameter `T` and returns another parameter `R`.
  *
  * Usually used to describe {@link OperatorFunction} - it always takes a single
  * parameter (the source AsyncObservable) and returns another AsyncObservable.
@@ -29,9 +29,11 @@ export interface UnaryFunction<T, R> {
 export type OperatorFunction<T, R> = UnaryFunction<AsyncObservable<T>, AsyncObservable<R>>;
 
 /**
- * A function type interface that describes a function that accepts and returns a parameter of the same type.
+ * A function type interface that describes a function that accepts and returns
+ * a parameter of the same type.
  *
- * Used to describe {@link OperatorFunction} with the only one type: `OperatorFunction<T, T>`.
+ * Used to describe {@link OperatorFunction} with the only one type:
+ * `OperatorFunction<T, T>`.
  */
 export type MonoTypeOperatorFunction<T, R> = OperatorFunction<T, R>;
 
@@ -71,8 +73,9 @@ export interface InteropAsyncObservable<T> {
 
 /**
  * Extracts the type from an `AsyncObservableInput<any>`. If you have
- * `O extends AsyncObservableInput<any>` and you pass in `AsyncObservable<number>`, or
- * `Promise<number>`, etc, it will type as `number`.
+ * `O extends AsyncObservableInput<any>` and you pass in
+ * `AsyncObservable<number>`, or `Promise<number>`, etc, it will type as
+ * `number`.
  */
 export type ObservedValueOf<O> = O extends AsyncObservableInput<infer T> ? T : never;
 

@@ -96,8 +96,8 @@ export function isAsyncObservable(obj: any): obj is AsyncObservable<unknown> {
 }
 
 /**
- * Creates an AsyncObservable from an Array, an array-like object, a Promise, an iterable object,
- * or an AsyncObservable-like object.
+ * Creates an AsyncObservable from an Array, an array-like object, a Promise,
+ * an iterable object, or an AsyncObservable-like object.
  *
  * @param input The source to create an AsyncObservable from
  * @returns An AsyncObservable that emits the values from the source
@@ -144,9 +144,12 @@ function fromInteropAsyncObservable<T>(obj: any) {
 
 /**
  * Emits the values of an array like and completes.
- * This is exported because there are creation functions and operators that need to
- * make direct use of the same logic, and there's no reason to make them run through
- * `from` conditionals because we *know* they're dealing with an array.
+ *
+ * This is exported because there are creation functions and operators that
+ * need to make direct use of the same logic, and there's no reason to make
+ * them run through `from` conditionals because we *know* they're dealing with
+ * an array.
+ *
  * @param array The array to emit values from
  */
 export function fromArrayLike<T>(array: ArrayLike<T>) {

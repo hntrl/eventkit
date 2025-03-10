@@ -23,6 +23,9 @@ importers:
       eslint:
         specifier: ^9.20.1
         version: 9.22.0
+      eslint-plugin-comment-length:
+        specifier: ^2.1.1
+        version: 2.1.1(eslint@9.22.0)(typescript@5.7.3)
       eslint-plugin-import:
         specifier: ^2.31.0
         version: 2.31.0(@typescript-eslint/parser@8.26.0(eslint@9.22.0)(typescript@5.7.3))(eslint@9.22.0)
@@ -1382,6 +1385,11 @@ packages:
         optional: true
       eslint-import-resolver-webpack:
         optional: true
+
+  eslint-plugin-comment-length@2.1.1:
+    resolution: {integrity: sha512-90xT9eLs0gggD6hupNbPglzCUlQV3f73yQqdpt+2I0zjnwycHqQu/TvUoF4Z7vInK94EaSOjKmsjVrCIby9gkQ==}
+    peerDependencies:
+      eslint: '>=8.0.0'
 
   eslint-plugin-import-helpers@2.0.1:
     resolution: {integrity: sha512-MSiQZV0k+bQlt7RnHZrJxDBE948urZthusQt78FKmQ5/WLm5PpS8L16+2JVGBiSffneOAe4fud8RdYmqPveo8A==}
@@ -4065,6 +4073,14 @@ snapshots:
       eslint-import-resolver-node: 0.3.9
     transitivePeerDependencies:
       - supports-color
+
+  eslint-plugin-comment-length@2.1.1(eslint@9.22.0)(typescript@5.7.3):
+    dependencies:
+      '@typescript-eslint/utils': 8.26.0(eslint@9.22.0)(typescript@5.7.3)
+      eslint: 9.22.0
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   eslint-plugin-import-helpers@2.0.1(eslint@9.22.0):
     dependencies:
