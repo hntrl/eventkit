@@ -5,13 +5,15 @@ export {
   from,
 } from "./from";
 
+export { Subscriber, AsyncObservable, kCancelSignal, kSubscriberType } from "./observable";
+
 export {
-  Subscriber,
+  PromiseSet,
+  ScheduledAction,
+  CleanupAction,
   Scheduler,
-  AsyncObservable,
-  kCancelSignal,
-  kSubscriberType,
-} from "./observable";
+  PassthroughScheduler,
+} from "./scheduler";
 
 export {
   type UnaryFunction,
@@ -19,6 +21,7 @@ export {
   type MonoTypeOperatorFunction,
   type AsyncObserver,
   type SubscriptionLike,
+  type SchedulerSubject,
   type SchedulerLike,
   type AsyncObservableInput,
   type InteropAsyncObservable,

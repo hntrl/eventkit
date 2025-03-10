@@ -1,4 +1,5 @@
 import { from } from "./from";
+import { PassthroughScheduler, ScheduledAction, Scheduler } from "./scheduler";
 import {
   type SubscriptionLike,
   type UnaryFunction,
@@ -234,166 +235,6 @@ export class Subscriber<T>
 }
 
 /**
- * The `Scheduler` class is responsible for managing any execution associated
- * with a set of subscribers. This is largely what enables AsyncObservable and
- * Subscriber to observe the asynchronous work that's performed as a result of
- * creating a subscription.
- *
- * Dependents on this class are typed to accept `SchedulerLike` in it's
- * prototype, which means that any class that implements `SchedulerLike` can be
- * used as a drop in replacement for this class to alter the asynchronous
- * behavior of AsyncObservable and Subscriber. This implementation can be
- * considered what orchestrates the default behavior of eventkit's asynchronous
- * operations.
- *
- * The default behavior of this class is to instantly execute the callback
- * passed to `schedule` and add it to the subscriber's execution promise, but
- * this method can be overridden in an extension of this class to provide a
- * different behavior (i.e. a callback queue or deferring execution).
- *
- * Internally, the `Scheduler` maintains state to track the execution promises
- * passed to each subscriber, and orchestrates the promises returned by
- * `promise` in a way that any execution that is added after the promise has
- * been returned will block that promise from resolving until the new execution
- * has completed.
- */
-export class Scheduler implements SchedulerLike {
-  /** @internal */
-  _subscriberExecutions: Map<Subscriber<any>, Promise<void>> = new Map();
-  /** @internal */
-  _subscriberPromises: Map<Subscriber<any>, PromiseWithResolvers<void>> = new Map();
-  /** @internal */
-  _drainPromise: PromiseWithResolvers<void> | null = null;
-
-  /**
-   * Adds an execution promise to the subscriber's execution chain.
-   *
-   * This method is responsible for managing the execution promises associated
-   * with a subscriber. It ensures that the new execution promise is added to
-   * the subscriber's existing execution chain, and handles the resolution or
-   * rejection of the subscriber's promise accordingly.
-   *
-   * @param subscriber - The subscriber to which the execution promise is added.
-   * @param execution - The execution promise to be added to the subscriber's execution chain.
-   */
-  add(subscriber: Subscriber<any>, execution: Promise<void>) {
-    const currentPromise = this._subscriberExecutions.get(subscriber) ?? Promise.resolve();
-    const newPromise = Promise.all([currentPromise, execution]).then(() => Promise.resolve());
-    this._subscriberExecutions.set(subscriber, newPromise);
-    newPromise
-      .catch((error) => this._rejectSubscriberPromise(subscriber, error))
-      .finally(() => this._resolveSubscriberPromise(subscriber, newPromise));
-
-    // If there's an existing drain promise but no promise for this subscriber,
-    // we need to create the subscriber promise so that new subscribers will be
-    // tracked by the drain promise.
-    if (this._drainPromise && !this._subscriberPromises.has(subscriber)) {
-      this._getSubscriberPromise(subscriber);
-    }
-  }
-
-  /**
-   * Schedules a callback to be executed for the given subscriber.
-   *
-   * @param subscriber - The subscriber for which the callback is scheduled.
-   * @param callback - The callback function to be executed.
-   */
-  schedule(subscriber: Subscriber<any>, callback: () => Promise<void>) {
-    this.add(subscriber, callback());
-  }
-
-  /**
-   * Returns a promise that resolves when the specified subscriber's execution
-   * chain has completed. If no subscriber is specified, returns a promise that
-   * resolves when all subscribers' execution chains have completed.
-   *
-   * @param sub - The subscriber whose execution chain completion is being awaited. If not provided,
-   *              the promise will resolve when all subsequent subscribers'
-   *              execution chains have completed.
-   * @returns A promise that resolves when the specified subscriber's execution chain or all subscribers'
-   *          execution chains have completed.
-   */
-  promise(sub?: Subscriber<any>): Promise<void> {
-    if (sub) return this._getSubscriberPromise(sub);
-    else return this._getDrainPromise();
-  }
-
-  /** @internal */
-  private _resolveSubscriberPromise(sub: Subscriber<any>, currentExecution: Promise<void>) {
-    // If there isn't a promise for this subscriber, there's nothing to resolve
-    if (!this._subscriberPromises.has(sub)) return;
-
-    // If the current execution is not the latest one, we shouldn't resolve the
-    // promise
-    const latestPromise = this._subscriberExecutions.get(sub);
-    if (latestPromise !== currentExecution) return;
-
-    // Otherwise, resolve the promise and remove it from being tracked by this
-    // scheduler
-    this._subscriberPromises.get(sub)!.resolve();
-    this._subscriberPromises.delete(sub);
-
-    // If there is a pending drain promise, and there are no more subscriber
-    // promises, resolve it
-    if (this._drainPromise && this._subscriberPromises.size === 0) {
-      this._drainPromise.resolve();
-      this._drainPromise = null;
-    }
-  }
-
-  /** @internal */
-  private _rejectSubscriberPromise(sub: Subscriber<any>, error: any) {
-    // If there isn't a promise for this subscriber, there's nothing to reject
-    if (!this._subscriberPromises.has(sub)) return;
-
-    // Otherwise, reject the promise and remove it from being tracked by this
-    // scheduler
-    this._subscriberPromises.get(sub)!.reject(error);
-    this._subscriberPromises.delete(sub);
-
-    // If there is a pending drain promise, and there are no more subscriber
-    // promises, reject it
-    if (this._drainPromise && this._subscriberPromises.size === 0) {
-      this._drainPromise.reject(error);
-      this._drainPromise = null;
-    }
-  }
-
-  /** @internal */
-  private _getSubscriberPromise(sub: Subscriber<any>): Promise<void> {
-    // If there is already a promise for this subscriber, return it
-    if (this._subscriberPromises.has(sub)) {
-      return this._subscriberPromises.get(sub)!.promise;
-    }
-
-    // If there is no current execution, we can just resolve immediately
-    const currentExecution = this._subscriberExecutions.get(sub);
-    if (!currentExecution) return Promise.resolve();
-
-    const promiseObject = Promise.withResolvers<void>();
-    this._subscriberPromises.set(sub, promiseObject);
-
-    // When the current execution completes, resolve the promise
-    currentExecution.finally(() => this._resolveSubscriberPromise(sub, currentExecution));
-
-    return promiseObject.promise;
-  }
-
-  /** @internal */
-  private _getDrainPromise(): Promise<void> {
-    // If there is already a drain promise, return it
-    if (this._drainPromise) return this._drainPromise.promise;
-
-    // If there are no current subscriber executions, resolve immediately
-    if (this._subscriberExecutions.size === 0) return Promise.resolve();
-
-    // Otherwise, create a new drain promise
-    this._drainPromise = Promise.withResolvers<void>();
-    return this._drainPromise.promise;
-  }
-}
-
-/**
  * Represents any number of values over any amount of time by way of an async
  * generator that can be subscribed to and cancelled from.
  *
@@ -445,13 +286,14 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
    * @returns A new AsyncObservable that is bound to the current instance.
    */
   get AsyncObservable() {
-    const { _scheduler: otherScheduler } = this;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const source = this;
     return class<BT> extends AsyncObservable<BT> {
       constructor(
         generator: (this: AsyncObservable<BT>, sub: Subscriber<BT>) => AsyncGenerator<BT>
       ) {
         super(generator);
-        this._scheduler = otherScheduler;
+        this._scheduler = new PassthroughScheduler(source._scheduler, source);
       }
     };
   }
@@ -527,7 +369,10 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
     try {
       for await (const value of subscriber) {
         if (callback) {
-          this._scheduler.schedule(subscriber, () => callback.bind(subscriber)(value));
+          this._scheduler.schedule(
+            subscriber,
+            new ScheduledAction(() => callback.bind(subscriber)(value))
+          );
         }
       }
     } finally {
@@ -612,7 +457,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
     onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
   ): PromiseLike<TResult1 | TResult2> {
-    return this._scheduler.promise().then(onfulfilled, onrejected);
+    return this._scheduler.promise(this).then(onfulfilled, onrejected);
   }
 
   /**
@@ -626,7 +471,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   catch<TResult = never>(
     onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
   ): PromiseLike<TResult> {
-    return this._scheduler.promise().then(() => undefined as any, onrejected);
+    return this._scheduler.promise(this).then(() => undefined as any, onrejected);
   }
 
   /**
@@ -638,7 +483,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
    * @returns A Promise that resolves when all subscribers and the finally handler complete
    */
   finally(onfinally?: (() => void) | null): PromiseLike<void> {
-    return this._scheduler.promise().finally(onfinally);
+    return this._scheduler.promise(this).finally(onfinally);
   }
 }
 

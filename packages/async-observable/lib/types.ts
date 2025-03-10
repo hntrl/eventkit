@@ -1,4 +1,5 @@
 import { type AsyncObservable, type Subscriber } from "./observable";
+import { type ScheduledAction } from "./scheduler";
 
 declare global {
   interface SymbolConstructor {
@@ -49,10 +50,12 @@ export interface SubscriptionLike {
 
 /** Scheduler Interfaces */
 
+export type SchedulerSubject = AsyncObservable<any> | Subscriber<any>;
+
 export interface SchedulerLike {
-  add(subscriber: Subscriber<any>, execution: Promise<void>): void;
-  schedule(subscriber: Subscriber<any>, callback: () => Promise<void>): void;
-  promise(sub?: Subscriber<any>): Promise<void>;
+  add(subject: SchedulerSubject, promise: PromiseLike<void>): void;
+  schedule(subject: SchedulerSubject, action: ScheduledAction<any>): void;
+  promise(subject: SchedulerSubject): Promise<void>;
 }
 
 /** Observable Interfaces */
