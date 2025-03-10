@@ -37,15 +37,11 @@ export interface MonoTypeOperatorFunction<T, R> extends OperatorFunction<T, R> {
 
 /** Subscription Interfaces */
 
-export interface Unsubscribable {
-  cancel(): Promise<void>;
-}
-
 export interface AsyncObserver<T> {
   (this: Subscriber<T>, value: T): PromiseOrValue<any>;
 }
 
-export interface SubscriptionLike extends Unsubscribable {
+export interface SubscriptionLike {
   cancel(): Promise<void>;
 }
 
@@ -59,10 +55,6 @@ export interface SchedulerLike {
 
 /** Observable Interfaces */
 
-export interface Subscribable<T> {
-  subscribe(observer: AsyncObserver<T>): SubscriptionLike;
-}
-
 export type AsyncObservableInput<T> =
   | AsyncObservable<T>
   | InteropAsyncObservable<T>
@@ -72,7 +64,7 @@ export type AsyncObservableInput<T> =
   | Iterable<T>;
 
 export interface InteropAsyncObservable<T> {
-  [Symbol.asyncObservable](): Subscribable<T>;
+  [Symbol.asyncObservable](): AsyncIterable<T>;
 }
 
 /** Other Interfaces */
