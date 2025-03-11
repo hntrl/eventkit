@@ -1,4 +1,4 @@
-import { Subscriber } from "./observable";
+import { Subscriber } from "./subscriber";
 import { type SchedulerSubject, type SchedulerLike, type PromiseOrValue } from "./types";
 
 /**

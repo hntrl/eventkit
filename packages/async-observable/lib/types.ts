@@ -1,5 +1,6 @@
-import { type AsyncObservable, type Subscriber } from "./observable";
+import { type AsyncObservable } from "./observable";
 import { type ScheduledAction } from "./scheduler";
+import { type Subscriber } from "./subscriber";
 
 declare global {
   interface SymbolConstructor {
