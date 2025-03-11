@@ -158,7 +158,7 @@ export class ScheduledAction<T> implements PromiseLike<T> {
  * subject's work has completed, so it's expected that any implementation of scheduler will
  * handle them accordingly.
  */
-export class CleanupAction extends ScheduledAction<void> {}
+export class CleanupAction extends ScheduledAction<any> {}
 
 /**
  * Responsible for managing and observing any execution associated with a set of subjects

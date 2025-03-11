@@ -1,5 +1,5 @@
 import { from } from "./from";
-import { PassthroughScheduler, ScheduledAction, Scheduler } from "./scheduler";
+import { CleanupAction, PassthroughScheduler, ScheduledAction, Scheduler } from "./scheduler";
 import {
   type SubscriptionLike,
   type UnaryFunction,
@@ -49,11 +49,9 @@ export class Subscriber<T>
   /** @internal */
   _observable: AsyncObservable<T>;
   /** @internal */
-  _returnPromise: PromiseWithResolvers<void>;
+  _returnSignal: PromiseWithResolvers<void>;
   /** @internal */
-  _nextHasBeenCalled: boolean;
-  /** @internal */
-  _cancelPromise: PromiseWithResolvers<typeof kCancelSignal>;
+  _cancelSignal: PromiseWithResolvers<typeof kCancelSignal>;
 
   /** @internal */
   private get generator(): AsyncGenerator<T> {
@@ -67,9 +65,9 @@ export class Subscriber<T>
 
   constructor(observable: AsyncObservable<T>) {
     this._observable = observable;
-    this._returnPromise = Promise.withResolvers<void>();
-    this._nextHasBeenCalled = false;
-    this._cancelPromise = Promise.withResolvers<typeof kCancelSignal>();
+    this._returnSignal = Promise.withResolvers<void>();
+    this._cancelSignal = Promise.withResolvers<typeof kCancelSignal>();
+    this.scheduler.add(this, this._returnSignal.promise);
   }
 
   /** SubscriptionLike */
@@ -105,7 +103,7 @@ export class Subscriber<T>
     // never-ending operations like a Stream. In every other scenario we should
     // rely on the generator state to determine when the generator has
     // completed.
-    this._cancelPromise.resolve(kCancelSignal);
+    this._cancelSignal.resolve(kCancelSignal);
     return this[Symbol.asyncIterator]()
       .return(null)
       .then(() => Promise.resolve())
@@ -115,7 +113,7 @@ export class Subscriber<T>
   [kSubscriberType]: "callback" | "iterator" | null = null;
 
   get [kCancelSignal]() {
-    return this._cancelPromise.promise;
+    return this._cancelSignal.promise;
   }
 
   /** PromiseLike<void> */
@@ -144,9 +142,8 @@ export class Subscriber<T>
   then<TResult1 = void, TResult2 = never>(
     onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
-  ): PromiseLike<TResult1 | TResult2> {
-    const promise = this._nextHasBeenCalled ? this._returnPromise.promise : Promise.resolve();
-    return promise.then(onfulfilled, onrejected).finally(() => this.scheduler.promise(this));
+  ): Promise<TResult1 | TResult2> {
+    return this.scheduler.promise(this).then(onfulfilled, onrejected);
   }
 
   /**
@@ -161,11 +158,8 @@ export class Subscriber<T>
    */
   catch<TResult = never>(
     onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
-  ): PromiseLike<TResult> {
-    const promise = this._nextHasBeenCalled ? this._returnPromise.promise : Promise.resolve();
-    return promise
-      .then(() => undefined as never, onrejected)
-      .finally(() => this.scheduler.promise(this));
+  ): Promise<TResult> {
+    return this.then(undefined, onrejected);
   }
 
   /**
@@ -180,9 +174,9 @@ export class Subscriber<T>
    * or rejects with the reason from the original Promise if it was rejected. The returned Promise
    * will be rejected if the callback throws an error or returns a rejected Promise.
    */
-  finally(onfinally?: (() => void) | null): PromiseLike<void> {
-    const promise = this._nextHasBeenCalled ? this._returnPromise.promise : Promise.resolve();
-    return promise.finally(() => this.scheduler.promise(this)).finally(onfinally);
+  finally(onfinally?: (() => void) | null): Promise<void> {
+    if (onfinally) this.scheduler.schedule(this, new CleanupAction(onfinally));
+    return this.then();
   }
 
   /** AsyncIterable<T, void, void> */
@@ -199,18 +193,17 @@ export class Subscriber<T>
         return this.generator
           .next()
           .then((result) => {
-            this._nextHasBeenCalled = true;
-            if (result.done) this._returnPromise.resolve();
+            if (result.done) this._returnSignal.resolve();
             return result;
           })
           .catch((error) => {
-            this._returnPromise.reject(error);
+            this._returnSignal.reject(error);
             throw error;
           });
       },
       throw: (error?: any): Promise<IteratorResult<T>> => {
         return this.generator.throw(error).then((value) => {
-          this._returnPromise.reject(value);
+          this._returnSignal.reject(value);
           throw value;
         });
       },
@@ -226,7 +219,7 @@ export class Subscriber<T>
         // we would always get an uncaught error since the return promise isn't
         // being handled anywhere.
         return this.generator.return(value).then((value) => {
-          this._returnPromise.resolve();
+          this._returnSignal.resolve();
           return value;
         });
       },
@@ -258,7 +251,7 @@ export class Subscriber<T>
  * AsyncObservable instances can be created from common iterable and
  * stream-like types by using the {@link AsyncObservable.from} method.
  */
-export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, PromiseLike<void> {
+export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   /** @internal */
   _subscribers: Set<Subscriber<T>> = new Set();
   /** @internal */
@@ -334,10 +327,13 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
    * @returns A new Subscriber that can be used to unsubscribe from the AsyncObservable.
    */
   subscribe(callback?: AsyncObserver<T>): Subscriber<T> {
-    const subscriber = new Subscriber(this);
-    subscriber[kSubscriberType] = "callback";
+    if (!callback) callback = () => {};
+    const subscriber = new CallbackSubscriber(this, callback);
     this._subscribers.add(subscriber);
-    this._scheduler.add(subscriber, this._trySubscriberWithCallback(subscriber, callback));
+    this._scheduler.schedule(
+      subscriber,
+      new CleanupAction(() => this._subscribers.delete(subscriber))
+    );
     return subscriber;
   }
 
@@ -358,26 +354,9 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
    */
   cancel(): Promise<void> {
     const cancelPromises = Array.from(this.subscribers).map((subscriber) => subscriber.cancel());
-    return Promise.all(cancelPromises).then(() => undefined);
-  }
-
-  /** @internal */
-  async _trySubscriberWithCallback(
-    subscriber: Subscriber<T>,
-    callback?: AsyncObserver<T>
-  ): Promise<void> {
-    try {
-      for await (const value of subscriber) {
-        if (callback) {
-          this._scheduler.schedule(
-            subscriber,
-            new ScheduledAction(() => callback.bind(subscriber)(value))
-          );
-        }
-      }
-    } finally {
-      this._subscribers.delete(subscriber);
-    }
+    return Promise.all(cancelPromises)
+      .then(() => undefined)
+      .finally(() => this._scheduler.promise(this));
   }
 
   /** @internal */
@@ -409,81 +388,57 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T>, P
   /** AsyncGenerator<T> */
   [Symbol.asyncIterator](): AsyncGenerator<T> {
     const subscriber = new Subscriber(this);
-    subscriber[kSubscriberType] = "iterator";
-    const iter = subscriber[Symbol.asyncIterator]();
     this._subscribers.add(subscriber);
-
+    this._scheduler.schedule(
+      subscriber,
+      new CleanupAction(() => this._subscribers.delete(subscriber))
+    );
+    const iter = subscriber[Symbol.asyncIterator]();
     return {
-      next: () => {
-        return iter.next().then((result) => {
-          if (result.done) this._subscribers.delete(subscriber);
-          return result;
-        });
-      },
-      throw: (error?: any) => {
-        return iter.throw(error).finally(() => {
-          this._subscribers.delete(subscriber);
-        });
-      },
-      return: () => {
-        return iter.return().finally(() => {
-          this._subscribers.delete(subscriber);
-        });
-      },
+      ...iter,
       [Symbol.asyncIterator]() {
         return this;
       },
       [Symbol.asyncDispose]: async () => {
         await subscriber.cancel();
-        this._subscribers.delete(subscriber);
       },
     };
   }
 
-  /** PromiseLike<void> */
-
   /**
-   * Implements the PromiseLike interface to allow using AsyncObservable with
-   * Promise-based APIs or await statements. When used as a Promise, the
-   * AsyncObservable will resolve when all active subscribers complete, reject
-   * if any subscriber errors, and can be chained with .then(), .catch(),
-   * and .finally().
-   *
-   * @param onfulfilled - Optional callback to execute when all subscribers complete successfully
-   * @param onrejected - Optional callback to execute if any subscriber errors
-   * @returns A Promise that resolves when all subscribers complete or rejects if any error
+   * Returns a promise that resolves when all the work scheduled against the
+   * observable has completed (i.e. subscriber callbacks or cleanup handlers).
    */
-  then<TResult1 = void, TResult2 = never>(
-    onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
-  ): PromiseLike<TResult1 | TResult2> {
-    return this._scheduler.promise(this).then(onfulfilled, onrejected);
+  drain(): Promise<void> {
+    return this._scheduler.promise(this);
   }
 
   /**
-   * Implements the catch method of the PromiseLike interface. This allows
-   * handling errors from the AsyncObservable when used as a Promise. The catch
-   * handler will be called if any subscriber errors.
+   * Adds a handler for any errors that occur in the work scheduled against the
+   * observable.
    *
-   * @param onrejected - Optional callback to execute if any subscriber errors
-   * @returns A Promise that resolves when all subscribers have completed or rejects if any error occurs
+   * @param onrejected - Optional callback to execute if the observable errors
+   * @returns A promise that resolves when all work scheduled against the observable has
+   * completed, or if any error occurs
    */
   catch<TResult = never>(
     onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
   ): PromiseLike<TResult> {
-    return this._scheduler.promise(this).then(() => undefined as any, onrejected);
+    return this.drain().then(undefined, onrejected);
   }
 
   /**
-   * Returns a Promise that resolves when all subscribers have either completed
-   * or errored. This is useful to implement cleanup logic after all
-   * subscribers have completed or errored.
+   * Returns a promise that resolves when all the work scheduled against the
+   * observable has completed (i.e. subscriber callbacks or cleanup handlers).
+   * Optionally, a callback can be provided to execute after all the work has
+   * been completed, which adds a cleanup action to the scheduler.
    *
    * @param onfinally - Optional callback to execute after subscribers complete or error
-   * @returns A Promise that resolves when all subscribers and the finally handler complete
+   * @returns A promise that resolves when all work scheduled against the observable has completed
    */
-  finally(onfinally?: (() => void) | null): PromiseLike<void> {
-    return this._scheduler.promise(this).finally(onfinally);
+  finally(onfinally?: (() => void) | null) {
+    if (onfinally) this._scheduler.schedule(this, new CleanupAction(onfinally));
+    return this.drain();
   }
 }
 
