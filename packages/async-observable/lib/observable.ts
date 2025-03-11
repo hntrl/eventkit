@@ -25,7 +25,7 @@ export const kCancelSignal = Symbol("cancelSignal");
  * The Subscriber also implements SubscriptionLike, providing an cancel()
  * method that can be used to cancel the execution of the generator. When
  * cancelled, the Subscriber will call the generator's return() method and
- * resolve any pending promises associated with the generator.
+ * wait for any work associated with the Subscriber to complete.
  *
  * It's worth noting that when using Subscriber as an async iterator (i.e. in a
  * for-await-of loop), Subscriber does not attempt to clone the values of the
@@ -77,7 +77,7 @@ export class Subscriber<T>
    *
    * Calling this method starts an immediate cleanup of the Subscriber. In the
    * case that you want to be notified of when the subscriber has closed
-   * without causing an interrupt, you can use the {@link #finally} method.
+   * without causing an interrupt, you can use the {@link #then} method.
    *
    * Note that the promise returned by this method doesn't represent the actual
    * execution of the generator, meaning that any errors that occur during the
@@ -85,7 +85,7 @@ export class Subscriber<T>
    * by this method. You can observe the status of the current execution by
    * using the {@link #then} method or catching any errors using the {@link
    * #catch} method. Because this class implements PromiseLike, you can also
-   * use the Subscriber in an await expression to yield the result of the
+   * use the Subscriber in an await expression to yield the state of the
    * generator's execution.
    *
    * @returns A promise that resolves when the generator has been cleaned up.
@@ -116,9 +116,9 @@ export class Subscriber<T>
   /** PromiseLike<void> */
 
   /**
-   * Returns a promise that resolves when the generator has completed execution
+   * Returns a promise that resolves when the subscriber has completed execution
    * and cleaned up, or rejects if an error occurs during. This allows
-   * AsyncObservable instances to be used with await expressions and Promise
+   * Subscriber instances to be used with await expressions and Promise
    * methods like then(), catch(), and finally().
    *
    * It's worth noting that while the Promise returned by this object is
@@ -160,16 +160,13 @@ export class Subscriber<T>
   }
 
   /**
-   * Attaches a callback that will be invoked when the Promise returned by this
-   * AsyncObservable settles (either resolves or rejects). The callback runs
-   * after the Promise is settled. This is a shorthand for .then(onfinally,
-   * onfinally).
+   * Returns a promise that resolves when all the work scheduled against the
+   * subscriber has completed (i.e. subscriber callbacks or cleanup handlers).
+   * Optionally, a callback can be provided to execute after all the work has
+   * been completed, which adds a cleanup action to the scheduler.
    *
-   * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-   * This callback does not receive any arguments.
-   * @returns A Promise that resolves with the value from the original Promise if it was fulfilled,
-   * or rejects with the reason from the original Promise if it was rejected. The returned Promise
-   * will be rejected if the callback throws an error or returns a rejected Promise.
+   * @param onfinally - Optional callback to execute after the subscriber has completed or errors
+   * @returns A promise that resolves when all work scheduled against the subscriber has completed
    */
   finally(onfinally?: (() => void) | null): Promise<void> {
     if (onfinally) this.scheduler.schedule(this, new CleanupAction(onfinally));
@@ -262,18 +259,12 @@ export class CallbackSubscriber<T> extends Subscriber<T> {
     }
   }
 }
+
 /**
  * Represents any number of values over any amount of time by way of an async
  * generator that can be subscribed to and cancelled from.
  *
- * AsyncObservable implements PromiseLike<void>, which means it can used in
- * await expressions. When awaited, it will resolve once all current
- * subscribers have completed or cancelled according to its {@link Scheduler}
- * implementation. This makes it useful for waiting for all current executions
- * of an AsyncObservable to complete, for instance making sure that all
- * subscribers have finished before continuing with some other work.
- *
- * AsyncObservable also implements AsyncIterable<T>, which means it can be used
+ * AsyncObservable implements AsyncIterable<T>, which means it can be used
  * in for-await-of loops. Doing so will create a new Subscriber and register it
  * with the AsyncObservable. The Subscriber will be unregistered (and have
  * `cancel()` called) from the AsyncObservable once the for-await-of loop has
@@ -283,8 +274,21 @@ export class CallbackSubscriber<T> extends Subscriber<T> {
  * 'cancel' by exiting the loop early, and you can still wait for the loop to
  * complete externally by awaiting the AsyncObservable.
  *
+ * AsyncObservable also implements SubscriptionLike, providing a cancel() method
+ * that can be used to cancel all subscribers at once. When cancelled, all subscribers
+ * will be notified and their resources will be released.
+ *
+ * The class supports functional composition through the pipe() method, allowing
+ * operators to be chained together to transform the stream of values. This enables
+ * powerful data transformation pipelines with async/await semantics.
+ *
+ * AsyncObservable provides Promise-like behavior through methods such as drain(),
+ * catch(), and finally(), making it easy to handle completion and errors. It also
+ * implements the disposable pattern when Symbol.dispose or Symbol.asyncDispose are
+ * available in the runtime.
+ *
  * AsyncObservable instances can be created from common iterable and
- * stream-like types by using the {@link AsyncObservable.from} method.
+ * stream-like types by using the {@link from} method.
  */
 export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   /** @internal */
@@ -305,10 +309,17 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   }
 
   /**
-   * Returns a class that is bound to the current instance. Any work done by
-   * subscribers created from this class will be pinned to the scheduler of the
-   * current instance. This is useful for creating a new AsyncObservable that
-   * is a composition of the current AsyncObservable and another
+   * Returns a class that uses a passthrough scheduler that is bound to the
+   * current instance. Any work done by subscribers created from this class
+   * will be pinned to the scheduler of the current instance. This is useful
+   * for creating a new AsyncObservable that is a composition of the current
+   * AsyncObservable (i.e. any operator function).
+   *
+   * The returned class maintains the parent-child relationship in the scheduler
+   * hierarchy, ensuring that cancellation of the parent observable properly
+   * propagates to all derived observables.
+   *
+   * @returns A new AsyncObservable that is bound to the current instance.
    * AsyncObservable (i.e. any operator function).
    *
    * @returns A new AsyncObservable that is bound to the current instance.
