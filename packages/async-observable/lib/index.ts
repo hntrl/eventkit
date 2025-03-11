@@ -5,7 +5,7 @@ export {
   from,
 } from "./from";
 
-export { Subscriber, AsyncObservable, kCancelSignal, kSubscriberType } from "./observable";
+export { Subscriber, AsyncObservable, kCancelSignal } from "./observable";
 
 export {
   PromiseSet,

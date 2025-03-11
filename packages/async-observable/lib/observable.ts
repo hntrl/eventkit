@@ -9,7 +9,6 @@ import {
 } from "./types";
 
 export const kCancelSignal = Symbol("cancelSignal");
-export const kSubscriberType = Symbol("subscriberType");
 
 /**
  * Represents an active execution and consumer of an async generator (like
@@ -54,12 +53,12 @@ export class Subscriber<T>
   _cancelSignal: PromiseWithResolvers<typeof kCancelSignal>;
 
   /** @internal */
-  private get generator(): AsyncGenerator<T> {
+  protected get generator(): AsyncGenerator<T> {
     return (this._generator ??= this._observable._generator(this));
   }
 
   /** @internal */
-  private get scheduler(): SchedulerLike {
+  protected get scheduler(): SchedulerLike {
     return this._observable._scheduler;
   }
 
@@ -109,8 +108,6 @@ export class Subscriber<T>
       .then(() => Promise.resolve())
       .finally(() => this.scheduler.promise(this));
   }
-
-  [kSubscriberType]: "callback" | "iterator" | null = null;
 
   get [kCancelSignal]() {
     return this._cancelSignal.promise;
@@ -227,6 +224,44 @@ export class Subscriber<T>
   }
 }
 
+/**
+ * A specialized Subscriber that invokes a callback function for each value emitted by the
+ * observable.
+ *
+ * CallbackSubscriber extends the base Subscriber class to provide a convenient way to process
+ * observable values through a callback function. When a value is emitted by the observable,
+ * the callback is scheduled to be executed via the observable's scheduler.
+ *
+ * This class is typically used internally by the AsyncObservable.subscribe() method to create
+ * a subscription that processes values through user-provided callbacks.
+ *
+ * @template T The type of values emitted by the observable
+ */
+export class CallbackSubscriber<T> extends Subscriber<T> {
+  /**
+   * Creates a new CallbackSubscriber instance.
+   *
+   * @param observable The AsyncObservable to subscribe to
+   * @param callback The function to be called for each emitted value
+   */
+  constructor(
+    observable: AsyncObservable<T>,
+    protected callback: AsyncObserver<T>
+  ) {
+    super(observable);
+    this.scheduler.add(this, this._tryIteratorWithCallback());
+  }
+
+  /** @internal */
+  async _tryIteratorWithCallback() {
+    for await (const value of this) {
+      if (this.callback) {
+        const action = new ScheduledAction(() => this.callback.bind(this)(value));
+        this.scheduler.schedule(this, action);
+      }
+    }
+  }
+}
 /**
  * Represents any number of values over any amount of time by way of an async
  * generator that can be subscribed to and cancelled from.
