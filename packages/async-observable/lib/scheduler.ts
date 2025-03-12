@@ -305,9 +305,12 @@ export class PassthroughScheduler extends Scheduler implements SchedulerLike {
    * @param action - The action to be scheduled.
    */
   schedule(subject: SchedulerSubject, action: ScheduledAction<any>) {
+    if (this.pinningSubject) {
+      this.parent.add(this.pinningSubject, action);
+    }
     // Instead of immediately executing the action, we defer to the parent
     // scheduler to create the execution (hence a pass through scheduler).
     this.parent.schedule(subject, action);
-    this.add(subject, action);
+    super.add(subject, action);
   }
 }
