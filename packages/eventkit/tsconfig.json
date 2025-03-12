@@ -1,0 +1,43 @@
+{
+  "include": [
+    "**/*.ts",
+    "__tests__/playground.mts"
+  ],
+  "exclude": [
+    "dist",
+    "__tests__",
+    "node_modules"
+  ],
+  "compilerOptions": {
+    "lib": [
+      "DOM", // ???
+      "ESNext",
+      "ESNext.AsyncIterable"
+    ],
+    "target": "ESNext",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "resolveJsonModule": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noEmitOnError": true,
+    "paths": {
+      "eventkit": [
+        "./index.ts"
+      ],
+    }
+  }
+}
