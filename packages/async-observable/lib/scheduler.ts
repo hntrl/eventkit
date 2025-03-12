@@ -195,17 +195,24 @@ export class Scheduler implements SchedulerLike {
    * @param promise - The promise to be added to the subject.
    */
   add(subject: SchedulerSubject, promise: PromiseLike<void>) {
+    if (promise instanceof CleanupAction) {
+      // we treat cleanup actions differently since they don't represent current
+      // work, but instead work that should be executed after all remaining subject
+      // work has completed
+      this._addCleanup(subject, promise);
+    } else {
+      this._add(subject, promise);
+    }
+  }
+
+  /** @internal */
+  private _add(subject: SchedulerSubject, promise: PromiseLike<void>) {
     // if the subject is a subscriber, we also add the promise to it's observable
     if (subject instanceof Subscriber) {
       this._add(subject._observable, promise);
     }
-    this._add(subject, promise);
-  }
-
-  /** @internal */
-  private _add(subject: SchedulerSubject, execution: PromiseLike<void>) {
     const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
-    promises.add(execution);
+    promises.add(promise);
     this._subjectPromises.set(subject, promises);
   }
 
@@ -216,18 +223,17 @@ export class Scheduler implements SchedulerLike {
    * @param action - The action to be scheduled.
    */
   schedule(subject: SchedulerSubject, action: ScheduledAction<any>) {
-    if (action instanceof CleanupAction) {
-      // we treat cleanup actions a differently since we only want to execute them
-      // when the subject has resolved
-      this._scheduleCleanup(subject, action);
-    } else {
-      this.add(subject, action);
-      action.execute();
-    }
+    this.add(subject, action);
+    if (action instanceof CleanupAction) return;
+    action.execute();
   }
 
   /** @internal */
-  private _scheduleCleanup(subject: SchedulerSubject, cleanup: CleanupAction) {
+  private _addCleanup(subject: SchedulerSubject, cleanup: CleanupAction) {
+    // if the subject is a subscriber, we also add the cleanup to it's observable
+    if (subject instanceof Subscriber) {
+      this._addCleanup(subject._observable, cleanup);
+    }
     const existing = this._subjectCleanup.get(subject) ?? new Set();
     existing.add(cleanup);
     this._subjectCleanup.set(subject, existing);
