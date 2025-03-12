@@ -1,6 +1,6 @@
 import { defineConfig } from "tsup";
-import { createBanner } from "../../scripts/utils";
 
+import { createBanner } from "../../scripts/utils";
 import pkg from "./package.json";
 
 export default defineConfig([

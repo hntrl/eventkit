@@ -1,5 +1,5 @@
 export {
-  AsyncObservableInputType,
+  type AsyncObservableInputType,
   getAsyncObservableInputType,
   isAsyncObservable,
   from,
