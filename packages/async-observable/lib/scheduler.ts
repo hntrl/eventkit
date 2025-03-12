@@ -100,7 +100,7 @@ export class PromiseSet implements PromiseLike<void> {
 
 /**
  * Represents an action that will be executed later. The callback that's passed in will be called
- * whenever `execute()` is called.
+ * at most once whenever `execute()` is called.
  *
  * ScheduledAction implements PromiseLike, which means that when the action is used as a promise
  * (i.e. when calling `then()` or being the subject of an await statement), the action will wait
@@ -109,6 +109,8 @@ export class PromiseSet implements PromiseLike<void> {
  * execute whenever `execute()` is called and the callback is resolved.
  */
 export class ScheduledAction<T> implements PromiseLike<T> {
+  /** @internal */
+  _hasExecuted = false;
   /** @internal */
   _signal: PromiseWithResolvers<T> | null = null;
   /** @internal */
@@ -130,7 +132,9 @@ export class ScheduledAction<T> implements PromiseLike<T> {
    * based on the callback's return value.
    */
   async execute() {
+    if (this._hasExecuted) return;
     try {
+      this._hasExecuted = true;
       const result = await this.callback();
       this.signal.resolve(result);
     } catch (err) {
@@ -154,9 +158,8 @@ export class ScheduledAction<T> implements PromiseLike<T> {
  *
  * Internally, CleanupAction is no different than ScheduledAction, but it's a separate class
  * that can be identified by the scheduler to control when the action is executed. Classes that
- * utilize a scheduler will add CleanupAction's that are expected to be executed when the
- * subject's work has completed, so it's expected that any implementation of scheduler will
- * handle them accordingly.
+ * utilize a scheduler will add CleanupAction's, and the scheduler is expected to execute them
+ * when the subject's work has completed.
  */
 export class CleanupAction extends ScheduledAction<any> {}
 
