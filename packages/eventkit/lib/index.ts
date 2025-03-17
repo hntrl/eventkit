@@ -1,3 +1,4 @@
+export * from "./operators";
 export * from "./stream";
 
 export {
