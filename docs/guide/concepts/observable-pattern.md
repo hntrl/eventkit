@@ -1,18 +1,18 @@
 ---
-outline: [1, 6]
+outline: [2, 6]
 ---
 
 # Observable Pattern
 
 In programming, you often write code or instructions with the expectation that they will be executed in a serial, one-at-a-time fashion in the order they are written. But what about when you want to execute code or instructions in parallel? Or when you want to execute code or instructions in a way that is not interdependent of each other?
 
-The observable pattern is one of many answers to this problem. It allows you to write code or instructions that will be executed in parallel and their results later recaptured in an arbitrary order. Rather than calling a function and waiting for it to finish, you define the mechanism by which data is retrieved and transformed in the form of an "observable", watch for any data that is yielded by "subscribing" to the observable, and respond accordingly. Eventkit uses this pattern as its core mechanism for handling asynchronous data.
+The observable pattern is one of many answers to this problem. It allows you to write code or instructions that will be executed in parallel and their results later recaptured in an arbitrary order. Rather than calling a function and waiting for it to finish, you define the mechanism by which data is retrieved and transformed in the form of an "observable", watch for any data that is yielded by "observing" the observable, and responding accordingly. Eventkit uses this pattern as its core mechanism for handling asynchronous data.
 
 You can think of an observable as a first-class object that represents a collection of events over time. They're like Promises but for multiple values. Instead of waiting for a producer to evaluate a value and then distribute it to a consumer (like a synchronous function call or a promise), an observable is different in that as it's evaluating, a consumer is responding to anything that is yielded by the producer, which can happen multiple times as the producer is executing.
 
-An advantage of this pattern is that it allows you to define tasks that consume this collection in a way that is interdependent of each other. It's much like a function in the way that it doesn't care about how its return value is being used, it just returns them to the caller. Observables act as a similar abstraction, with the key difference being that they can return multiple values over time, and any instructions that are being executed as the result of a value being yielded can be executed in parallel.
+An advantage of this pattern is that it allows you to define tasks that consume this collection in a way that is interdependent of each other. If you think about how a function works, it doesn't care about how its return value is being used, it just passes it to the caller. Observables act as a similar abstraction, with the key difference being that they can return multiple values over time.
 
-**TL;DR -** Observables provide a way to evaluate a collection of data asynchronously.
+**TL;DR** ⎯ Observables provide a way to evaluate a collection of data over time.
 
 |              | single items | multiple items |
 | ------------ | ------------ | -------------- |
@@ -21,9 +21,7 @@ An advantage of this pattern is that it allows you to define tasks that consume 
 
 There are plenty of schools of thought on how best to describe this model of asynchronous programming. [Reactive programming](https://en.wikipedia.org/wiki/Reactive_programming), the "[reactor pattern](https://en.wikipedia.org/wiki/Reactor_pattern)", and the "[observer pattern](https://en.wikipedia.org/wiki/Observer_pattern)" are all different ways of describing similar concepts. The reactor pattern is the most similar to what an Observable is in the context of eventkit.
 
-Observables have a history of being used within the JavaScript ecosystem, even going so far as to be proposed as a standard for the language by way of a [TC39 proposal](https://github.com/tc39/proposal-observable) in May of 2015. The proposal failed to gain traction in part due to some opposition from the community that the API wasn't suitable to be a language-level primitive, but is still a beneficial pattern that's used extensively in the JavaScript ecosystem, eventkit included.
-
-## Push vs. Pull
+## Push vs. Pull {#push-vs-pull}
 
 To go deeper into detail on where the observable pattern fits in, it's beneficial to illustrate the difference between _push_ and _pull_.
 
@@ -31,7 +29,7 @@ _Push and Pull are two different ways of describing how data is transferred from
 
 **What is push?** In push systems, the producer determines when to send data to the consumer. The consumer doesn't have any idea of when it will receive data.
 
-Promises are a good example of a push system in JavaScript. A promise (the producer) delivers a resolved value to a callback (the consumer, `then()`/ `catch()`/ etc). Unlike functions, it's the promise that determines when the value is delivered (i.e. by calling `resolve()` or `reject()`).
+Promises are a good example of a push system in JavaScript. A promise (the producer) delivers a resolved value to a callback (the consumer; `then`, `catch`, `await`, etc.). Unlike functions, it's the promise that determines when the value is delivered (i.e. by calling `resolve` or `reject`).
 
 **What is pull?** In pull systems, the consumer determines when it receives data from the producer. The producer doesn't have any idea of when it will receive a request, and it's unaware of when the data will be delivered to the consumer.
 
@@ -44,7 +42,7 @@ Generator functions and iterators are another type of pull system. Code that cal
 | Producer | **Active:** produces data when requested by the consumer    | **Passive:** produces data at its own pace |
 | Consumer | **Passive:** decides when to request data from the producer | **Active:** reacts to received data        |
 
-The observable pattern is a push system. An observable is a producer of any number of values, "pushing" them to its subscribers.
+The observable pattern is a push system. An observable is a producer of any number of values, "pushing" them to its observers.
 
 - A function is a lazily evaluated computation that returns a single value when invoked.
 - A promise is a computation that may or may not return a single value.
@@ -53,7 +51,7 @@ The observable pattern is a push system. An observable is a producer of any numb
 
 ## Using AsyncObservable
 
-AsyncObservable is eventkit's implementation of the observable pattern. It's named this way as to avoid conflicting nomenclature with the Observable primitive that's used by the popular [RxJS](https://rxjs.dev/) library (for which reasons can be described in the [Motivations](/motivations) section).
+AsyncObservable is eventkit's implementation of the observable pattern. The implementation is slightly different than the Observable primitive that is familiar to the JavaScript ecosystem, so it's named this way to avoid confusion (more on this in the [Motivations](/guide/motivations) section).
 
 Eventkit relies on the [async iterator/generator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator) pattern as the mechanism to yield values to its subscribers. This means that the producer of the observable is an async generator function in itself.
 
@@ -69,7 +67,7 @@ const myObservable = new AsyncObservable(async function* () {
 });
 ```
 
-To invoke the observable, we need to add a subscriber to it. The subscriber is a function that will be called with each value that is yielded by the producer.
+To invoke the observable, we need to add a subscriber to it. The subscriber (or the observer) is a function that will be called with each value that is yielded by the producer.
 
 ```ts
 myObservable.subscribe((value) => {
@@ -85,7 +83,7 @@ output 2
 output 3
 ```
 
-It's worth noting that as a result of yielding values, the observable is not sequentially waiting for each value to be logged via the subscriber's callback before continuing (hence the name AsyncObservable). Instead, the execution of the subscriber's callback with the value that's yielded is added to a [Scheduler](/reference/scheduler) which controls the execution behavior of the observable.
+It's worth noting that as a result of yielding values, the observable is not sequentially waiting for each value to be logged via the subscriber's callback before continuing (hence the name AsyncObservable). Instead, the execution of the subscriber's callback with the value that's yielded is added to a [Scheduler](/guide/concepts/async-processing#scheduler) which controls the execution behavior of the observable.
 
 For instance, given the following example:
 
@@ -124,11 +122,16 @@ output 2
 output 1
 ```
 
+A couple of things to note here:
+
+1. `output 3` is logged before `output 2` and `output 1`. Since a higher value yielded means a shorter delay in the callback, it takes less time for `console.log` to get called if the value is higher. This is to demonstrate that the callbacks don't happen in sequential order by default.
+2. `done` is logged before any of the `output` callbacks are executed. This is to demonstrate that executing an observable doesn't block the main thread from executing.
+
 We can better control this execution in the following ways:
 
-1. Providing a different Scheduler to the AsyncObservable to control the order in which the callbacks are executed (as described in [Scheduling](/guide/concepts/scheduling))
+1. Providing a different Scheduler to the AsyncObservable to control the behavior of the callbacks (an example of this in [Scheduling](/guide/concepts/scheduling#queue-scheduler))
 2. Awaiting the subscriber, which will resolve when all the values in the observable have been yielded and all callbacks have finished executing
-3. Awaiting the `drain()` method of the AsyncObservable, which will resolve when all current subscribers have "finished" executing
+3. Awaiting the `drain()` method of the AsyncObservable, which will resolve when all current subscribers have finished executing
 
 For instance, if we wanted to wait for all the values to be yielded before logging "done", we could do so in the following ways:
 
@@ -141,7 +144,7 @@ await myObservable.subscribe(async (value) => {
 });
 console.log("done");
 
-// -- {OR} --
+// or
 
 console.log("subscribing");
 myObservable.subscribe(async (value) => {
@@ -172,7 +175,7 @@ done
 observable.subscribe((x) => console.log(x));
 ```
 
-Each time you subscribe to an observable, a new execution is created. This means that if you subscribe to an observable multiple times, you'll get multiple executions. An execution for sake of simplicity is an execution of the generator function provided to the AsyncObservable (the producer).
+Each time you subscribe to an observable, a new execution is created. This means that if you subscribe to an observable multiple times, you'll get multiple executions. An execution created this way for sake of simplicity is an execution of the generator function provided to the AsyncObservable (the producer) which delivers values to the provided callback (the consumer).
 
 ::: tip
 Subscribing to an AsyncObservable is like calling a function, with the callback being representative of where the data is being delivered to.
@@ -192,7 +195,7 @@ This is a shorthand that subscribes to the observable and iterates over the valu
 2. All values emitted by the observable will be handled sequentially, negating a large benefit of AsyncObservable.
 3. This can potentially block the observable from ever resolving if the for await loop isn't managed properly.
 
-The only notable exception to this is when you're subscribing to an observable inside of an observable (i.e. [operators](/guide/concepts/transforming-data#creating-custom-operators)) since the execution of an observable is inherently tracked as apart of the life cycle of the observable.
+The only notable exception to this is when you're subscribing to an observable inside of an observable (i.e. [operators](/guide/concepts/transforming-data#creating-custom-operators)) since the execution of an observable is inherently tracked as apart of its life cycle.
 
 ### Disposing AsyncObservable Executions
 
@@ -337,7 +340,7 @@ for await (const value of generator()) {
 }
 ```
 
-The important distinction to make here is that the `for await` loop is the consumer, **pulling** data from the generator (or the producer). Even though the for await loop must be called in an asynchronous function, the values are still processed in a sequential fashion.
+The important distinction to make here is that the `for await` loop is the consumer, **pulling** data from the generator (or the producer). Even though the for await loop must be called asynchronously, the values are still processed by the loop in a sequential fashion.
 
 AsyncObservable augments the generator pattern by orchestrating the **pushing** side of the equation; the observable handles the _pulling_ of values from the generator and does the work of _pushing_ them to the consumer.
 
