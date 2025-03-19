@@ -1,15 +1,34 @@
+---
+outline: [2, 6]
+---
+
 # Transforming Data
 
 Transforming data is a core part of eventkit. It happens through the use of operators, which are powerful utility functions that allow you to manipulate, transform, filter, and combine [observables](/guide/concepts/observable-pattern) (like [Streams](/guide/concepts/creating-streams)) in a declarative way. They form a crucial part of the reactive programming patterns that eventkit employs, and enables you to create complex data processing pipelines.
 
 ## Introduction to Operators
 
-In eventkit, operators are functions that take an observable as input, and return a new observable that (most commonly) subscribes to the provided observable, transform the data in some way, and yield that transformed data to the subscriber.
+In eventkit, operators are functions that take an [observable](/guide/concepts/observable-pattern) as input, and return a new observable that (most commonly) subscribes to the provided observable, transforms the data in some way, and yield that transformed data to the subscriber.
 
 For example, the `map` operator is synonymous to the Array method with the same name.
 
 ::: code-group
+```ts [AsyncObservable]
+import { AsyncObservable, map } from "eventkit";
 
+// Array method
+[1, 2, 3].map((x) => x * x); // [1, 4, 9]
+
+// Using operators
+await AsyncObservable.from([1, 2, 3])
+  .pipe(map((x) => x * x))
+  .subscribe((x) => console.log("squared", x));
+
+// outputs:
+// squared 1
+// squared 4
+// squared 9
+```
 ```ts [Stream]
 import { Stream, map } from "eventkit";
 
@@ -33,24 +52,6 @@ await stream.drain();
 // squared 4
 // squared 9
 ```
-
-```ts [AsyncObservable]
-import { AsyncObservable, map } from "eventkit";
-
-// Array method
-[1, 2, 3].map((x) => x * x); // [1, 4, 9]
-
-// Using operators
-AsyncObservable.from([1, 2, 3])
-  .pipe(map((x) => x * x))
-  .subscribe((x) => console.log("squared", x));
-
-// outputs:
-// squared 1
-// squared 4
-// squared 9
-```
-
 :::
 
 ## Chaining Operators
@@ -68,7 +69,7 @@ For that reason AsyncObservable provides a `pipe` method that allows you to chai
 obs.pipe(op1(), op2(), op3(), op4());
 ```
 
-To give a practical example of what multiple operators chained together looks like, let's say we want to square all the numbers in an array, filter out the odd numbers, and then sum them all up:
+To give a practical example of what multiple operators chained together looks like, let's say we want to square all the numbers in an observable, filter out the odd numbers, and then sum them all up:
 
 ```ts
 import { AsyncObservable, map, filter, reduce } from "eventkit";
@@ -121,7 +122,7 @@ When you use the pipe method, you should provide a type parameter that represent
 
 ### Creating custom operators
 
-While eventkit provides many built-in operators, you can also create your own custom operators to implement your own transformations. An operator is most commonly a function that takes a source observable and returns a new observable that performs some transformation on the data.
+While eventkit provides many built-in operators, you can also create your own custom operators to implement your own transformations. An operator is most commonly a function that takes a source observable and returns a new observable that performs some transformation on the data. You'll likely never need to do this as you can achieve just about any data transformation by chaining multiple of the built-in operators together.
 
 ```ts
 import { AsyncObservable, type OperatorFunction } from "eventkit";
@@ -154,6 +155,10 @@ await doubledEvens.subscribe((value) => {
 // fourth yield - "Doubled even: 8"
 ```
 
+::: info
 `source.AsyncObservable` is a pattern used to declare that the returned observable is a child of the source observable. This is used for scheduling purposes and allows us to add any work of the child observable to the parent observable's scheduler. More details can be found [here](/guide/concepts/scheduling#composing-observables).
+:::
 
+::: tip
 In case you get stuck trying to implement your own operator, the source code of all the existing operators are available [here](https://github.com/hntrl/eventkit/blob/main/packages/eventkit/lib/operators).
+:::
