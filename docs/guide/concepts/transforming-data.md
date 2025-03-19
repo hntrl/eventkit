@@ -106,7 +106,7 @@ For example, you could make a function that discarded odd values and doubled eve
 
 ```ts
 function doubleEvens() {
-  return pipe(
+  return pipe<number>(
     filter((num) => num % 2 === 0),
     map((num) => num * 2)
   );
@@ -114,6 +114,10 @@ function doubleEvens() {
 ```
 
 _The `pipe()` operator is analogous to the `.pipe()` method on AsyncObservable._
+
+::: tip
+When you use the pipe method, you should provide a type parameter that represents the type of data that will be emitted by the observable that gets operated on. This allows you to keep end-to-end type safety when hoisting transforms like this.
+:::
 
 ### Creating custom operators
 
