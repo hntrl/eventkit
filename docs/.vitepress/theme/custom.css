@@ -1,0 +1,13 @@
+html.dark .light-only {
+  display: none !important;
+}
+
+html:not(.dark) .dark-only {
+  display: none !important;
+}
+
+.reference-image {
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+}
