@@ -7,6 +7,18 @@ Eventkit is a TypeScript library designed for defining, composing, and observing
 Want to try it out? Jump to [Getting Started](./getting-started.md).
 </div>
 
+## Use Cases
+
+- **Real-Time Applications**: Eventkit's ability to handle real-time data streams makes it ideal for building applications that require fast, responsive user interfaces. If you're developing dashboards, chat applications, or live analytics tools, eventkit provides the primitives needed to process and react to continuous data flows without the mountains of boilerplate.
+
+- **Event Sourcing**: Eventkit provides a robust way to model event-driven systems, allowing you to capture, store, and replay events in a way that is both flexible and easy to understand. With features like `drain()`, you can ensure database operations complete before proceeding, making it perfect for implementing event sourcing patterns with strong consistency guarantees.
+
+- **Reactive Programming**: Eventkit is built on well-established reactive principles which allows you to build applications that respond to changes in data in real-time. The library's composable operators let you transform, filter, and combine streams declaratively, creating complex data processing pipelines with clean, maintainable code that accurately models your business logic.
+
+- **Web or Server**: Eventkit works natively in any modern JavaScript runtime, making it versatile for frontend applications, backend services, or full-stack implementations. The same code can power real-time UI updates in the browser and handle high-throughput event processing on the server, simplifying your architecture. (eventkit even provides the primitives for having streams communicate between the browser and server!)
+
+- **Data Processing**: Build efficient data transformation pipelines that process, filter, and aggregate streams of information with minimal overhead. Eventkit's scheduling capabilities give you fine-grained control over how and when work is executed, allowing you to optimize for throughput, latency, or resource usage depending on your specific requirements.
+
 ## Basic Example
 
 ```ts
@@ -31,19 +43,6 @@ stream.push({ type: "system.update", payload: { version: "1.0.1" } }); // This w
 // Wait for all events to be processed
 await stream.drain();
 ```
-
-## Use Cases
-
-- **Real-Time Applications**: Eventkit's ability to handle real-time data streams makes it ideal for building applications that require fast, responsive user interfaces. If you're developing dashboards, chat applications, or live analytics tools, eventkit provides the primitives needed to process and react to continuous data flows without the mountains of boilerplate.
-
-- **Event Sourcing**: Eventkit provides a robust way to model event-driven systems, allowing you to capture, store, and replay events in a way that is both flexible and easy to understand. With features like `drain()`, you can ensure database operations complete before proceeding, making it perfect for implementing event sourcing patterns with strong consistency guarantees.
-
-- **Reactive Programming**: Eventkit is built on well-established reactive principles which allows you to build applications that respond to changes in data in real-time. The library's composable operators let you transform, filter, and combine streams declaratively, creating complex data processing pipelines with clean, maintainable code that accurately models your business logic.
-
-- **Web or Server**: Eventkit works natively in any modern JavaScript runtime, making it versatile for frontend applications, backend services, or full-stack implementations. The same code can power real-time UI updates in the browser and handle high-throughput event processing on the server, simplifying your architecture. (eventkit even provides the primitives for having streams communicate between the browser and server!)
-
-- **Data Processing**: Build efficient data transformation pipelines that process, filter, and aggregate streams of information with minimal overhead. Eventkit's scheduling capabilities give you fine-grained control over how and when work is executed, allowing you to optimize for throughput, latency, or resource usage depending on your specific requirements.
-
 
 ## Features
 
