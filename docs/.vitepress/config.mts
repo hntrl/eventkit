@@ -7,6 +7,7 @@ export default defineConfig({
   lang: "en-US",
   title: "eventkit",
   description: "Declarative stream processing for Typescript",
+  base: "/eventkit/",
   lastUpdated: false,
   ignoreDeadLinks: true,
   cleanUrls: true,
