@@ -1,8 +1,11 @@
-name: Deploy Docs
+name: 📨 Deploy Docs
 
 on:
   push:
     branches: [main]
+    paths:
+      - "docs/**"
+      - "**/README.md"
 
   # Allows this workflow to be manually from the Actions tab
   workflow_dispatch:
