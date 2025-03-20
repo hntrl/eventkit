@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   format:
-    if: github.repository == 'remix-run/react-router'
+    if: github.repository == 'hntrl/eventkit'
     runs-on: ubuntu-latest
 
     steps:

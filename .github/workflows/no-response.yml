@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   stale:
-    if: github.repository == 'remix-run/react-router'
+    if: github.repository == 'hntrl/eventkit'
     runs-on: ubuntu-latest
     steps:
       - name: 🥺 Handle Ghosting
