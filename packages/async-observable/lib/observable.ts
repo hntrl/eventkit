@@ -185,6 +185,8 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
    * in the order they were passed in.
    */
   pipe(...operations: UnaryFunction<any, any>[]): unknown {
+    // we still want to return a dummy observable if no operations are provided
+    if (operations.length === 0) return this.stub();
     return operations.reduce(pipeReducer, this as any);
   }
 
