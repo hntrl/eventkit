@@ -176,7 +176,11 @@ Eventkit internally uses a `PassthroughScheduler` that will also "pass" any work
 You may also notice that the `PassthroughScheduler` forwards the schedule call to the parent. This is intentional as it means that whatever execution dynamic the root scheduler imposes will be applied to the entire composition. (i.e. if we put a `QueueScheduler` on the root, all callbacks to A, B, C, D, and E will be processed sequentially.)
 
 ::: info
-The base `AsyncObservable` class exposes an 'AsyncObservable' property that represents a "sub-class" of the current observable that, when constructed, will initialize with a `PassthroughScheduler` that will forward all work to the parent or source observable (i.e. `new AsyncObservable` initializes with a generic `Scheduler`, `new source.AsyncObservable` initializes with a `PassthroughScheduler` that forwards to `source`). Creating observables in this way is the standard way of how operators are implemented.
+The base `AsyncObservable` class exposes an 'AsyncObservable' property that represents a "sub-class" of the current observable that, when constructed, will initialize with a `PassthroughScheduler` that will forward all work to the parent or source observable.
+
+i.e. `new AsyncObservable` initializes with a generic `Scheduler`, `new source.AsyncObservable` initializes with a `PassthroughScheduler` that forwards to `source`
+
+Creating observables in this way is the standard way of how operators are implemented.
 :::
 
 ### A childs work is a subset of its parents work
