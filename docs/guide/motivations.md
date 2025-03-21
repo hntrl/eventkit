@@ -43,7 +43,7 @@ However, this approach also presents challenges. When dealing with computational
 
 In contrast, eventkit is designed with asynchronicity at its core. By leveraging JavaScript's async/await primitives, eventkit provides a more natural and intuitive way to handle its asynchronous nature. This design choice aligns with the fundamental purpose of observables: to represent data that changes over time.
 
-With eventkit, the execution and side effects of observables are managed asynchronously which allows for non-blocking execution. This means the mechanism by which an observable emits a value and the consumers of that value inherently allows the call stack to continue execution. This approach is particularly beneficial in environments where responsiveness is critical, such as web applications with complex user interfaces or serverless functions that need to handle multiple requests concurrently.
+With eventkit, the execution and side effects of observables are managed asynchronously which allows for non-blocking execution. This means the mechanism by which an observable emits a value and pushes it to its consumers inherently allows the call stack to continue execution. This approach is particularly beneficial in environments where responsiveness is critical, such as web applications with complex user interfaces or serverless functions.
 
 ### Why is the distinction important?
 
@@ -65,7 +65,7 @@ This is explained more in the [Observable Pattern](/guide/concepts/observable-pa
 
 #### Why is observing side effects important?
 
-For one, observing side effects gives us more visibility into our processes, but its especially crucial in environments where execution is short-lived. In these contexts it's essential to ensure that any work resulting from a side effect is completed before the execution context is terminated (think serverless, node, etc). Eventkit was created because there wasn't an off-the-shelf solution for solving this problem in JavaScript.
+For one, observing side effects gives us more visibility into our processes, but its especially crucial in environments where execution is short-lived. In these contexts it's essential to ensure that any side effects are completed before the execution context is terminated (think serverless, node, etc). Eventkit was created because there wasn't an off-the-shelf solution for solving this problem in JavaScript.
 
 In a [CQRS](https://en.wikipedia.org/wiki/Command_Query_Responsibility_Segregation) (**C**ommand **Q**uery **R**esponsibility **S**egregation) architecture, for example, commands may trigger side effects that update the read model. Observing these side effects and making sure they're completed before the execution context is terminated means that you can guarantee that the read model will **eventually** be consistent (unless your server rack gets hit by a meteorite, but that's a different problem).
 
