@@ -1,3 +1,4 @@
+export * from "./buffer";
 export * from "./concat";
 export * from "./count";
 export * from "./elementAt";
