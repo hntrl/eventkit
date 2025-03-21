@@ -5,5 +5,6 @@ export * from "./elementAt";
 export * from "./filter";
 export * from "./map";
 export * from "./merge";
+export * from "./partition";
 export * from "./reduce";
 export * from "./withScheduler";
