@@ -2,6 +2,8 @@ export * from "./operators";
 export * from "./schedulers";
 export * from "./stream";
 
+export * from "./utils/errors";
+
 export {
   // @eventkit/async-observable/from
   type AsyncObservableInputType,
