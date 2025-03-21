@@ -1,4 +1,5 @@
 export * from "./operators";
+export * from "./schedulers";
 export * from "./stream";
 
 export {
