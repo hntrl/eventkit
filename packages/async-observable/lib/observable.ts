@@ -58,7 +58,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   }
 
   /**
-   * Returns a class that uses a passthrough scheduler that is bound to the
+   * Returns a class that uses a PassthroughScheduler that is bound to the
    * current instance. Any work done by subscribers created from this class
    * will be pinned to the scheduler of the current instance. This is useful
    * for creating a new AsyncObservable that is a composition of the current
@@ -67,9 +67,6 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
    * The returned class maintains the parent-child relationship in the scheduler
    * hierarchy, ensuring that cancellation of the parent observable properly
    * propagates to all derived observables.
-   *
-   * @returns A new AsyncObservable that is bound to the current instance.
-   * AsyncObservable (i.e. any operator function).
    *
    * @returns A new AsyncObservable that is bound to the current instance.
    */
