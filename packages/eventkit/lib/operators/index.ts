@@ -7,4 +7,5 @@ export * from "./map";
 export * from "./merge";
 export * from "./partition";
 export * from "./reduce";
+export * from "./takeUntil";
 export * from "./withScheduler";
