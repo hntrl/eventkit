@@ -88,6 +88,8 @@ A Stream is a special type of [AsyncObservable](/guide/concepts/observable-patte
 You can provide a `preprocess` method in the stream's constructor to transform or validate the values that are pushed into the stream.
 
 ::: tip Example with Zod 💎
+[Zod](https://zod.dev/) is a powerful schema validation library that lets you validate any incoming data. If you wanted to validate that the values pushed into the stream are a specific shape, you could do so like this:
+
 ```ts
 import { z } from "zod";
 import { Stream } from "eventkit";
