@@ -4,11 +4,11 @@ outline: [2, 3]
 
 # Async Processing
 
-A big component of eventkit's design is in how it organizes and processes work. While existing implementations of the [Observable Pattern](/guide/concepts/observable-pattern) in JavaScript largely assert that, by default, all work will happen synchronously in the main loop when an observable is called. Eventkit takes the approach of treating all work as work that can be deferred to a later time.
+A big component of eventkit's design is in how it organizes and processes work. While existing implementations of the [Observable Pattern](/guide/concepts/observable-pattern) in JavaScript largely assert that, by default, all work will happen synchronously in the main loop when an observable is called,eventkit takes the approach of treating all work as work that can be deferred to a later time.
 
 Losing that flexibility might seem like a big regression at first, but baking that assumption in as a primitive actually enables a lot more in terms of concurrency and observability which would otherwise be hard to replicate. Since eventkit handles that abstraction by using JavaScript's async/await primitives, it also allows us to still emulate that synchronous behavior in a way that's still fully async and non-blocking.
 
-In reactive programming, you often hear the term "side effects" a lot. While that term often has a lot of different interpretations, in eventkit side effects are any work that is done as a result of a value being yielded by an observable (like the execution of a callback).
+In reactive programming, you often hear the term "[side effects](https://en.wikipedia.org/wiki/Side_effect_(computer_science))" a lot. While that term often has a lot of different interpretations, in eventkit side effects are any work that is done as a result of a value being yielded by an observable (like the execution of a callback).
 
 ::: info
 It's worth noting that we use the terms `async/await` and `Promise` pretty interchangeably here. What's important to know is that when we bring either of these up, we're talking about the native methodolgy by which JavaScript handles deferred work. (A `Promise` represents a value that will be available at some point in the future, which can be created using an `async` function or the `Promise` constructor, and can block the call stack from continuing until that value is made available using `await`).
@@ -168,7 +168,7 @@ console.log("done second");
 // done second
 ```
 
-We can await the subscriber multiple times because the subscriber isn't a real JavaScript `Promise` object. Instead it's known as a custom ["Thennable"](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#thenables). It has a custom `then` method which will be called every time the subscriber is in an await statement, which is asking the scheduler for the promise that represents the completion of its work.
+We can await the subscriber multiple times because the subscriber isn't a real JavaScript `Promise` object. Instead it's known as a custom ["Thennable"](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#thenables), which means it has a custom `then` method which will be called every time the subscriber is in an await statement, which is asking the scheduler for the promise that represents the completion of its work.
 
 Since `await` is just syntactic sugar for `.then()`, you can also wait for a subscriber to finish by calling `.then()` on the subscriber object to register a callback.
 
@@ -198,7 +198,7 @@ async function addSub() {
 const sub = addSub();
 ```
 
-This is because of how JavaScript promise chaining works. If you return a promise-like object from a function, awaiting the return value also implicitly awaits the promise (or promise-like object) you returned.
+This is because of how JavaScript promise chaining works. If you return a promise from an async function, awaiting the return value also implicitly awaits the promise (or promise-like object) you returned.
 
 You can circumvent this by wrapping the return value in an object that isn't promise-like:
 
@@ -319,7 +319,7 @@ This means that its good practice to await at least **one** of the subjects that
 
 #### Higher-order error handling on callbacks
 
-If we can reasonably expect that callbacks are executed sequentially, then a callback that rejects in the middle of the sequence will leave the resolution of any proceeding work in limbo. Eventkit provides two operators for mitigating this: `dlq()` and `retry()`.
+If we can reasonably expect that callbacks are executed in order (this isn't guaranteed, but we're saying this because values are yielded sequentially and we need to have some way to demonstrate the problem here), then a callback that rejects in the middle of the sequence will leave the resolution of any proceeding work in limbo. Eventkit provides two operators for mitigating this: `dlq()` and `retry()`.
 
 ##### `dlq()`
 
