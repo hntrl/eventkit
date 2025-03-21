@@ -243,9 +243,6 @@ export class Stream<T> extends AsyncObservable<T> {
    * @returns AsyncObservable that this Stream casts to
    */
   asObservable(): AsyncObservable<T> {
-    const generator = this._generator.bind(this);
-    return new AsyncObservable(async function* (sub: Subscriber<T>) {
-      yield* generator(sub);
-    });
+    return this.stub();
   }
 }

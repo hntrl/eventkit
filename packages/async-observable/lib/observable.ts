@@ -87,6 +87,24 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   }
 
   /**
+   * Returns a bound AsyncObservable (using {@link #AsyncObservable}) that
+   * will emit values from this AsyncObservable in order. This effectively
+   * creates a distinct "dummy" observable that acts as a generic wrapper
+   * around the current AsyncObservable.
+   *
+   * @returns A new AsyncObservable that wraps this AsyncObservable and emits the same values.
+   */
+  stub() {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const source = this;
+    return new this.AsyncObservable<T>(async function* () {
+      for await (const value of source) {
+        yield value;
+      }
+    });
+  }
+
+  /**
    * Invokes an execution of an AsyncObservable and registers a new Subscriber
    * that will call the provided callback for each value emitted by the
    * generator. The callback will be passed the value of the current value as
