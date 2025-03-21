@@ -73,7 +73,18 @@ export class StreamScheduler implements SchedulerLike {
 }
 
 export interface StreamInit<T> {
+  /**
+   * Function to preprocess values before they are pushed to observers.
+   * This can be used to validate values before they are emitted.
+   * @param value The raw value to be preprocessed
+   * @returns The processed value that will be emitted to observers
+   */
   preprocess?(value: unknown): T;
+  /**
+   * Scheduler to use for managing the execution of the inner observable.
+   * Can be provided as either a constructor function or an instance.
+   * If not provided, the default Scheduler will be used.
+   */
   scheduler?: new () => SchedulerLike | SchedulerLike;
 }
 
