@@ -5,20 +5,23 @@ import commentLengthPlugin from "eslint-plugin-comment-length";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
+  {
+    ignores: [
+      "docs/**",
+      "**/node_modules/",
+      "**/pnpm-lock.yaml",
+      "__tests__/**",
+      "dist/**",
+      ".wireit/**",
+      "scripts/**",
+      "eslint.config.mjs",
+      "vitest.config.ts",
+      "prettier.config.js",
+    ],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   importPlugin.flatConfigs.recommended,
-  {
-    ignores: [
-      "fixtures/",
-      "**/node_modules/",
-      "**/pnpm-lock.yaml",
-      "packages/**/dist/",
-      "packages/**/.wireit/",
-      "packages/**/eslint.config.mjs",
-      "eslint.config.mjs",
-    ],
-  },
   {
     languageOptions: {
       parserOptions: {

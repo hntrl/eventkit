@@ -1,13 +1,6 @@
 {
-  "include": [
-    "**/*.ts",
-    "__tests__/playground.mts"
-  ],
-  "exclude": [
-    "dist",
-    "__tests__",
-    "node_modules"
-  ],
+  "include": ["**/*.ts"],
+  "exclude": ["dist", "__tests__", "node_modules"],
   "compilerOptions": {
     "lib": [
       "DOM", // ???
@@ -35,9 +28,7 @@
     "noImplicitReturns": true,
     "noEmitOnError": true,
     "paths": {
-      "eventkit": [
-        "./index.ts"
-      ],
+      "eventkit": ["./index.ts"]
     }
   }
 }
