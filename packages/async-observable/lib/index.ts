@@ -17,6 +17,8 @@ export {
   PassthroughScheduler,
 } from "./scheduler";
 
+export { Signal } from "./signal";
+
 export {
   type UnaryFunction,
   type OperatorFunction,

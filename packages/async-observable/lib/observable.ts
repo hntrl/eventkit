@@ -236,7 +236,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
     onfinally ??= () => {};
     const action = new CleanupAction(onfinally);
     this._scheduler.schedule(this, action);
-    return action.signal.promise;
+    return action.signal.asPromise();
   }
 }
 

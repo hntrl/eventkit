@@ -1,3 +1,4 @@
+import { Signal } from "./signal";
 import { Subscriber } from "./subscriber";
 import { type SchedulerSubject, type SchedulerLike, type PromiseOrValue } from "./types";
 
@@ -15,7 +16,7 @@ export class PromiseSet implements PromiseLike<void> {
   /** @internal */
   _promiseChain: Promise<void> | null = null;
   /** @internal */
-  _signal: PromiseWithResolvers<void> | null = null;
+  _signal: Signal | null = null;
 
   /**
    * Adds a promise that will be tracked by the PromiseSet.
@@ -80,9 +81,9 @@ export class PromiseSet implements PromiseLike<void> {
     }
     // if there isn't an existing signal already, we need to create one
     if (!this._signal) {
-      this._signal = Promise.withResolvers<void>();
+      this._signal = new Signal();
     }
-    return this._signal.promise.then(onfulfilled, onrejected);
+    return this._signal.then(onfulfilled, onrejected);
   }
 
   /**
@@ -118,11 +119,11 @@ export class ScheduledAction<T> implements PromiseLike<T> {
   /** @internal */
   _hasExecuted = false;
   /** @internal */
-  _signal: PromiseWithResolvers<T> | null = null;
+  _signal: Signal<T> | null = null;
   /** @internal */
   get signal() {
     if (!this._signal) {
-      this._signal = Promise.withResolvers<T>();
+      this._signal = new Signal<T>();
     }
     return this._signal;
   }
@@ -155,7 +156,7 @@ export class ScheduledAction<T> implements PromiseLike<T> {
     onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
   ): PromiseLike<TResult1 | TResult2> {
-    return this.signal.promise.then(onfulfilled, onrejected);
+    return this.signal.then(onfulfilled, onrejected);
   }
 }
 

@@ -1,5 +1,6 @@
 import { type AsyncObservable } from "./observable";
 import { CleanupAction, ScheduledAction } from "./scheduler";
+import { Signal } from "./signal";
 import { type SubscriptionLike, type AsyncObserver, type SchedulerLike } from "./types";
 
 export const kCancelSignal = Symbol("cancelSignal");
@@ -88,9 +89,9 @@ export class Subscriber<T>
   /** @internal */
   _observable: AsyncObservable<T>;
   /** @internal */
-  _returnSignal: PromiseWithResolvers<void>;
+  _returnSignal: Signal<void>;
   /** @internal */
-  _cancelSignal: PromiseWithResolvers<typeof kCancelSignal>;
+  _cancelSignal: Signal<typeof kCancelSignal>;
 
   /** @internal */
   protected get generator(): AsyncGenerator<T> {
@@ -104,9 +105,9 @@ export class Subscriber<T>
 
   constructor(observable: AsyncObservable<T>) {
     this._observable = observable;
-    this._returnSignal = Promise.withResolvers<void>();
-    this._cancelSignal = Promise.withResolvers<typeof kCancelSignal>();
-    this.scheduler.add(this, this._returnSignal.promise);
+    this._returnSignal = new Signal<void>();
+    this._cancelSignal = new Signal<typeof kCancelSignal>();
+    this.scheduler.add(this, this._returnSignal.asPromise());
   }
 
   /** SubscriptionLike */
@@ -139,7 +140,7 @@ export class Subscriber<T>
   }
 
   get [kCancelSignal]() {
-    return this._cancelSignal.promise;
+    return this._cancelSignal.asPromise();
   }
 
   /** PromiseLike<void> */
@@ -199,7 +200,7 @@ export class Subscriber<T>
     onfinally ??= () => {};
     const action = new CleanupAction(onfinally);
     this.scheduler.schedule(this, action);
-    return action.signal.promise;
+    return action.signal.asPromise();
   }
 
   /** AsyncIterable<T, void, void> */
