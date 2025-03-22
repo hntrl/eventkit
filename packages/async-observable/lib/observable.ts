@@ -226,20 +226,6 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   }
 
   /**
-   * Adds a handler for any errors that occur in the work scheduled against the
-   * observable.
-   *
-   * @param onrejected - Optional callback to execute if the observable errors
-   * @returns A promise that resolves when all work scheduled against the observable has
-   * completed, or if any error occurs
-   */
-  catch<TResult = never>(
-    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
-  ): PromiseLike<TResult> {
-    return this.drain().then(undefined, onrejected);
-  }
-
-  /**
    * Returns a promise that resolves when all the work scheduled against the
    * observable has completed (i.e. subscriber callbacks or cleanup handlers).
    * Optionally, a callback can be provided to execute after all the work has
