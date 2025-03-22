@@ -75,7 +75,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
     const source = this;
     return class<BT> extends AsyncObservable<BT> {
       constructor(
-        generator: (this: AsyncObservable<BT>, sub: Subscriber<BT>) => AsyncGenerator<BT>
+        generator?: (this: AsyncObservable<BT>, sub: Subscriber<BT>) => AsyncGenerator<BT>
       ) {
         super(generator);
         this._scheduler = new PassthroughScheduler(source._scheduler, source);
