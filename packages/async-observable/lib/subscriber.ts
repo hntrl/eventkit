@@ -85,17 +85,6 @@ export class Subscriber<T>
    * @returns A promise that resolves when the generator has been cleaned up.
    */
   cancel(): Promise<void> {
-    // Generators have a synchronous queue of all the operations it receives
-    // (next/throw/return) which if we're waiting on a next() call that never
-    // comes, we'll never be able to break out of the generator and perform an
-    // early return since the first next() call is perpertually blocked. To
-    // solve this, we resolve the cancel signal which can be read off of the
-    // Subscriber to indicate when the subscriber has been cancelled, and in
-    // turn break out of the generator. This should only really be applicable to
-    // generators that don't have an affixed execution context with potentially
-    // never-ending operations like a Stream. In every other scenario we should
-    // rely on the generator state to determine when the generator has
-    // completed.
     this._cancelSignal.resolve(kCancelSignal);
     return this[Symbol.asyncIterator]()
       .return(null)
@@ -178,8 +167,17 @@ export class Subscriber<T>
     // control flow methods to the outside world.
     return {
       next: (): Promise<IteratorResult<T>> => {
-        return this.generator
-          .next()
+        // When generators are initializing (i.e. before the first next() call returns), the return
+        // call gets put up on a synchronous queue since the runtime doesn't know if the generator
+        // will return without values or not. If we're waiting on the first next() call that never
+        // comes, we'll never be able to break out of the generator and perform an early return
+        // since the first next() call is perpertually blocked. To solve this, we race against the
+        // cancel signal to see if the generator has been cancelled elsewhere, and if so we return a
+        // done result.
+        return Promise.race([
+          this.generator.next(),
+          this[kCancelSignal].then(() => ({ done: true as const, value: undefined })),
+        ])
           .then((result) => {
             if (result.done) this._returnSignal.resolve();
             return result;
