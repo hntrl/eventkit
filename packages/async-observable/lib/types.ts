@@ -64,10 +64,11 @@ export interface SchedulerLike {
 export type AsyncObservableInput<T> =
   | AsyncObservable<T>
   | InteropAsyncObservable<T>
-  | AsyncIterable<T>
-  | PromiseLike<T>
   | ArrayLike<T>
-  | Iterable<T>;
+  | PromiseLike<T>
+  | AsyncIterable<T>
+  | Iterable<T>
+  | ReadableStreamLike<T>;
 
 export interface InteropAsyncObservable<T> {
   [Symbol.asyncObservable](): AsyncIterable<T>;
