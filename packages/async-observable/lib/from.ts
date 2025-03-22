@@ -137,6 +137,7 @@ function fromInteropAsyncObservable<T>(obj: any) {
       for await (const value of obs) {
         yield value;
       }
+      return;
     }
     // Should be caught by observable subscribe function error handling.
     throw new TypeError("Provided object does not correctly implement Symbol.asyncObservable");
