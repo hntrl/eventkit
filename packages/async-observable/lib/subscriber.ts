@@ -5,6 +5,52 @@ import { type SubscriptionLike, type AsyncObserver, type SchedulerLike } from ".
 export const kCancelSignal = Symbol("cancelSignal");
 
 /**
+ * A wrapper around a Promise that allows for deferred execution of observable processing work.
+ *
+ * ConsumerPromise implements the PromiseLike interface, allowing it to be used in async/await
+ * contexts and with Promise chaining. Unlike a regular Promise, ConsumerPromise accepts a getter
+ * function that returns a Promise, which is only executed when the ConsumerPromise is created.
+ *
+ * This class is used internally to manage the asynchronous processing of observable values,
+ * providing better introspection into the work associated with a subscriber. Wrapping a promise in
+ * this way allows us to discern between the work of reading the observable and the work of
+ * processing its values. Internally, we use this in the implementation of Stream to treat the
+ * consumer work differently then callbacks as the consumer work will run indefinitely. We're only
+ * interested in awaiting the side effects of the consumer work, not the consumer work itself.
+ * This is included in async-observable since the only place we can expose this is in the
+ * implementation of the Subscriber class.
+ *
+ * @template T The type of value that the wrapped Promise resolves to
+ */
+export class ConsumerPromise<T> implements PromiseLike<T> {
+  private _promise: Promise<T>;
+
+  /**
+   * Creates a new ConsumerPromise instance.
+   *
+   * @param getter A function that returns a Promise to be wrapped. This function is
+   * executed immediately upon construction of the ConsumerPromise.
+   */
+  constructor(getter: () => Promise<T>) {
+    this._promise = getter();
+  }
+
+  /**
+   * Attaches callbacks for the resolution and/or rejection of the Promise.
+   *
+   * @param onfulfilled The callback to execute when the Promise is resolved.
+   * @param onrejected The callback to execute when the Promise is rejected.
+   * @returns A Promise for the completion of which ever callback is executed.
+   */
+  then<TResult1 = T, TResult2 = never>(
+    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2> {
+    return this._promise.then(onfulfilled, onrejected);
+  }
+}
+
+/**
  * Represents an active execution and consumer of an async generator (like
  * AsyncObservable).
  *
@@ -242,13 +288,15 @@ export class CallbackSubscriber<T> extends Subscriber<T> {
   }
 
   /** @internal */
-  async _tryIteratorWithCallback() {
-    for await (const value of this) {
-      if (this.callback) {
-        const action = new ScheduledAction(() => this.callback.bind(this)(value));
-        this.scheduler.schedule(this, action);
+  _tryIteratorWithCallback() {
+    return new ConsumerPromise(async () => {
+      for await (const value of this) {
+        if (this.callback) {
+          const action = new ScheduledAction(() => this.callback.bind(this)(value));
+          this.scheduler.schedule(this, action);
+        }
       }
-    }
+    });
   }
 }
 
