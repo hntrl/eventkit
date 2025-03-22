@@ -360,3 +360,5 @@ export interface AsyncObservable<T> {
 function pipeReducer(prev: any, fn: UnaryFunction<any, any>) {
   return fn(prev);
 }
+
+Object.defineProperty(Symbol, "asyncObservable", { value: Symbol("asyncObservable") });
