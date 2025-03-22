@@ -6,13 +6,14 @@ import {
   Scheduler,
   type SchedulerLike,
   type SchedulerSubject,
+  Signal,
   type Subscriber,
   kCancelSignal,
 } from "@eventkit/async-observable";
 
 export class StreamScheduler implements SchedulerLike {
   private _callbackScheduler: SchedulerLike;
-  private _subscriberTicks = new Map<Subscriber<any>, Set<PromiseWithResolvers<void>>>();
+  private _subscriberTicks = new Map<Subscriber<any>, Set<Signal>>();
 
   constructor(callbackScheduler: new () => SchedulerLike | SchedulerLike) {
     if (typeof callbackScheduler === "function") {
@@ -57,10 +58,10 @@ export class StreamScheduler implements SchedulerLike {
 
   addSubscriberTick(subscriber: Subscriber<any>) {
     const ticks = this._subscriberTicks.get(subscriber) ?? new Set();
-    const promiseObject = Promise.withResolvers<void>();
-    ticks.add(promiseObject);
+    const signal = new Signal();
+    ticks.add(signal);
     this._subscriberTicks.set(subscriber, ticks);
-    this._callbackScheduler.add(subscriber, promiseObject.promise);
+    this._callbackScheduler.add(subscriber, signal.asPromise());
   }
 
   resolveSubscriberTick(subscriber: Subscriber<any>) {
