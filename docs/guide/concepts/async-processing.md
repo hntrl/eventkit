@@ -258,7 +258,7 @@ await stream.finally(() => console.log("done"));
 `finally` will add the callback that's provided to the scheduler and return a promise that resolves whenever that cleanup work has completed (which is at the discretion of the scheduler, but usually happens after all previous work has finished).
 
 ::: tip
-Note that using `finally` will implicitly add the cleanup work to the subject, so awaiting it will also wait for the cleanup work to finish.
+Note that using `finally` will implicitly add the cleanup work to the subject, so awaiting the subject will also wait for the cleanup work to finish.
 
 ```ts
 import { AsyncObservable } from "eventkit";
@@ -279,7 +279,34 @@ console.log("after");
 // 🧹 cleaning up
 // after
 ```
+:::
+::: warning
+A common misconception is that `finally` will wait for **all** cleanup work to finish before resolving. This is not the case. `finally` will only wait for the callback provided to finish, which will happen concurrently with the rest of the cleanup work when the subject is disposed of.
 
+```ts
+import { AsyncObservable } from "eventkit";
+
+const myObservable = new AsyncObservable(async function* () {
+  yield 1;
+});
+
+myObservable.finally(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+  console.log("longer cleanup")
+});
+await myObservable.finally(() => {
+  console.log("shorter cleanup")
+});
+console.log("before drain")
+await myObservable.drain();
+console.log("done");
+
+// output:
+// shorter cleanup
+// before drain
+// longer cleanup
+// done
+```
 :::
 
 ## Error handling

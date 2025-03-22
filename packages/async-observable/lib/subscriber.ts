@@ -189,17 +189,17 @@ export class Subscriber<T>
   }
 
   /**
-   * Returns a promise that resolves when all the work scheduled against the
-   * subscriber has completed (i.e. subscriber callbacks or cleanup handlers).
-   * Optionally, a callback can be provided to execute after all the work has
-   * been completed, which adds a cleanup action to the scheduler.
+   * Schedules a cleanup action that gets executed when the subscriber is disposed of.
+   * Optionally, a callback can be provided to inform the behavior of the created action.
    *
-   * @param onfinally - Optional callback to execute after the subscriber has completed or errors
-   * @returns A promise that resolves when all work scheduled against the subscriber has completed
+   * @param onfinally - Optional callback to execute after completion or error
+   * @returns A promise that resolves when the action has completed
    */
-  finally(onfinally?: (() => void) | null): Promise<void> {
-    if (onfinally) this.scheduler.schedule(this, new CleanupAction(onfinally));
-    return this.then();
+  finally(onfinally?: (() => void) | null) {
+    onfinally ??= () => {};
+    const action = new CleanupAction(onfinally);
+    this.scheduler.schedule(this, action);
+    return action.signal.promise;
   }
 
   /** AsyncIterable<T, void, void> */

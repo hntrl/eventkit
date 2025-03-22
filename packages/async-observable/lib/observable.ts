@@ -226,17 +226,17 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   }
 
   /**
-   * Returns a promise that resolves when all the work scheduled against the
-   * observable has completed (i.e. subscriber callbacks or cleanup handlers).
-   * Optionally, a callback can be provided to execute after all the work has
-   * been completed, which adds a cleanup action to the scheduler.
+   * Schedules a cleanup action that gets executed when the observable is disposed of.
+   * Optionally, a callback can be provided to inform the behavior of the created action.
    *
-   * @param onfinally - Optional callback to execute after subscribers complete or error
-   * @returns A promise that resolves when all work scheduled against the observable has completed
+   * @param onfinally - Optional callback to execute after completion or error
+   * @returns A promise that resolves when the action has completed
    */
   finally(onfinally?: (() => void) | null) {
-    if (onfinally) this._scheduler.schedule(this, new CleanupAction(onfinally));
-    return this.drain();
+    onfinally ??= () => {};
+    const action = new CleanupAction(onfinally);
+    this._scheduler.schedule(this, action);
+    return action.signal.promise;
   }
 }
 
