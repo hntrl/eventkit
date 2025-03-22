@@ -32,30 +32,36 @@ export class PromiseSet implements PromiseLike<void> {
 
   /** @internal */
   private _resolveSignal(current: Promise<void>) {
-    // If there isn't a current signal, there's nothing to resolve
-    if (!this._signal) return;
-
     // If the current promise is not the latest one, we shouldn't resolve the signal This is what
     // makes promise sets work -- This function will get called every time the promise created in
     // `add` is resolved, but we don't resolve the signal unless the latest version of the chain is
     // passed in.
     if (this._promiseChain !== current) return;
 
-    // Resolve the signal and reset the promise set
+    // The promise chain is resolved, so we can reset the promise chain. That way if the signal
+    // gets created after all promises have resolved, the signal will resolve immediately rather
+    // than waiting for a change in the status of an already complete promise chain.
+    this._promiseChain = null;
+
+    // If there isn't a current signal, there's nothing to resolve
+    if (!this._signal) return;
+
+    // Resolve the signal
     this._signal.resolve();
     this._signal = null;
-    this._promiseChain = null;
   }
 
   /** @internal */
   private _rejectSignal(error: any) {
+    // Throw out the promise chain since it's been rejected
+    this._promiseChain = null;
+
     // If there isn't a current signal, there's nothing to reject
     if (!this._signal) return;
 
-    // Otherwise, reject the signal and reset the promise set
+    // Otherwise, reject the signal
     this._signal.reject(error);
     this._signal = null;
-    this._promiseChain = null;
   }
 
   /**
