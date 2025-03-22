@@ -73,6 +73,7 @@ export function isPromise(value: any): value is PromiseLike<any> {
 
 /** Identifies an input as being Observable (but not necessary an Observable) */
 function isInteropAsyncObservable(input: any): input is InteropAsyncObservable<any> {
+  input ??= {};
   return isFunction(input[Symbol.asyncObservable ?? "@@asyncObservable"]);
 }
 
