@@ -7,9 +7,7 @@ outline: [2, 3]
 Eventkit centers itself around solving two higher-order problems:
 
 - How do we observe values over time in a collection?
-- How do we observe the side effects that come from observing those values?
-
-[Side effects](https://en.wikipedia.org/wiki/Side_effect_(computer_science)) can be best described as any effect that occurs as a result of an action. For simplicity's sake, in eventkit this would be any callbacks that occur because of an observable emitting a value.
+- How do we observe the [side effects](https://en.wikipedia.org/wiki/Side_effect_(computer_science)) that come from observing those values?
 
 These problems are particularly relevant in modern JavaScript applications where asynchronous operations are ubiquitous. Traditional approaches to handling asynchronous code, such as callbacks or even Promises, often fall short when dealing with complex sequences of events or when needing to track the status of operations triggered by those events.
 

@@ -4,7 +4,7 @@ outline: [2, 3]
 
 # Async Processing
 
-A big component of eventkit's design is in how it organizes and processes work. While existing implementations of the [Observable Pattern](/guide/concepts/observable-pattern) in JavaScript largely assert that, by default, all work will happen synchronously in the main loop when an observable is called,eventkit takes the approach of treating all work as work that can be deferred to a later time.
+A big component of eventkit's design is in how it organizes and processes work. While existing implementations of the [Observable Pattern](/guide/concepts/observable-pattern) in JavaScript largely assert that, by default, all work will happen synchronously in the main loop when an observable is called, eventkit takes the approach of treating all work as work that can be deferred to a later time.
 
 Losing that flexibility might seem like a big regression at first, but baking that assumption in as a primitive actually enables a lot more in terms of concurrency and observability which would otherwise be hard to replicate. Since eventkit handles that abstraction by using JavaScript's async/await primitives, it also allows us to still emulate that synchronous behavior in a way that's still fully async and non-blocking.
 
