@@ -241,20 +241,16 @@ export class Subscriber<T>
         });
       },
       return: (value?: any): Promise<IteratorResult<T>> => {
-        // We intentionally don't propagate the error back to the return
-        // promise here; this is what lets us differentiate between an
-        // "execution error" and a "cleanup error". Return will only be called
-        // when the generator has a premature exit (i.e. .cancel() is called),
-        // whereas any cleanup errors that occur as a result of the generator
-        // completing will be thrown in the `next` method, and propagated to the
-        // return promise. If we did propagate the error back to the return
-        // promise here, and given that the subscriber isn't awaited anywhere,
-        // we would always get an uncaught error since the return promise isn't
-        // being handled anywhere.
-        return this.generator.return(value).then((value) => {
-          this._returnSignal.resolve();
-          return value;
-        });
+        return this.generator
+          .return(value)
+          .then((value) => {
+            this._returnSignal.resolve();
+            return value;
+          })
+          .catch((error) => {
+            this._returnSignal.reject(error);
+            throw error;
+          });
       },
     };
   }
