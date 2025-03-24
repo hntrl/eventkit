@@ -21,7 +21,7 @@ export class PromiseSet implements PromiseLike<void> {
   /**
    * Adds a promise that will be tracked by the PromiseSet.
    */
-  add(promise: PromiseLike<void>) {
+  add(promise: PromiseLike<any>) {
     const currentPromise = this._promiseChain ?? Promise.resolve();
     const newPromise = Promise.all([currentPromise, promise]).then(() => Promise.resolve());
     this._promiseChain = newPromise;
