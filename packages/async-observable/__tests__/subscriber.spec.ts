@@ -736,18 +736,20 @@ describe("Subscriber", () => {
 
       const observable = new AsyncObservable<number>(async function* () {
         yield 1;
-        await Promise.resolve(); // Make this async
+        await Promise.resolve();
         throw generatorError;
       });
 
       const subscriber = new Subscriber<number>(observable);
 
+      const subPromise = subscriber.then();
+
       // Immediately consume the generator
       subscriber.next();
-      subscriber.next();
+      await expect(subscriber.next()).rejects.toBe(generatorError);
 
       // Any code awaiting the subscriber should receive the error
-      await expect(subscriber).rejects.toBe(generatorError);
+      await expect(subPromise).rejects.toBe(generatorError);
     });
 
     it("should throw errors from cleanup work to the cancellation promise", async () => {
