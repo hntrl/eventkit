@@ -12,6 +12,7 @@ export { kCancelSignal, ConsumerPromise, Subscriber, CallbackSubscriber } from "
 export {
   PromiseSet,
   ScheduledAction,
+  CallbackAction,
   CleanupAction,
   Scheduler,
   PassthroughScheduler,

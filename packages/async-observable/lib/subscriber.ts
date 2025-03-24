@@ -1,5 +1,5 @@
 import { type AsyncObservable } from "./observable";
-import { CleanupAction, ScheduledAction } from "./scheduler";
+import { CallbackAction, CleanupAction } from "./scheduler";
 import { Signal } from "./signal";
 import { type SubscriptionLike, type AsyncObserver, type SchedulerLike } from "./types";
 
@@ -293,7 +293,7 @@ export class CallbackSubscriber<T> extends Subscriber<T> {
     return new ConsumerPromise(async () => {
       for await (const value of this) {
         if (this.callback) {
-          const action = new ScheduledAction(() => this.callback.bind(this)(value));
+          const action = new CallbackAction(() => this.callback.bind(this)(value));
           this.scheduler.schedule(this, action);
         }
       }

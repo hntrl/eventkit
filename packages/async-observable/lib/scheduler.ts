@@ -161,6 +161,11 @@ export class ScheduledAction<T> implements PromiseLike<T> {
 }
 
 /**
+ * Represents an action that will be executed as a result of an observable yielding a value.
+ */
+export class CallbackAction<T> extends ScheduledAction<T> {}
+
+/**
  * Represents an action that will be executed after some other work has been done.
  *
  * Internally, CleanupAction is no different than ScheduledAction, but it's a separate class
