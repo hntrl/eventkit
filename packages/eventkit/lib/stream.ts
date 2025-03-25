@@ -16,7 +16,7 @@ export class StreamScheduler implements SchedulerLike {
   private _callbackScheduler: SchedulerLike;
   private _subscriberTicks = new Map<Subscriber<any>, Set<Signal>>();
 
-  constructor(callbackScheduler: new () => SchedulerLike | SchedulerLike) {
+  constructor(callbackScheduler: SchedulerLike | (new () => SchedulerLike)) {
     if (typeof callbackScheduler === "function") {
       this._callbackScheduler = new callbackScheduler();
     } else {
@@ -87,7 +87,7 @@ export interface StreamInit<T> {
    * Can be provided as either a constructor function or an instance.
    * If not provided, the default Scheduler will be used.
    */
-  scheduler?: new () => SchedulerLike | SchedulerLike;
+  scheduler?: SchedulerLike | (new () => SchedulerLike);
 }
 
 /**
