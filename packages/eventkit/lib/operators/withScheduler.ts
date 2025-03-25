@@ -1,6 +1,6 @@
 import { type SchedulerLike, type OperatorFunction } from "@eventkit/async-observable";
 
-import { DeferredPassthroughScheduler } from "../schedulers";
+import { DeferredPassthroughScheduler } from "../schedulers/deferred-passthrough";
 
 /**
  * Applies a scheduler to an observable that passes side effects to the source observable, but
