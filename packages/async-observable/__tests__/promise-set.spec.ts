@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PromiseSet } from "../lib/scheduler";
+import { PromiseSet } from "../lib/utils/promise";
 
 describe("PromiseSet", () => {
   describe("core functionality", () => {

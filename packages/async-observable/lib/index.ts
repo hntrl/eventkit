@@ -16,15 +16,12 @@ export {
 } from "./subscriber";
 
 export {
-  PromiseSet,
   ScheduledAction,
   CallbackAction,
   CleanupAction,
   Scheduler,
   PassthroughScheduler,
 } from "./scheduler";
-
-export { Signal } from "./signal";
 
 export {
   type UnaryFunction,
@@ -39,3 +36,6 @@ export {
   type ObservedValueOf,
   type ReadableStreamLike,
 } from "./types";
+
+export { PromiseSet } from "./utils/promise";
+export { Signal } from "./utils/signal";

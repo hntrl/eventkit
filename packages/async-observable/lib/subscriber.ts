@@ -1,7 +1,7 @@
 import { type AsyncObservable } from "./observable";
 import { CallbackAction, CleanupAction } from "./scheduler";
-import { Signal } from "./signal";
 import { type SubscriptionLike, type AsyncObserver, type SchedulerLike } from "./types";
+import { Signal } from "./utils/signal";
 
 export const kCancelSignal = Symbol("cancelSignal");
 

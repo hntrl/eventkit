@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { CleanupAction, PromiseSet, ScheduledAction, Scheduler } from "../lib/scheduler";
+import { CleanupAction, ScheduledAction, Scheduler } from "../lib/scheduler";
 import { SchedulerLike, SchedulerSubject } from "../lib/types";
 import { Subscriber } from "../lib/subscriber";
 import { AsyncObservable } from "../lib/observable";
+import { PromiseSet } from "../lib/utils/promise";
 
 describe("Scheduler", () => {
   describe("core responsibilities", () => {
