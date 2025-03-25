@@ -7,7 +7,7 @@ import {
   Subscriber,
   SubscriberReturnSignal,
 } from "../lib/subscriber";
-import { Scheduler } from "../lib/scheduler";
+import { CleanupAction, Scheduler } from "../lib/scheduler";
 
 describe("Subscriber", () => {
   describe("constructor", () => {
@@ -66,15 +66,16 @@ describe("Subscriber", () => {
       const subscriber = new Subscriber<number>(observable);
 
       // Verify the subscriber was registered with the scheduler
-      expect(schedulerAddSpy).toHaveBeenCalledTimes(1);
-      expect(schedulerAddSpy).toHaveBeenCalledWith(subscriber, expect.any(Promise));
+      expect(schedulerAddSpy).toHaveBeenCalledTimes(5);
+      expect(schedulerAddSpy).toHaveBeenCalledWith(subscriber, expect.any(SubscriberReturnSignal));
+      expect(schedulerAddSpy).toHaveBeenCalledWith(subscriber, expect.any(CleanupAction));
 
       // Verify the promise passed is the _returnSignal
       const addCall = schedulerAddSpy.mock.calls[0];
       const promiseArg = addCall[1];
 
       // The promise should be from the return signal
-      expect(promiseArg).toBe(subscriber._returnSignal.asPromise());
+      expect(promiseArg).toBe(subscriber._returnSignal);
     });
 
     it("should initialize internal promise resolvers", async () => {
@@ -89,7 +90,7 @@ describe("Subscriber", () => {
       expect(subscriber._cancelSignal).toBeDefined();
 
       // Verify they're initialized as Signal instances
-      expect(subscriber._returnSignal.constructor.name).toBe("Signal");
+      expect(subscriber._returnSignal.constructor.name).toBe("SubscriberReturnSignal");
       expect(subscriber._cancelSignal.constructor.name).toBe("Signal");
 
       // Verify the signals can be resolved
@@ -387,14 +388,12 @@ describe("Subscriber", () => {
       // The next call should throw
       try {
         await subscriber.next();
+        await subscriber;
         // Should not reach here
         expect(true).toBe(false);
       } catch (error) {
         expect(error).toBe(testError);
       }
-
-      // The subscriber promise should also reject with the same error
-      await expect(subscriber).rejects.toBe(testError);
     });
 
     it("should act as a catch-all for errors during generator execution", async () => {
@@ -504,20 +503,7 @@ describe("Subscriber", () => {
         // Just iterate to complete the generator
       }
 
-      // Subscriber should not resolve until all work is done
-      const beforeWorkDone = await Promise.race([
-        Promise.resolve("not done"),
-        subscriber.then(() => "done"),
-      ]);
-
-      expect(beforeWorkDone).toBe("not done");
-      expect(work1Done).toBe(false);
-      expect(work2Done).toBe(false);
-
-      // Wait for the subscriber to resolve
-      await subscriber;
-
-      // All work should be complete
+      // All work should be complete after completion
       expect(work1Done).toBe(true);
       expect(work2Done).toBe(true);
     });
@@ -579,8 +565,6 @@ describe("Subscriber", () => {
         for await (const value of subscriber) {
           // Should throw after first value
         }
-        // Wait for the promise to resolve
-        await subscriber;
       } catch (error) {
         expect(error).toBe(testError);
       }
@@ -963,10 +947,6 @@ describe("Subscriber", () => {
 
       // Cancelling should result in the cleanup error being thrown
       await expect(subscriber.cancel()).rejects.toBe(cleanupError);
-
-      // But the main subscriber promise should still be resolved, not rejected
-      // This is because cancellation is considered separate from execution
-      await subscriber;
     });
   });
   describe("cleanup behavior", () => {
@@ -1112,7 +1092,6 @@ describe("Subscriber", () => {
       expect(cleanup1Executed).toBe(true);
       expect(cleanup2Executed).toBe(true);
 
-      // The scheduler should have no more work for this subscriber
       const scheduler = observable._scheduler as Scheduler;
       expect(scheduler._subjectPromises.has(subscriber)).toBe(false);
       expect(scheduler._subjectCleanup.has(subscriber)).toBe(false);

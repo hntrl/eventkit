@@ -489,16 +489,20 @@ describe("PromiseSet", () => {
       // After resolution, awaiting again should be immediate
       expect(duration).toBeLessThan(50);
     });
-    it("should reset internal state after rejection", async () => {
+    it("should keep errors from rejected promises across awaits", async () => {
       const rejectSet = new PromiseSet();
 
-      // Add and reject a promise
-      rejectSet.add(Promise.reject(new Error("Test error")));
+      const originalError = new Error("Original error");
+      rejectSet.add(Promise.reject(originalError));
 
-      // Catch the rejection
-      await rejectSet.catch(() => {});
+      try {
+        await rejectSet;
+        // If we get here, the catch should have thrown an error
+        expect(true).toBe(false);
+      } catch (error) {
+        expect(error).toBe(originalError);
+      }
 
-      // Add a new promise that takes some time to resolve
       let wasResolved = false;
       rejectSet.add(
         Promise.resolve().then(() => {
@@ -506,10 +510,13 @@ describe("PromiseSet", () => {
         })
       );
 
-      // A new await should resolve immediately because state was reset
-      await rejectSet;
-
-      // The promise was processed
+      try {
+        await rejectSet;
+        // Again we should expect this to throw an error
+        expect(true).toBe(false);
+      } catch (error) {
+        expect(error).toBe(originalError);
+      }
       expect(wasResolved).toBe(true);
     });
   });

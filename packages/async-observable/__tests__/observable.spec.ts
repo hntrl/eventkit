@@ -174,7 +174,11 @@ describe("AsyncObservable", () => {
     });
 
     it("should track subscribers in a Set", async () => {
-      const observable = new AsyncObservable();
+      const observable = new AsyncObservable(async function* () {
+        yield 1;
+        yield 2;
+        yield 3;
+      });
 
       // Initially should have no subscribers
       expect(observable.subscribers.length).toBe(0);
@@ -424,10 +428,10 @@ describe("AsyncObservable", () => {
       // Cancel the observable
       await observable.cancel();
 
-      // All subscriber cancel methods should have been called
-      expect(spy1).toHaveBeenCalled();
-      expect(spy2).toHaveBeenCalled();
-      expect(spy3).toHaveBeenCalled();
+      // All subscriber return signals should be resolved
+      await expect(sub1._returnSignal).resolves.toBe(undefined);
+      await expect(sub2._returnSignal).resolves.toBe(undefined);
+      await expect(sub3._returnSignal).resolves.toBe(undefined);
     });
 
     it("should remove subscribers from internal tracking when cancelled", async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { AsyncObservable } from "../lib/observable";
-import { CallbackSubscriber } from "../lib/subscriber";
+import { CallbackSubscriber, ConsumerPromise } from "../lib/subscriber";
+import { CallbackAction, ScheduledAction } from "../lib/scheduler";
 
 describe("CallbackSubscriber", () => {
   describe("constructor", () => {
@@ -87,7 +88,7 @@ describe("CallbackSubscriber", () => {
       await subscriber;
 
       // Verify the scheduler.schedule was called for each value
-      expect(scheduleSpy).toHaveBeenCalledTimes(2);
+      expect(scheduleSpy).toHaveBeenCalledWith(subscriber, expect.any(ScheduledAction));
     });
 
     it("should add the consumer promise to the scheduler", async () => {
@@ -101,17 +102,7 @@ describe("CallbackSubscriber", () => {
       const subscriber = new CallbackSubscriber<number>(observable, () => {});
 
       // Verify scheduler.add was called with the consumer promise
-      // It should be called twice:
-      // 1. Once by the Subscriber parent class for the _returnSignal
-      // 2. Once by the CallbackSubscriber for the _tryIteratorWithCallback consumer promise
-      expect(addSpy).toHaveBeenCalledTimes(2);
-      expect(addSpy.mock.calls[0][0]).toBe(subscriber);
-      expect(addSpy.mock.calls[1][0]).toBe(subscriber);
-
-      // Verify the second call includes a ConsumerPromise
-      const secondCallPromise = addSpy.mock.calls[1][1];
-      expect(secondCallPromise).toBeDefined();
-      expect(secondCallPromise.constructor.name).toBe("ConsumerPromise");
+      expect(addSpy).toHaveBeenCalledWith(subscriber, expect.any(ConsumerPromise));
     });
 
     it("should handle errors in callbacks", async () => {
@@ -183,12 +174,7 @@ describe("CallbackSubscriber", () => {
       expect(scheduleSpy).toHaveBeenCalled();
 
       // The first argument to schedule should be the subscriber
-      const scheduleCall = scheduleSpy.mock.calls[0];
-      expect(scheduleCall[0]).toBe(subscriber);
-
-      // The second argument should be a CallbackAction
-      const action = scheduleCall[1];
-      expect(action.constructor.name).toBe("CallbackAction");
+      expect(scheduleSpy).toHaveBeenCalledWith(subscriber, expect.any(CallbackAction));
     });
 
     it("should bind the callback to the subscriber instance", async () => {

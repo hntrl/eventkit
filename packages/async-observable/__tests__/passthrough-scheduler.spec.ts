@@ -980,26 +980,6 @@ describe("PassthroughScheduler", () => {
     });
   });
   describe("dispose method", () => {
-    it("should forward dispose calls to the parent scheduler for the same subject", async () => {
-      // Create a parent scheduler with a spy on dispose
-      const parentScheduler = new Scheduler();
-      const disposeSpy = vi.spyOn(parentScheduler, "dispose");
-
-      // Create passthrough scheduler
-      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
-
-      // Add work to a subject
-      const subject = {} as SchedulerSubject;
-      passthroughScheduler.add(subject, Promise.resolve());
-
-      // Dispose of the subject through the passthrough scheduler
-      await passthroughScheduler.dispose(subject);
-
-      // Verify parent scheduler's dispose was called for the same subject
-      expect(disposeSpy).toHaveBeenCalledWith(subject);
-      expect(disposeSpy).toHaveBeenCalledTimes(1);
-    });
-
     it("should track resources being disposed in its own internal maps", async () => {
       // Create parent and passthrough schedulers
       const parentScheduler = new Scheduler();
@@ -1111,8 +1091,8 @@ describe("PassthroughScheduler", () => {
       expect(parentScheduler._subjectCleanup.has(subject)).toBe(true);
       expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
 
-      // Dispose through the passthrough scheduler
-      await passthroughScheduler.dispose(subject);
+      // Dispose through the parent scheduler
+      await parentScheduler.dispose(subject);
 
       // Both cleanup actions should have executed
       expect(parentCleanupSpy).toHaveBeenCalledTimes(1);

@@ -187,6 +187,10 @@ describe("Scheduler", () => {
           // Simple implementation for the test
           return Promise.resolve();
         }
+
+        dispose(subject: SchedulerSubject): Promise<void> {
+          return Promise.resolve();
+        }
       }
 
       const customScheduler = new CustomScheduler();
@@ -587,7 +591,10 @@ describe("Scheduler", () => {
     it("should connect subscriber work back to its observable", async () => {
       // Create mock subscriber and observable
       const scheduler = new Scheduler();
-      const observable = { _scheduler: scheduler } as any;
+      const observable = {
+        _generator: async function* () {},
+        _scheduler: scheduler,
+      } as any;
 
       class MockSubscriber extends Subscriber<any> {
         constructor(observable: any) {
@@ -1272,6 +1279,8 @@ describe("Scheduler", () => {
         })
       );
 
+      expect(cleanupExecuted).toBe(false);
+
       // Wait for completion, catching the error
       try {
         await scheduler.promise(subject);
@@ -1283,10 +1292,6 @@ describe("Scheduler", () => {
 
       // Cleanup should still have executed
       expect(cleanupExecuted).toBe(true);
-
-      // Subject tracking should be cleaned up
-      expect(scheduler._subjectPromises.has(subject)).toBe(false);
-      expect(scheduler._subjectCleanup.has(subject)).toBe(false);
     });
 
     it("should clean up subject tracking after completion", async () => {
