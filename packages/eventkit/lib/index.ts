@@ -18,10 +18,12 @@ export {
   Subscriber,
   CallbackSubscriber,
   kCancelSignal,
+  ConsumerPromise,
 
   // @eventkit/async-observable/scheduler
   PromiseSet,
   ScheduledAction,
+  CallbackAction,
   CleanupAction,
   Scheduler,
   PassthroughScheduler,
