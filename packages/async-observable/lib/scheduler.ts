@@ -39,9 +39,7 @@ export class PromiseSet implements PromiseLike<void> {
     // passed in.
     if (this._promiseChain !== current) return;
 
-    // The promise chain is resolved, so we can reset the promise chain. That way if the signal
-    // gets created after all promises have resolved, the signal will resolve immediately rather
-    // than waiting for a change in the status of an already complete promise chain.
+    // The promise chain is resolved, so we can reset the promise chain.
     this._promiseChain = null;
 
     // If there isn't a current signal, there's nothing to resolve
@@ -253,7 +251,7 @@ export class Scheduler implements SchedulerLike {
 
   /**
    * Returns a promise that will resolve when the subject's work has completed and all
-   * scheduled work has been executed.
+   * scheduled work has been executed (including cleanup work).
    *
    * @param subject - The subject whose work is being awaited.
    */
