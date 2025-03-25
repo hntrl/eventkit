@@ -7,7 +7,13 @@ export {
 
 export { AsyncObservable } from "./observable";
 
-export { kCancelSignal, ConsumerPromise, Subscriber, CallbackSubscriber } from "./subscriber";
+export {
+  kCancelSignal,
+  SubscriberReturnSignal,
+  Subscriber,
+  ConsumerPromise,
+  CallbackSubscriber,
+} from "./subscriber";
 
 export {
   PromiseSet,
