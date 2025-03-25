@@ -1,4 +1,4 @@
-import { Subscriber } from "./subscriber";
+import { ConsumerPromise, Subscriber } from "./subscriber";
 import { type SchedulerSubject, type SchedulerLike, type PromiseOrValue } from "./types";
 import { PromiseSet } from "./utils/promise";
 import { Signal } from "./utils/signal";
@@ -163,20 +163,18 @@ export class Scheduler implements SchedulerLike {
    * @returns A promise that resolves when the subject has been fully disposed
    */
   async dispose(subject: SchedulerSubject): Promise<void> {
-    const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
+    let promises = this._subjectPromises.get(subject) ?? new PromiseSet();
+    // We want to intentionally ignore consumer promises here since `dispose` gets awaited in the
+    // generator methods. The consumer promise is often times the reader of the generator itself, so
+    // if we're waiting for dispose we'll be waiting for the last value to be yielded which in turn
+    // is waiting for dispose to finish, which causes a circular promise.
+    promises = promises.filter((promise) => !(promise instanceof ConsumerPromise));
     const cleanup = this._subjectCleanup.get(subject) ?? new Set();
     for (const action of cleanup) {
       action.execute();
     }
-    // waiting for the promises to resolve here might seem redundant since we're
-    // already waiting for them when we call `promise`, but the important thing
-    // to note is that dispose can be called independently of `promise`, and
-    // as apart of disposing we want to make sure that *all* work has completed.
-    // `promise` will wait for non-cleanup work to finish before disposing, whereas
-    // a direct call to `dispose` will immediately execute cleanup work and wait
-    // for it to finish, so the promises object is either already resolved or will
-    // be resolved by the time we're done executing cleanup work.
-    await Promise.all([promises, ...cleanup]);
+    await Promise.all([...cleanup, promises]);
+    // Once all promises have settled, we can remove the subject from the scheduler.
     this._subjectCleanup.delete(subject);
     this._subjectPromises.delete(subject);
   }

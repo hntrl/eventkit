@@ -69,6 +69,18 @@ export class PromiseSet implements PromiseLike<void> {
   }
 
   /**
+   * Returns a new PromiseSet that only contains promises that pass the filter function.
+   */
+  filter(predicate: (promise: PromiseLike<any>) => boolean) {
+    const newSet = new PromiseSet();
+    for (const promise of this._promises) {
+      if (!predicate(promise)) continue;
+      newSet.add(promise);
+    }
+    return newSet;
+  }
+
+  /**
    * Returns a promise that will resolve when all of the promises added to the set have resolved,
    * and reject if any of the promises added to the set have rejected. This method makes this object
    * a "custom thennable", which means that this is the logic that will be applied when the set is

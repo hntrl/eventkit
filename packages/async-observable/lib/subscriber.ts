@@ -74,7 +74,17 @@ export class Subscriber<T>
     this._observable = observable;
     this._returnSignal = new SubscriberReturnSignal();
     this._cancelSignal = new Signal<typeof kCancelSignal>();
+    // Adds the return signal that's representative of the state of the generator.
     this.scheduler.add(this, this._returnSignal);
+    // Add a cleanup action that resolves the cancel signal when the subscriber is disposed of.
+    this.scheduler.schedule(
+      this,
+      new CleanupAction(() => {
+        this._cancelSignal.resolve(kCancelSignal);
+      })
+    );
+    // Adds a cleanup action to the observable that will call cancel() on the subscriber.
+    this.scheduler.schedule(this._observable, new CleanupAction(this.cancel.bind(this)));
   }
 
   /** SubscriptionLike */
@@ -99,7 +109,6 @@ export class Subscriber<T>
    * @returns A promise that resolves when the generator has been cleaned up.
    */
   cancel(): Promise<void> {
-    this._cancelSignal.resolve(kCancelSignal);
     return this[Symbol.asyncIterator]()
       .return(null)
       .then(() => Promise.resolve());
@@ -212,17 +221,18 @@ export class Subscriber<T>
         });
       },
       return: (value?: any): Promise<IteratorResult<T>> => {
+        const disposePromise = this.scheduler.dispose(this);
         return this.generator
           .return(value)
-          .then(async (value) => {
+          .then((value) => {
             this._returnSignal.resolve();
             return value;
           })
-          .catch(async (error) => {
+          .catch((error) => {
             this._returnSignal.reject(error);
             throw error;
           })
-          .finally(() => this.scheduler.dispose(this));
+          .finally(() => disposePromise);
       },
     };
   }
