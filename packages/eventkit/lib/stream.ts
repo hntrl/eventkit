@@ -152,7 +152,6 @@ export class Stream<T> extends AsyncObservable<T> {
   /**
    * Feeds a new value to all observers of this stream.
    * @param value The value to emit to all observers
-   * @returns A Promise that resolves when all observers have processed the value
    */
   push(value: T): void {
     if (!this._closed) {
