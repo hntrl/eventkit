@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { vi } from "vitest";
 import { AsyncObservable } from "../lib/observable";
-import { CallbackSubscriber, kCancelSignal, Subscriber } from "../lib/subscriber";
+import {
+  CallbackSubscriber,
+  kCancelSignal,
+  Subscriber,
+  SubscriberReturnSignal,
+} from "../lib/subscriber";
 import { Scheduler } from "../lib/scheduler";
 
 describe("Subscriber", () => {
@@ -108,6 +113,17 @@ describe("Subscriber", () => {
       // Verify the signals were resolved
       expect(returnResolved).toBe(true);
       expect(cancelResolved).toBe(true);
+    });
+
+    it("should initialize _returnSignal as SubscriberReturnSignal", async () => {
+      // Create an observable
+      const observable = new AsyncObservable<number>();
+
+      // Create a subscriber
+      const subscriber = new Subscriber<number>(observable);
+
+      // Verify the return signal is a SubscriberReturnSignal
+      expect(subscriber._returnSignal).instanceOf(SubscriberReturnSignal);
     });
 
     it("should add work to both subscriber and parent observable", async () => {
@@ -1012,6 +1028,112 @@ describe("Subscriber", () => {
       ]);
 
       expect(isComplete).toBe(true);
+    });
+  });
+  describe("SubscriberReturnSignal", () => {
+    it("should be used for tracking subscriber execution state", async () => {
+      // Create an observable and subscriber
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+      });
+
+      const subscriber = new Subscriber<number>(observable);
+
+      // Verify the return signal is created and is a SubscriberReturnSignal
+      expect(subscriber._returnSignal).toBeInstanceOf(SubscriberReturnSignal);
+
+      // Check initial state - should not be resolved yet
+      let isResolved = false;
+      subscriber._returnSignal.asPromise().then(() => {
+        isResolved = true;
+      });
+
+      // Should not be resolved immediately
+      await Promise.resolve();
+      expect(isResolved).toBe(false);
+
+      // After consuming all values, it should eventually resolve
+      await subscriber.next();
+      await subscriber.next();
+      await subscriber.next(); // This should complete the generator
+
+      // The return signal should now be resolved
+      await Promise.resolve();
+      expect(isResolved).toBe(true);
+    });
+
+    it("should be registered with the scheduler", async () => {
+      // Create an observable
+      const observable = new AsyncObservable<number>();
+
+      // Spy on scheduler's add method
+      const schedulerAddSpy = vi.spyOn(observable._scheduler, "add");
+
+      // Create a subscriber
+      const subscriber = new Subscriber<number>(observable);
+
+      // Verify the return signal was registered with the scheduler
+      expect(schedulerAddSpy).toHaveBeenCalledWith(subscriber, subscriber._returnSignal);
+    });
+
+    it("should resolve when generator execution completes", async () => {
+      // Create an observable that completes normally
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+        // Generator completes normally after yielding values
+      });
+
+      const subscriber = new Subscriber<number>(observable);
+
+      // Create a spy to track when the return signal resolves
+      let signalResolved = false;
+      subscriber._returnSignal.asPromise().then(() => {
+        signalResolved = true;
+      });
+
+      // Consume all values to complete the generator
+      let result = await subscriber.next();
+      expect(result.value).toBe(1);
+
+      result = await subscriber.next();
+      expect(result.value).toBe(2);
+
+      result = await subscriber.next();
+      expect(result.done).toBe(true);
+
+      // The return signal should resolve
+      await Promise.resolve();
+      expect(signalResolved).toBe(true);
+    });
+
+    it("should reject when generator execution fails", async () => {
+      // Create an observable that throws an error
+      const testError = new Error("Test error in generator");
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        throw testError;
+      });
+
+      const subscriber = new Subscriber<number>(observable);
+
+      // Create a spy to track when the return signal rejects
+      let caughtError: Error | null = null;
+      subscriber._returnSignal.asPromise().catch((err) => {
+        caughtError = err;
+      });
+
+      // Get the first value
+      const firstValue = await subscriber.next();
+      expect(firstValue.value).toBe(1);
+
+      // Next call should throw the error
+      await expect(subscriber.next()).rejects.toBe(testError);
+
+      // The return signal should reject with the same error
+      await Promise.resolve();
+      expect(caughtError).toBe(testError);
     });
   });
 });
