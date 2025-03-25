@@ -205,6 +205,10 @@ export class Scheduler implements SchedulerLike {
    * @param promise - The promise to be added to the subject.
    */
   add(subject: SchedulerSubject, promise: PromiseLike<void>) {
+    // If the subject is a subscriber, we also add the promise to it's observable
+    if (subject instanceof Subscriber) {
+      this.add(subject._observable, promise);
+    }
     if (promise instanceof CleanupAction) {
       // we treat cleanup actions differently since they don't represent current
       // work, but instead work that should be executed after all remaining subject
@@ -213,17 +217,6 @@ export class Scheduler implements SchedulerLike {
     } else {
       this._add(subject, promise);
     }
-  }
-
-  /** @internal */
-  private _add(subject: SchedulerSubject, promise: PromiseLike<void>) {
-    // if the subject is a subscriber, we also add the promise to it's observable
-    if (subject instanceof Subscriber) {
-      this._add(subject._observable, promise);
-    }
-    const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
-    promises.add(promise);
-    this._subjectPromises.set(subject, promises);
   }
 
   /**
@@ -238,17 +231,6 @@ export class Scheduler implements SchedulerLike {
     action.execute();
   }
 
-  /** @internal */
-  private _addCleanup(subject: SchedulerSubject, cleanup: CleanupAction) {
-    // if the subject is a subscriber, we also add the cleanup to it's observable
-    if (subject instanceof Subscriber) {
-      this._addCleanup(subject._observable, cleanup);
-    }
-    const existing = this._subjectCleanup.get(subject) ?? new Set();
-    existing.add(cleanup);
-    this._subjectCleanup.set(subject, existing);
-  }
-
   /**
    * Returns a promise that will resolve when the subject's work has completed and all
    * scheduled work has been executed (including cleanup work).
@@ -257,15 +239,60 @@ export class Scheduler implements SchedulerLike {
    */
   async promise(subject: SchedulerSubject): Promise<void> {
     const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
-    const cleanup = this._subjectCleanup.get(subject) ?? new Set();
     try {
       await promises;
     } finally {
-      const cleanupPromises = Array.from(cleanup).map((action) => action.execute());
-      await Promise.all(cleanupPromises);
-      this._subjectPromises.delete(subject);
-      this._subjectCleanup.delete(subject);
+      await this.dispose(subject);
     }
+  }
+
+  /**
+   * Disposes of a subject by executing all cleanup actions and waiting for all promises to resolve.
+   *
+   * This method executes all cleanup actions associated with the subject and waits for both
+   * regular promises and cleanup actions to complete before removing the subject from the
+   * scheduler. Unlike the `promise()` method which waits for work to complete before disposing,
+   * this method immediately executes cleanup work and can be called independently.
+   *
+   * When a subject is disposed:
+   * 1. All cleanup actions are executed immediately
+   * 2. The method waits for all promises and cleanup actions to resolve
+   * 3. The subject is removed from the scheduler's tracking collections
+   *
+   * @param subject - The subject to dispose of and remove from the scheduler
+   * @returns A promise that resolves when the subject has been fully disposed
+   */
+  async dispose(subject: SchedulerSubject): Promise<void> {
+    const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
+    const cleanup = this._subjectCleanup.get(subject) ?? new Set();
+    for (const action of cleanup) {
+      action.execute();
+    }
+    // waiting for the promises to resolve here might seem redundant since we're
+    // already waiting for them when we call `promise`, but the important thing
+    // to note is that dispose can be called independently of `promise`, and
+    // as apart of disposing we want to make sure that *all* work has completed.
+    // `promise` will wait for non-cleanup work to finish before disposing, whereas
+    // a direct call to `dispose` will immediately execute cleanup work and wait
+    // for it to finish, so the promises object is either already resolved or will
+    // be resolved by the time we're done executing cleanup work.
+    await Promise.all([promises, ...cleanup]);
+    this._subjectCleanup.delete(subject);
+    this._subjectPromises.delete(subject);
+  }
+
+  /** @internal */
+  private _add(subject: SchedulerSubject, promise: PromiseLike<void>) {
+    const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
+    promises.add(promise);
+    this._subjectPromises.set(subject, promises);
+  }
+
+  /** @internal */
+  private _addCleanup(subject: SchedulerSubject, cleanup: CleanupAction) {
+    const existing = this._subjectCleanup.get(subject) ?? new Set();
+    existing.add(cleanup);
+    this._subjectCleanup.set(subject, existing);
   }
 }
 

@@ -57,6 +57,7 @@ export interface SchedulerLike {
   add(subject: SchedulerSubject, promise: PromiseLike<void>): void;
   schedule(subject: SchedulerSubject, action: ScheduledAction<any>): void;
   promise(subject: SchedulerSubject): Promise<void>;
+  dispose(subject: SchedulerSubject): Promise<void>;
 }
 
 /** Observable Interfaces */

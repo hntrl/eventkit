@@ -102,8 +102,7 @@ export class Subscriber<T>
     this._cancelSignal.resolve(kCancelSignal);
     return this[Symbol.asyncIterator]()
       .return(null)
-      .then(() => Promise.resolve())
-      .finally(() => this.scheduler.promise(this));
+      .then(() => Promise.resolve());
   }
 
   get [kCancelSignal]() {
@@ -192,32 +191,38 @@ export class Subscriber<T>
           this.generator.next(),
           this[kCancelSignal].then(() => ({ done: true as const, value: undefined })),
         ])
-          .then((result) => {
-            if (result.done) this._returnSignal.resolve();
+          .then(async (result) => {
+            if (result.done) {
+              this._returnSignal.resolve();
+              await this.scheduler.dispose(this);
+            }
             return result;
           })
-          .catch((error) => {
+          .catch(async (error) => {
             this._returnSignal.reject(error);
+            await this.scheduler.dispose(this);
             throw error;
           });
       },
       throw: (error?: any): Promise<IteratorResult<T>> => {
-        return this.generator.throw(error).then((value) => {
+        return this.generator.throw(error).then(async (value) => {
           this._returnSignal.reject(value);
+          await this.scheduler.dispose(this);
           throw value;
         });
       },
       return: (value?: any): Promise<IteratorResult<T>> => {
         return this.generator
           .return(value)
-          .then((value) => {
+          .then(async (value) => {
             this._returnSignal.resolve();
             return value;
           })
-          .catch((error) => {
+          .catch(async (error) => {
             this._returnSignal.reject(error);
             throw error;
-          });
+          })
+          .finally(() => this.scheduler.dispose(this));
       },
     };
   }
