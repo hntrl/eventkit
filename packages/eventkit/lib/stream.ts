@@ -2,6 +2,7 @@ import {
   AsyncObservable,
   type AsyncObserver,
   CallbackSubscriber,
+  ConsumerPromise,
   type ScheduledAction,
   Scheduler,
   type SchedulerLike,
@@ -25,14 +26,14 @@ export class StreamScheduler implements SchedulerLike {
 
   /** SchedulerLike */
 
-  add(): void {
-    // We can optimisitcally say that any direct calls to add should be treated as
-    // a no-op since the execution passed here is representative of the subject's
-    // lifecycle (i.e. the only native call to `add` is `_tryIteratorWithCallabck`).
+  add(subject: SchedulerSubject, action: ScheduledAction<any>): void {
+    // If the action is a ConsumerPromise, we don't need to add it to the scheduler.
     // Since we know that the lifecycle of a stream subject is infinite until `cancel`
     // is called, and since we're only interested in observing the side effects of
     // pushing values (i.e. propagating values to observers and callback executions),
     // we can ignore the execution promise here.
+    if (action instanceof ConsumerPromise) return;
+    this._callbackScheduler.add(subject, action);
   }
 
   schedule(subject: SchedulerSubject, action: ScheduledAction<any>): void {
