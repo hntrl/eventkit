@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CleanupAction, PromiseSet, ScheduledAction, Scheduler } from "../lib/scheduler";
 import { SchedulerLike, SchedulerSubject } from "../lib/types";
 import { Subscriber } from "../lib/subscriber";
+import { AsyncObservable } from "../lib/observable";
 
 describe("Scheduler", () => {
   describe("core responsibilities", () => {
@@ -825,6 +826,207 @@ describe("Scheduler", () => {
       // Both should be cleaned up
       expect(scheduler._subjectPromises.has(subscriber)).toBe(false);
       expect(scheduler._subjectCleanup.has(subscriber)).toBe(false);
+    });
+  });
+  describe("dispose method", () => {
+    it("should execute all cleanup actions for a subject immediately", async () => {
+      const scheduler = new Scheduler();
+      const subject = {} as SchedulerSubject;
+
+      // Create cleanup actions with spies
+      const cleanup1 = vi.fn();
+      const cleanup2 = vi.fn();
+
+      scheduler.add(subject, new CleanupAction(cleanup1));
+      scheduler.add(subject, new CleanupAction(cleanup2));
+
+      // Verify cleanup actions are not executed yet
+      expect(cleanup1).not.toHaveBeenCalled();
+      expect(cleanup2).not.toHaveBeenCalled();
+
+      // Call dispose
+      await scheduler.dispose(subject);
+
+      // Verify all cleanup actions were executed immediately
+      expect(cleanup1).toHaveBeenCalledTimes(1);
+      expect(cleanup2).toHaveBeenCalledTimes(1);
+    });
+
+    it("should wait for both regular promises and cleanup actions to complete", async () => {
+      const scheduler = new Scheduler();
+      const subject = {} as SchedulerSubject;
+
+      // Create a promise with delayed resolution
+      let resolvePromise: (value: any) => void;
+      const promise = new Promise<void>((resolve) => {
+        resolvePromise = resolve;
+      });
+      scheduler.add(subject, promise);
+
+      // Create a cleanup action with delayed execution
+      let cleanupCompleted = false;
+      const cleanupAction = new CleanupAction(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        cleanupCompleted = true;
+      });
+      scheduler.add(subject, cleanupAction);
+
+      // Start dispose but don't await it yet
+      const disposePromise = scheduler.dispose(subject);
+
+      // Neither the promise nor cleanup should be complete immediately
+      expect(cleanupCompleted).toBe(false);
+
+      // Resolve the regular promise
+      resolvePromise!(null);
+
+      // Wait for disposal to complete
+      await disposePromise;
+
+      // Both regular promise and cleanup action should be complete
+      expect(cleanupCompleted).toBe(true);
+    });
+
+    it("should remove the subject from tracking collections after disposal", async () => {
+      const scheduler = new Scheduler();
+      const subject = {} as SchedulerSubject;
+
+      // Add regular promise and cleanup action
+      scheduler.add(subject, Promise.resolve());
+      scheduler.add(subject, new CleanupAction(() => {}));
+
+      // Verify subject is being tracked
+      expect(scheduler._subjectPromises.has(subject)).toBe(true);
+      expect(scheduler._subjectCleanup.has(subject)).toBe(true);
+
+      // Dispose of the subject
+      await scheduler.dispose(subject);
+
+      // Verify subject is removed from all tracking collections
+      expect(scheduler._subjectPromises.has(subject)).toBe(false);
+      expect(scheduler._subjectCleanup.has(subject)).toBe(false);
+    });
+
+    it("should be callable independently of the promise method", async () => {
+      const scheduler = new Scheduler();
+      const subject = {} as SchedulerSubject;
+
+      // Add work and cleanup
+      let workExecuted = false;
+      scheduler.add(
+        subject,
+        Promise.resolve().then(() => {
+          workExecuted = true;
+        })
+      );
+
+      const cleanupSpy = vi.fn();
+      scheduler.add(subject, new CleanupAction(cleanupSpy));
+
+      // Call dispose directly without calling promise first
+      await scheduler.dispose(subject);
+
+      // Regular work should still be executed
+      expect(workExecuted).toBe(true);
+
+      // Cleanup should be executed
+      expect(cleanupSpy).toHaveBeenCalledTimes(1);
+
+      // Subject should be removed from tracking
+      expect(scheduler._subjectPromises.has(subject)).toBe(false);
+      expect(scheduler._subjectCleanup.has(subject)).toBe(false);
+    });
+
+    it("should handle the special case of observables by also disposing subscribers", async () => {
+      const scheduler = new Scheduler();
+      const observable = new AsyncObservable();
+      const subscriber = new Subscriber(observable);
+
+      // Add work to both subscriber and observable
+      const subscriberCleanup = vi.fn();
+      const observableCleanup = vi.fn();
+
+      scheduler.add(subscriber, new CleanupAction(subscriberCleanup));
+      scheduler.add(observable, new CleanupAction(observableCleanup));
+
+      // Dispose the subscriber
+      await scheduler.dispose(observable);
+
+      // Both cleanups should be executed
+      expect(subscriberCleanup).toHaveBeenCalledTimes(1);
+      expect(observableCleanup).toHaveBeenCalledTimes(1);
+
+      // Both subjects should be removed from tracking
+      expect(scheduler._subjectPromises.has(observable)).toBe(false);
+      expect(scheduler._subjectPromises.has(subscriber)).toBe(false);
+    });
+
+    it("should be idempotent - calling multiple times on the same subject should not cause issues", async () => {
+      const scheduler = new Scheduler();
+      const subject = {} as SchedulerSubject;
+
+      // Add cleanup action with spy
+      const cleanupSpy = vi.fn();
+      scheduler.add(subject, new CleanupAction(cleanupSpy));
+
+      // Call dispose multiple times
+      await scheduler.dispose(subject);
+      await scheduler.dispose(subject); // Second call
+      await scheduler.dispose(subject); // Third call
+
+      // Cleanup should only be executed once
+      expect(cleanupSpy).toHaveBeenCalledTimes(1);
+
+      // Tracking should still be clean
+      expect(scheduler._subjectPromises.has(subject)).toBe(false);
+      expect(scheduler._subjectCleanup.has(subject)).toBe(false);
+    });
+
+    it("should properly handle subjects with no cleanup actions", async () => {
+      const scheduler = new Scheduler();
+      const subject = {} as SchedulerSubject;
+
+      // Add only regular promise, no cleanup actions
+      let workExecuted = false;
+      scheduler.add(
+        subject,
+        Promise.resolve().then(() => {
+          workExecuted = true;
+        })
+      );
+
+      // Verify no cleanup is tracked
+      expect(scheduler._subjectCleanup.has(subject)).toBe(false);
+
+      // Dispose should still work
+      await scheduler.dispose(subject);
+
+      // Regular work should still be executed
+      expect(workExecuted).toBe(true);
+
+      // Subject should be removed from tracking
+      expect(scheduler._subjectPromises.has(subject)).toBe(false);
+    });
+
+    it("should properly handle subjects with no regular promises", async () => {
+      const scheduler = new Scheduler();
+      const subject = {} as SchedulerSubject;
+
+      // Add only cleanup action, no regular promises
+      const cleanupSpy = vi.fn();
+      scheduler.add(subject, new CleanupAction(cleanupSpy));
+
+      // Verify no promises are tracked
+      expect(scheduler._subjectPromises.has(subject)).toBe(false);
+
+      // Dispose should still work
+      await scheduler.dispose(subject);
+
+      // Cleanup should be executed
+      expect(cleanupSpy).toHaveBeenCalledTimes(1);
+
+      // Subject should be removed from tracking
+      expect(scheduler._subjectCleanup.has(subject)).toBe(false);
     });
   });
   describe("promise method", () => {

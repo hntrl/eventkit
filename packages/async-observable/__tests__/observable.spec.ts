@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AsyncObservable } from "../lib/observable";
 import { Subscriber } from "../lib/subscriber";
 import { ReadableStreamLike } from "../lib/types";
+import { Scheduler } from "../lib/scheduler";
 
 describe("AsyncObservable", () => {
   describe("constructor", () => {
@@ -323,6 +324,84 @@ describe("AsyncObservable", () => {
       // The cleanup function should have been called again
       expect(cleanupSpy).toHaveBeenCalledTimes(1);
     });
+
+    it("should dispose of resources via scheduler when the iteration completes", async () => {
+      // Create a spy to verify scheduler.dispose is called
+      const schedulerSpy = vi.spyOn(Scheduler.prototype, "dispose");
+
+      // Create an observable that emits a few values and completes
+      const observable = new AsyncObservable<number>(async function* (sub) {
+        yield 1;
+        yield 2;
+        yield 3;
+        // Natural completion
+      });
+
+      // Consume all values
+      for await (const value of observable) {
+        // Just iterate through all values
+      }
+
+      // Verify scheduler.dispose was called for the subscriber
+      expect(schedulerSpy).toHaveBeenCalled();
+
+      // Clean up spy
+      schedulerSpy.mockRestore();
+    });
+
+    it("should dispose of resources via scheduler when an error occurs", async () => {
+      // Create a spy to verify scheduler.dispose is called
+      const schedulerSpy = vi.spyOn(Scheduler.prototype, "dispose");
+
+      // Create an observable that throws an error
+      const observable = new AsyncObservable<number>(async function* (sub) {
+        yield 1;
+        throw new Error("Test error");
+      });
+
+      // Try to consume values, but expect an error
+      try {
+        for await (const value of observable) {
+          // This should throw after the first value
+        }
+      } catch (error) {
+        // Expected error
+        expect(error.message).toBe("Test error");
+      }
+
+      // Verify scheduler.dispose was called for the subscriber
+      expect(schedulerSpy).toHaveBeenCalled();
+
+      // Clean up spy
+      schedulerSpy.mockRestore();
+    });
+
+    it("should dispose of resources via scheduler when early termination occurs", async () => {
+      // Create a spy to verify scheduler.dispose is called
+      const schedulerSpy = vi.spyOn(Scheduler.prototype, "dispose");
+
+      // Create an observable that would emit multiple values
+      const observable = new AsyncObservable<number>(async function* (sub) {
+        yield 1;
+        yield 2;
+        yield 3;
+        yield 4;
+        yield 5;
+      });
+
+      // Break early after the second value
+      for await (const value of observable) {
+        if (value >= 2) {
+          break; // Early termination
+        }
+      }
+
+      // Verify scheduler.dispose was called for the subscriber
+      expect(schedulerSpy).toHaveBeenCalled();
+
+      // Clean up spy
+      schedulerSpy.mockRestore();
+    });
   });
   describe("cancellation", () => {
     it("should cancel all subscribers when cancel() is called", async () => {
@@ -492,6 +571,35 @@ describe("AsyncObservable", () => {
 
       // The cleanup function should have been called
       expect(cleanupSpy).toHaveBeenCalled();
+    });
+
+    it("should execute direct cleanup actions when cancel() is called", async () => {
+      // Create a spy for cleanup action execution
+      const cleanupSpy = vi.fn();
+
+      // Create an observable
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+      });
+
+      // Add a cleanup action directly to the scheduler
+      observable.finally(cleanupSpy);
+
+      // Subscribe to start the observable execution
+      observable.subscribe();
+
+      // Initially the cleanup action should not have been called
+      expect(cleanupSpy).not.toHaveBeenCalled();
+
+      // Call cancel() which should trigger cleanup actions
+      await observable.cancel();
+
+      // Verify the cleanup action was executed
+      expect(cleanupSpy).toHaveBeenCalledTimes(1);
+
+      // Verify that all subscribers have been removed
+      expect(observable.subscribers.length).toBe(0);
     });
   });
   describe("Promise-like behavior", () => {

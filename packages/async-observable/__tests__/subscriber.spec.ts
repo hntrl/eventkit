@@ -521,6 +521,79 @@ describe("Subscriber", () => {
       expect(work1Done).toBe(true);
       expect(work2Done).toBe(true);
     });
+    it("should dispose of resources via scheduler when the promise is resolved", async () => {
+      // Create an observable with a generator that completes normally
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+        // Natural completion
+      });
+
+      // Spy on the scheduler's dispose method
+      const disposeSpy = vi.spyOn(observable._scheduler, "dispose");
+
+      // Create a subscriber
+      const subscriber = new Subscriber<number>(observable);
+
+      const subPromise = subscriber.then();
+
+      expect(disposeSpy).not.toHaveBeenCalled();
+
+      // Iterate through values to trigger promise resolution
+      for await (const value of subscriber) {
+        // Just consume values
+      }
+
+      // Wait for the promise to resolve
+      await subPromise;
+
+      // Verify the scheduler's dispose method was called with the subscriber
+      expect(disposeSpy).toHaveBeenCalledWith(subscriber);
+
+      // Observable should have no subscribers
+      expect(observable.subscribers.length).toBe(0);
+
+      // Clean up spy
+      disposeSpy.mockRestore();
+    });
+    it("should dispose of resources via scheduler when the promise is rejected", async () => {
+      // Create a test error
+      const testError = new Error("Test rejection error");
+
+      // Create an observable with a generator that throws an error
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        throw testError;
+      });
+
+      // Spy on the scheduler's dispose method
+      const disposeSpy = vi.spyOn(observable._scheduler, "dispose");
+
+      // Create a subscriber
+      const subscriber = new Subscriber<number>(observable);
+
+      expect(disposeSpy).not.toHaveBeenCalled();
+
+      // Attempt to iterate through values (will throw)
+      try {
+        for await (const value of subscriber) {
+          // Should throw after first value
+        }
+        // Wait for the promise to resolve
+        await subscriber;
+      } catch (error) {
+        expect(error).toBe(testError);
+      }
+
+      // Verify the scheduler's dispose method was called with the subscriber
+      expect(disposeSpy).toHaveBeenCalledWith(subscriber);
+
+      // Observable should have no subscribers
+      expect(observable.subscribers.length).toBe(0);
+
+      // Clean up spy
+      disposeSpy.mockRestore();
+    });
   });
   describe("AsyncIterable implementation", () => {
     it("should implement Symbol.asyncIterator", async () => {
@@ -676,6 +749,105 @@ describe("Subscriber", () => {
       });
       expect(resolved).toBe(true);
     });
+    it("should dispose of resources via scheduler when the iteration completes", async () => {
+      // Create an observable with a generator that completes normally
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+        // Natural completion
+      });
+
+      // Spy on the scheduler's dispose method
+      const disposeSpy = vi.spyOn(observable._scheduler, "dispose");
+
+      // Create a subscriber
+      const subscriber = new Subscriber<number>(observable);
+
+      expect(disposeSpy).not.toHaveBeenCalled();
+
+      // Create an iterator and consume all values
+      const iterator = subscriber[Symbol.asyncIterator]();
+      await iterator.next(); // First value
+      await iterator.next(); // Second value
+      const result = await iterator.next(); // Should be done
+
+      // Verify the iterator has completed
+      expect(result.done).toBe(true);
+
+      // Verify the scheduler's dispose method was called with the subscriber
+      expect(disposeSpy).toHaveBeenCalledWith(subscriber);
+
+      // Clean up spy
+      disposeSpy.mockRestore();
+    });
+    it("should dispose of resources via scheduler when an error occurs", async () => {
+      // Create a test error
+      const testError = new Error("Test iteration error");
+
+      // Create an observable with a generator that throws an error
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        throw testError;
+      });
+
+      // Spy on the scheduler's dispose method
+      const disposeSpy = vi.spyOn(observable._scheduler, "dispose");
+
+      // Create a subscriber and iterator
+      const subscriber = new Subscriber<number>(observable);
+      const iterator = subscriber[Symbol.asyncIterator]();
+
+      expect(disposeSpy).not.toHaveBeenCalled();
+
+      // Get the first value successfully
+      await iterator.next();
+
+      // Next call should throw
+      try {
+        await iterator.next();
+      } catch (error) {
+        expect(error).toBe(testError);
+      }
+
+      // Verify the scheduler's dispose method was called with the subscriber
+      expect(disposeSpy).toHaveBeenCalledWith(subscriber);
+
+      // Clean up spy
+      disposeSpy.mockRestore();
+    });
+    it("should dispose of resources via scheduler when early termination occurs", async () => {
+      // Create an observable with a generator that would emit multiple values
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+        yield 3; // Should never be reached
+      });
+
+      // Spy on the scheduler's dispose method
+      const disposeSpy = vi.spyOn(observable._scheduler, "dispose");
+
+      // Create a subscriber and iterator
+      const subscriber = new Subscriber<number>(observable);
+      const iterator = subscriber[Symbol.asyncIterator]();
+
+      expect(disposeSpy).not.toHaveBeenCalled();
+
+      // Get the first value
+      await iterator.next();
+
+      // Call return to terminate early
+      await iterator.return();
+
+      // Verify the scheduler's dispose method was called with the subscriber
+      expect(disposeSpy).toHaveBeenCalledWith(subscriber);
+
+      // Trying to get more values should indicate completion
+      const result = await iterator.next();
+      expect(result.done).toBe(true);
+
+      // Clean up spy
+      disposeSpy.mockRestore();
+    });
   });
   describe("error handling", () => {
     it("should forward generator errors to promise rejection", async () => {
@@ -829,9 +1001,6 @@ describe("Subscriber", () => {
         executionOrder.push(`value: ${value}`);
       }
 
-      // FIXME: we shouldn't need to do this! If we don't do this, cleanup work never gets executed.
-      await subscriber;
-
       // Verify cleanup work was executed last
       expect(executionOrder).toContain("cleanup work");
       expect(executionOrder.indexOf("cleanup work")).toBe(executionOrder.length - 1);
@@ -878,9 +1047,6 @@ describe("Subscriber", () => {
       for await (const value of subscriber) {
         // Just iterating
       }
-
-      // FIXME: we shouldn't need to do this! If we don't do this, cleanup work never gets executed.
-      await subscriber;
 
       // Verify cleanup was executed
       expect(cleanupExecuted).toBe(true);
@@ -942,9 +1108,6 @@ describe("Subscriber", () => {
         // Just iterate
       }
 
-      // FIXME: we shouldn't need to do this! If we don't do this, cleanup work never gets executed.
-      await subscriber;
-
       // Verify all cleanup work was executed
       expect(cleanup1Executed).toBe(true);
       expect(cleanup2Executed).toBe(true);
@@ -953,6 +1116,115 @@ describe("Subscriber", () => {
       const scheduler = observable._scheduler as Scheduler;
       expect(scheduler._subjectPromises.has(subscriber)).toBe(false);
       expect(scheduler._subjectCleanup.has(subscriber)).toBe(false);
+    });
+    it("should call scheduler.dispose when the generator completes", async () => {
+      // Create an observable with a generator that completes after emitting values
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+        // Generator completes naturally
+      });
+
+      // Create a spy on the scheduler's dispose method
+      const scheduler = observable._scheduler;
+      const disposeSpy = vi.spyOn(scheduler, "dispose");
+
+      // Create a subscriber
+      const subscriber = new Subscriber<number>(observable);
+
+      // Verify dispose hasn't been called yet
+      expect(disposeSpy).not.toHaveBeenCalled();
+
+      // Consume the values to complete the generator
+      const iterator = subscriber[Symbol.asyncIterator]();
+      await iterator.next(); // value: 1
+      await iterator.next(); // value: 2
+      await iterator.next(); // done: true
+
+      // Verify dispose was called with the subscriber
+      expect(disposeSpy).toHaveBeenCalledWith(subscriber);
+      expect(disposeSpy).toHaveBeenCalledTimes(1);
+
+      // Clean up
+      disposeSpy.mockRestore();
+    });
+
+    it("should call scheduler.dispose when the generator throws an error", async () => {
+      // Create a specific error to identify
+      const testError = new Error("Generator error");
+
+      // Create an observable with a generator that throws
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        throw testError; // Will throw on the second next() call
+      });
+
+      // Create a spy on the scheduler's dispose method
+      const scheduler = observable._scheduler;
+      const disposeSpy = vi.spyOn(scheduler, "dispose");
+
+      // Create a subscriber
+      const subscriber = new Subscriber<number>(observable);
+
+      // Verify dispose hasn't been called yet
+      expect(disposeSpy).not.toHaveBeenCalled();
+
+      // Get the iterator and first value
+      const iterator = subscriber[Symbol.asyncIterator]();
+      await iterator.next(); // Get first value successfully
+
+      // Next call should throw the error
+      try {
+        await iterator.next();
+        // If we get here, the test failed
+        expect(true).toBe(false);
+      } catch (error) {
+        expect(error).toBe(testError);
+      }
+
+      // Verify dispose was called with the subscriber
+      expect(disposeSpy).toHaveBeenCalledWith(subscriber);
+      expect(disposeSpy).toHaveBeenCalledTimes(1);
+
+      // Clean up
+      disposeSpy.mockRestore();
+    });
+
+    it("should call scheduler.dispose when return() is called on the iterator", async () => {
+      // Create an observable with a generator
+      const observable = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+        yield 3; // This should never be reached
+      });
+
+      // Create a spy on the scheduler's dispose method
+      const scheduler = observable._scheduler;
+      const disposeSpy = vi.spyOn(scheduler, "dispose");
+
+      // Create a subscriber
+      const subscriber = new Subscriber<number>(observable);
+
+      // Verify dispose hasn't been called yet
+      expect(disposeSpy).not.toHaveBeenCalled();
+
+      // Get the iterator and first value
+      const iterator = subscriber[Symbol.asyncIterator]();
+      await iterator.next(); // Get first value
+
+      // Now manually call return to terminate early
+      await iterator.return();
+
+      // Verify dispose was called with the subscriber
+      expect(disposeSpy).toHaveBeenCalledWith(subscriber);
+      expect(disposeSpy).toHaveBeenCalledTimes(1);
+
+      // Verify the iterator is indeed done
+      const result = await iterator.next();
+      expect(result.done).toBe(true);
+
+      // Clean up
+      disposeSpy.mockRestore();
     });
   });
   describe("kCancelSignal", () => {

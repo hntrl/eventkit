@@ -979,6 +979,154 @@ describe("PassthroughScheduler", () => {
       expect(parentScheduler._subjectPromises.has(unrelatedSubject)).toBe(false);
     });
   });
+  describe("dispose method", () => {
+    it("should forward dispose calls to the parent scheduler for the same subject", async () => {
+      // Create a parent scheduler with a spy on dispose
+      const parentScheduler = new Scheduler();
+      const disposeSpy = vi.spyOn(parentScheduler, "dispose");
+
+      // Create passthrough scheduler
+      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
+
+      // Add work to a subject
+      const subject = {} as SchedulerSubject;
+      passthroughScheduler.add(subject, Promise.resolve());
+
+      // Dispose of the subject through the passthrough scheduler
+      await passthroughScheduler.dispose(subject);
+
+      // Verify parent scheduler's dispose was called for the same subject
+      expect(disposeSpy).toHaveBeenCalledWith(subject);
+      expect(disposeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("should track resources being disposed in its own internal maps", async () => {
+      // Create parent and passthrough schedulers
+      const parentScheduler = new Scheduler();
+      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
+
+      // Create a subject and add both regular work and cleanup action
+      const subject = {} as SchedulerSubject;
+
+      // Add regular work
+      passthroughScheduler.add(subject, Promise.resolve());
+
+      // Add cleanup action
+      const cleanupSpy = vi.fn();
+      const cleanupAction = new CleanupAction(cleanupSpy);
+      passthroughScheduler.add(subject, cleanupAction);
+
+      // Verify work is tracked in passthrough scheduler
+      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
+      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
+
+      // Execute the cleanup action manually to verify it's tracked
+      expect(cleanupSpy).not.toHaveBeenCalled();
+
+      // Dispose of the subject
+      await passthroughScheduler.dispose(subject);
+
+      // Verify the cleanup action was executed
+      expect(cleanupSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("should remove the subject from its own tracking after disposal", async () => {
+      // Create parent and passthrough schedulers
+      const parentScheduler = new Scheduler();
+      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
+
+      // Add work to a subject
+      const subject = {} as SchedulerSubject;
+      passthroughScheduler.add(subject, Promise.resolve());
+      passthroughScheduler.add(subject, new CleanupAction(() => {}));
+
+      // Verify the subject is initially tracked
+      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
+      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
+
+      // Dispose of the subject
+      await passthroughScheduler.dispose(subject);
+
+      // Verify the subject is removed from both tracking maps
+      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
+      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(false);
+    });
+
+    it("should properly dispose of pinned subjects", async () => {
+      // Create parent scheduler
+      const parentScheduler = new Scheduler();
+
+      // Create subjects
+      const pinningSubject = {} as SchedulerSubject;
+      const workSubject = {} as SchedulerSubject;
+
+      // Create passthrough scheduler with pinning subject
+      const passthroughScheduler = new PassthroughScheduler(parentScheduler, pinningSubject);
+
+      // Add work to the work subject (which gets pinned to pinningSubject)
+      const executionSpy = vi.fn();
+      passthroughScheduler.add(workSubject, Promise.resolve().then(executionSpy));
+
+      // Add a cleanup action
+      const cleanupSpy = vi.fn();
+      passthroughScheduler.add(workSubject, new CleanupAction(cleanupSpy));
+
+      // Verify work is tracked in parent for both subjects
+      expect(parentScheduler._subjectPromises.has(workSubject)).toBe(true);
+      expect(parentScheduler._subjectPromises.has(pinningSubject)).toBe(true);
+
+      // Dispose of the work subject
+      await passthroughScheduler.dispose(workSubject);
+
+      // Verify cleanup was executed
+      expect(cleanupSpy).toHaveBeenCalledTimes(1);
+
+      // Verify work subject is removed from passthrough tracking
+      expect(passthroughScheduler._subjectPromises.has(workSubject)).toBe(false);
+      expect(passthroughScheduler._subjectCleanup.has(workSubject)).toBe(false);
+
+      // The pinning subject should still be tracked in parent (not disposed)
+      expect(parentScheduler._subjectPromises.has(pinningSubject)).toBe(true);
+    });
+
+    it("should handle disposal of subjects that exist in both parent and child schedulers", async () => {
+      // Create parent scheduler
+      const parentScheduler = new Scheduler();
+
+      // Create passthrough scheduler
+      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
+
+      // Create a subject
+      const subject = {} as SchedulerSubject;
+
+      // Add work directly to parent
+      const parentCleanupSpy = vi.fn();
+      parentScheduler.add(subject, new CleanupAction(parentCleanupSpy));
+
+      // Add different work to passthrough
+      const childCleanupSpy = vi.fn();
+      passthroughScheduler.add(subject, new CleanupAction(childCleanupSpy));
+
+      // Verify work is tracked in both schedulers
+      expect(parentScheduler._subjectCleanup.has(subject)).toBe(true);
+      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
+
+      // Dispose through the passthrough scheduler
+      await passthroughScheduler.dispose(subject);
+
+      // Both cleanup actions should have executed
+      expect(parentCleanupSpy).toHaveBeenCalledTimes(1);
+      expect(childCleanupSpy).toHaveBeenCalledTimes(1);
+
+      // Subject should be removed from parent scheduler
+      expect(parentScheduler._subjectCleanup.has(subject)).toBe(false);
+      expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
+
+      // but not from the passthrough scheduler (FIXME)
+      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
+      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
+    });
+  });
   describe("observable composition", () => {
     it("should enable parent-child scheduler relationships", async () => {
       // Create a hierarchy of schedulers
