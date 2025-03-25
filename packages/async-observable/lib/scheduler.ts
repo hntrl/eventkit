@@ -9,12 +9,17 @@ import { type SchedulerSubject, type SchedulerLike, type PromiseOrValue } from "
  * using the `add` method.
  *
  * When a PromiseSet is awaited, the promise being observed won't resolve until all of the
- * promises added to the set have resolved, including any promises that are added after the
- * set was awaited.
+ * promises added to the set have resolved, including any promises that are added in the time it
+ * takes for any previous promises to resolve.
+ *
+ * Note that a PromiseSet is primarily used to track the resolution of promises added to it, but
+ * not necessarily the values that get returned since we can't yield that in a meaningful way
  */
 export class PromiseSet implements PromiseLike<void> {
   /** @internal */
-  _promiseChain: Promise<void> | null = null;
+  _promises: Set<PromiseLike<any>> = new Set();
+  /** @internal */
+  _currentPromise: Promise<void> | null = null;
   /** @internal */
   _signal: Signal | null = null;
 
@@ -22,11 +27,11 @@ export class PromiseSet implements PromiseLike<void> {
    * Adds a promise that will be tracked by the PromiseSet.
    */
   add(promise: PromiseLike<any>) {
-    const currentPromise = this._promiseChain ?? Promise.resolve();
-    const newPromise = Promise.all([currentPromise, promise]).then(() => Promise.resolve());
-    this._promiseChain = newPromise;
-    newPromise.then(
-      () => this._resolveSignal(newPromise),
+    this._promises.add(promise);
+    const nextPromise = Promise.all(this._promises).then(() => Promise.resolve());
+    this._currentPromise = nextPromise;
+    nextPromise.then(
+      () => this._resolveSignal(nextPromise),
       (error) => this._rejectSignal(error)
     );
   }
@@ -37,10 +42,10 @@ export class PromiseSet implements PromiseLike<void> {
     // makes promise sets work -- This function will get called every time the promise created in
     // `add` is resolved, but we don't resolve the signal unless the latest version of the chain is
     // passed in.
-    if (this._promiseChain !== current) return;
+    if (this._currentPromise !== current) return;
 
     // The promise chain is resolved, so we can reset the promise chain.
-    this._promiseChain = null;
+    this._currentPromise = null;
 
     // If there isn't a current signal, there's nothing to resolve
     if (!this._signal) return;
@@ -53,14 +58,16 @@ export class PromiseSet implements PromiseLike<void> {
   /** @internal */
   private _rejectSignal(error: any) {
     // Throw out the promise chain since it's been rejected
-    this._promiseChain = null;
+    this._currentPromise = null;
 
     // If there isn't a current signal, there's nothing to reject
     if (!this._signal) return;
 
     // Otherwise, reject the signal
     this._signal.reject(error);
-    this._signal = null;
+    // We intentionally don't reset the signal here. Any error that occurs in the promise set is
+    // meant to "error" the promise set, meaning that any subsequent calls to `then` or `catch` will
+    // be rejected immediately.
   }
 
   /**
@@ -74,7 +81,7 @@ export class PromiseSet implements PromiseLike<void> {
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     // If there isn't any work being done, we can just resolve immediately
-    if (!this._promiseChain) {
+    if (!this._currentPromise) {
       return Promise.resolve().then(onfulfilled, onrejected);
     }
     // if there isn't an existing signal already, we need to create one
