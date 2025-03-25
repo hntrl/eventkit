@@ -107,7 +107,7 @@ export class Subscriber<T>
     this._observable = observable;
     this._returnSignal = new Signal<void>();
     this._cancelSignal = new Signal<typeof kCancelSignal>();
-    this.scheduler.add(this, this._returnSignal.asPromise());
+    this.scheduler.add(this, this._returnSignal);
   }
 
   /** SubscriptionLike */
