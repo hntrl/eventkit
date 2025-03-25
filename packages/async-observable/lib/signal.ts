@@ -13,13 +13,21 @@
  */
 export class Signal<T = void> implements PromiseLike<T> {
   /** @internal */
+  _status: "pending" | "resolved" | "rejected" = "pending";
+  /** @internal */
   _promise: Promise<T>;
 
   /** Creates a new Signal instance with resolve and reject methods bound to the instance. */
   constructor() {
     this._promise = new Promise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
+      this.resolve = (value: T) => {
+        this._status = "resolved";
+        resolve(value);
+      };
+      this.reject = (reason: any) => {
+        this._status = "rejected";
+        reject(reason);
+      };
     });
   }
 
