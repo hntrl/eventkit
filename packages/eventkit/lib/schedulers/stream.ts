@@ -1,42 +1,49 @@
 import {
+  CleanupAction,
   ConsumerPromise,
+  PromiseSet,
   type ScheduledAction,
+  Scheduler,
   type SchedulerLike,
   type SchedulerSubject,
   Signal,
   type Subscriber,
+  SubscriberReturnSignal,
 } from "@eventkit/async-observable";
 
-export class StreamScheduler implements SchedulerLike {
-  private _callbackScheduler: SchedulerLike;
+export class StreamScheduler extends Scheduler implements SchedulerLike {
+  private deferred: SchedulerLike;
   private _subscriberTicks = new Map<Subscriber<any>, Set<Signal>>();
 
-  constructor(callbackScheduler: SchedulerLike | (new () => SchedulerLike)) {
-    if (typeof callbackScheduler === "function") {
-      this._callbackScheduler = new callbackScheduler();
+  constructor(schedulerCtor: SchedulerLike | (new () => SchedulerLike)) {
+    super();
+    if (typeof schedulerCtor === "function") {
+      this.deferred = new schedulerCtor();
     } else {
-      this._callbackScheduler = callbackScheduler;
+      this.deferred = schedulerCtor;
     }
   }
 
-  /** SchedulerLike */
-
-  add(subject: SchedulerSubject, action: ScheduledAction<any>): void {
-    // If the action is a ConsumerPromise, we don't need to add it to the scheduler.
-    // Since we know that the lifecycle of a stream subject is infinite until `cancel`
-    // is called, and since we're only interested in observing the side effects of
-    // pushing values (i.e. propagating values to observers and callback executions),
-    // we can ignore the execution promise here.
-    if (action instanceof ConsumerPromise) return;
-    this._callbackScheduler.add(subject, action);
+  add(subject: SchedulerSubject, promise: PromiseLike<void>): void {
+    const isLifecycleWork =
+      promise instanceof ConsumerPromise || promise instanceof SubscriberReturnSignal;
+    if (isLifecycleWork) {
+      return super.add(subject, new CleanupAction(() => promise));
+    } else {
+      return super.add(subject, promise);
+    }
   }
 
   schedule(subject: SchedulerSubject, action: ScheduledAction<any>): void {
-    this._callbackScheduler.schedule(subject, action);
+    super.add(subject, action);
+    if (action instanceof CleanupAction) return;
+    this.deferred.schedule(subject, action);
   }
 
-  promise(subject: SchedulerSubject): Promise<void> {
-    return this._callbackScheduler.promise(subject);
+  async promise(subject: SchedulerSubject): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
+    await promises;
   }
 
   // Subscriber ticks are a little bit of a hack way to inform the scheduler that
@@ -57,7 +64,7 @@ export class StreamScheduler implements SchedulerLike {
     const signal = new Signal();
     ticks.add(signal);
     this._subscriberTicks.set(subscriber, ticks);
-    this._callbackScheduler.add(subscriber, signal.asPromise());
+    this.add(subscriber, signal);
   }
 
   resolveSubscriberTick(subscriber: Subscriber<any>) {
