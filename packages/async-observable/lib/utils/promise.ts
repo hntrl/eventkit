@@ -20,6 +20,8 @@ export class PromiseSet implements PromiseLike<void> {
   _currentPromise: Promise<void> | null = null;
   /** @internal */
   _signal: Signal | null = null;
+  /** @internal */
+  _error: any | null = null;
 
   /**
    * Adds a promise that will be tracked by the PromiseSet.
@@ -29,18 +31,17 @@ export class PromiseSet implements PromiseLike<void> {
     const nextPromise = Promise.all(this._promises).then(() => Promise.resolve());
     this._currentPromise = nextPromise;
     nextPromise.then(
-      () => this._resolveSignal(nextPromise),
-      (error) => this._rejectSignal(error)
+      () => this._resolve(nextPromise),
+      (error) => this._reject(error)
     );
   }
 
-  /** @internal */
-  private _resolveSignal(current: Promise<void>) {
-    // If the current promise is not the latest one, we shouldn't resolve the signal This is what
+  private _resolve(nextPromise: Promise<void>) {
+    // If the current promise is not the latest one, we shouldn't resolve the signal. This is what
     // makes promise sets work -- This function will get called every time the promise created in
     // `add` is resolved, but we don't resolve the signal unless the latest version of the chain is
     // passed in.
-    if (this._currentPromise !== current) return;
+    if (this._currentPromise !== nextPromise) return;
 
     // The promise chain is resolved, so we can reset the promise chain.
     this._currentPromise = null;
@@ -54,18 +55,19 @@ export class PromiseSet implements PromiseLike<void> {
   }
 
   /** @internal */
-  private _rejectSignal(error: any) {
+  private _reject(error: any) {
     // Throw out the promise chain since it's been rejected
     this._currentPromise = null;
+
+    // Set the error state of this promise set
+    this._error = error;
 
     // If there isn't a current signal, there's nothing to reject
     if (!this._signal) return;
 
     // Otherwise, reject the signal
     this._signal.reject(error);
-    // We intentionally don't reset the signal here. Any error that occurs in the promise set is
-    // meant to "error" the promise set, meaning that any subsequent calls to `then` or `catch` will
-    // be rejected immediately.
+    this._signal = null;
   }
 
   /**
@@ -90,6 +92,10 @@ export class PromiseSet implements PromiseLike<void> {
     onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
+    // If there is an error, we can just reject immediately
+    if (this._error) {
+      return Promise.reject(this._error).then(onfulfilled, onrejected);
+    }
     // If there isn't any work being done, we can just resolve immediately
     if (!this._currentPromise) {
       return Promise.resolve().then(onfulfilled, onrejected);

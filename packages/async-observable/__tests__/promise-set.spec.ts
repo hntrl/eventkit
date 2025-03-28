@@ -519,5 +519,13 @@ describe("PromiseSet", () => {
       }
       expect(wasResolved).toBe(true);
     });
+    it("should reject when one promise rejects even when all promises have settled", async () => {
+      const promiseSet = new PromiseSet();
+      const originalError = new Error("Original error");
+      promiseSet.add(Promise.reject(originalError));
+      promiseSet.add(Promise.resolve());
+      // Give a chance for all promises to settle
+      await expect(promiseSet).rejects.toThrow(originalError);
+    });
   });
 });
