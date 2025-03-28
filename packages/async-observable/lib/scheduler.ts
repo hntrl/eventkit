@@ -206,13 +206,11 @@ export class Scheduler implements SchedulerLike {
  * scheduler. (i.e. we can independently await three distinct observable's that are observing a
  * parent observable, or we can await the parent observable directly)
  */
-export class PassthroughScheduler extends Scheduler implements SchedulerLike {
+export class PassthroughScheduler implements SchedulerLike {
   constructor(
     protected readonly parent: SchedulerLike,
     protected readonly pinningSubject?: SchedulerSubject
-  ) {
-    super();
-  }
+  ) {}
 
   /**
    * Adds a promise that is "owned" by a subject. This means that the promise will be observed
@@ -229,7 +227,6 @@ export class PassthroughScheduler extends Scheduler implements SchedulerLike {
     }
     // Track the promise in both the parent and the child scheduler
     this.parent.add(subject, promise);
-    super.add(subject, promise);
   }
 
   /**
@@ -246,6 +243,13 @@ export class PassthroughScheduler extends Scheduler implements SchedulerLike {
     // Instead of immediately executing the action, we defer to the parent
     // scheduler to create the execution (hence a pass through scheduler).
     this.parent.schedule(subject, action);
-    super.add(subject, action);
+  }
+
+  promise(subject: SchedulerSubject): Promise<void> {
+    return this.parent.promise(subject);
+  }
+
+  dispose(subject: SchedulerSubject): Promise<void> {
+    return this.parent.dispose(subject);
   }
 }
