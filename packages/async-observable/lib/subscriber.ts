@@ -81,8 +81,6 @@ export class Subscriber<T>
       this,
       new CleanupAction(() => this._cancelSignal.resolve(kCancelSignal))
     );
-    // Add a cleanup action to the observable that will call cancel() on the subscriber.
-    this.scheduler.schedule(this._observable, new CleanupAction(this.cancel.bind(this)));
   }
 
   /** SubscriptionLike */
