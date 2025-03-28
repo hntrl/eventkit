@@ -14,7 +14,7 @@ export function withScheduler<T>(scheduler: SchedulerLike): OperatorFunction<T, 
     const obs = new source.AsyncObservable<T>(async function* () {
       yield* source;
     });
-    obs._scheduler = new DeferredPassthroughScheduler(source._scheduler, scheduler);
+    obs._scheduler = new DeferredPassthroughScheduler(source._scheduler, scheduler, source);
     return obs;
   };
 }
