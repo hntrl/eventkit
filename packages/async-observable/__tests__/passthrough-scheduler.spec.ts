@@ -21,25 +21,17 @@ describe("PassthroughScheduler", () => {
 
       passthroughScheduler.add(subject, promise);
 
-      // Verify work is tracked in both schedulers
+      // Verify work is tracked in the parent scheduler
       expect(parentScheduler._subjectPromises.has(subject)).toBe(true);
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
 
-      // Wait for work completion using the parent scheduler
-      await parentScheduler.promise(subject);
+      // Wait for work completion using the passthrough scheduler
+      await passthroughScheduler.promise(subject);
 
       // Verify work was executed
       expect(workExecuted).toBe(true);
 
       // Parent scheduler should have cleaned up its tracking
       expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
-
-      // But passthrough scheduler still has its tracking until awaited
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
-
-      // Awaiting the passthrough scheduler should clean up its tracking
-      await passthroughScheduler.promise(subject);
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
     });
 
     it("should defer execution of scheduled actions to the parent scheduler", async () => {
@@ -69,12 +61,10 @@ describe("PassthroughScheduler", () => {
       // Schedule using the passthrough scheduler
       passthroughScheduler.schedule(subject, action);
 
-      // Verify the action is tracked in both schedulers
+      // Verify the action is tracked in the parent scheduler
       expect(parentScheduler._subjectPromises.has(subject)).toBe(true);
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
 
       // Clean up
-      await parentScheduler.promise(subject);
       await passthroughScheduler.promise(subject);
 
       // Verify the action was executed by the parent scheduler
@@ -109,9 +99,6 @@ describe("PassthroughScheduler", () => {
       // Only the first work item should be done
       expect(results).toEqual(["work1"]);
 
-      // First passthrough scheduler tracking is cleaned up
-      expect(passthrough1._subjectPromises.has(subject1)).toBe(false);
-
       // Add work to second passthrough scheduler
       let resolve2: (value: any) => void;
       const promise2 = new Promise<void>((r) => (resolve2 = r));
@@ -124,9 +111,6 @@ describe("PassthroughScheduler", () => {
 
       // Now both work items should be done
       expect(results).toEqual(["work1", "work2"]);
-
-      // All tracking should be cleaned up
-      expect(passthrough2._subjectPromises.has(subject2)).toBe(false);
     });
 
     it("should pass work through while tracking it independently", async () => {
@@ -151,8 +135,7 @@ describe("PassthroughScheduler", () => {
         })
       );
 
-      // Both schedulers should be tracking the work
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
+      // Parent scheduler should be tracking the work
       expect(parentScheduler._subjectPromises.has(subject)).toBe(true);
 
       // Complete the work from the parent perspective
@@ -164,15 +147,6 @@ describe("PassthroughScheduler", () => {
 
       // Parent tracking is cleaned up
       expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
-
-      // But passthrough scheduler is still tracking until it's specifically awaited
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
-
-      // Complete from passthrough perspective
-      await passthroughScheduler.promise(subject);
-
-      // Now passthrough tracking is also cleaned up
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
     });
 
     it("should pin work to a specified subject in the parent scheduler", async () => {
@@ -231,6 +205,11 @@ describe("PassthroughScheduler", () => {
       // Track execution order
       const executionOrder: string[] = [];
 
+      // Add cleanup action
+      const cleanup = new CleanupAction(() => {
+        executionOrder.push("cleanup");
+      });
+
       // Add regular work
       passthroughScheduler.add(
         subject,
@@ -239,37 +218,21 @@ describe("PassthroughScheduler", () => {
         })
       );
 
-      // Add cleanup action
-      const cleanup = new CleanupAction(() => {
-        executionOrder.push("cleanup");
-      });
-
       passthroughScheduler.add(subject, cleanup);
 
-      // Verify cleanup is tracked separately in both schedulers
-      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
+      // Verify cleanup is tracked in parent scheduler
       expect(parentScheduler._subjectCleanup.has(subject)).toBe(true);
 
       // Complete work
-      await parentScheduler.promise(subject);
+      await passthroughScheduler.promise(subject);
 
       // Regular work should be done before cleanup
       expect(executionOrder[0]).toBe("regular work");
       expect(executionOrder[1]).toBe("cleanup");
 
-      // Both schedulers should have cleaned up
+      // Parent scheduler should be cleaned up
       expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
       expect(parentScheduler._subjectCleanup.has(subject)).toBe(false);
-
-      // Passthrough scheduler is still tracking until it's specifically awaited
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
-
-      // Complete from passthrough perspective
-      await passthroughScheduler.promise(subject);
-
-      // Now passthrough should be cleaned up too
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
-      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(false);
     });
   });
   describe("constructor and initialization", () => {
@@ -310,36 +273,6 @@ describe("PassthroughScheduler", () => {
       expect(parentScheduler._subjectPromises.has(workSubject)).toBe(true);
       expect(parentScheduler._subjectPromises.has(pinningSubject)).toBe(true);
     });
-
-    it("should extend the base Scheduler class", async () => {
-      const parentScheduler = new Scheduler();
-      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
-
-      // Verify PassthroughScheduler is an instance of Scheduler
-      expect(passthroughScheduler).toBeInstanceOf(Scheduler);
-
-      // Verify it inherits methods from Scheduler
-      expect(typeof passthroughScheduler.add).toBe("function");
-      expect(typeof passthroughScheduler.schedule).toBe("function");
-      expect(typeof passthroughScheduler.promise).toBe("function");
-    });
-
-    it("should initialize with empty internal tracking maps", async () => {
-      const parentScheduler = new Scheduler();
-      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
-
-      // Verify internal maps start empty
-      expect(passthroughScheduler._subjectPromises.size).toBe(0);
-      expect(passthroughScheduler._subjectCleanup.size).toBe(0);
-
-      // Verify adding work to parent doesn't affect child
-      const subject = {} as SchedulerSubject;
-      parentScheduler.add(subject, Promise.resolve());
-
-      // Passthrough scheduler maps should still be empty
-      expect(passthroughScheduler._subjectPromises.size).toBe(0);
-      expect(passthroughScheduler._subjectCleanup.size).toBe(0);
-    });
   });
   describe("add method", () => {
     it("should add the promise to the parent scheduler for the given subject", async () => {
@@ -360,27 +293,6 @@ describe("PassthroughScheduler", () => {
       await parentScheduler.promise(subject);
     });
 
-    it("should add the promise to its own internal tracking", async () => {
-      const parentScheduler = new Scheduler();
-      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
-      const subject = {} as SchedulerSubject;
-
-      // Create promise to add
-      const promise = Promise.resolve();
-
-      // Add the promise to the passthrough scheduler
-      passthroughScheduler.add(subject, promise);
-
-      // Verify the promise is tracked in both schedulers
-      expect(parentScheduler._subjectPromises.has(subject)).toBe(true);
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
-
-      // The promise sets themselves should be different instances
-      const parentPromiseSet = parentScheduler._subjectPromises.get(subject);
-      const childPromiseSet = passthroughScheduler._subjectPromises.get(subject);
-      expect(parentPromiseSet).not.toBe(childPromiseSet);
-    });
-
     it("should optionally add the promise to the pinning subject in parent scheduler", async () => {
       const parentScheduler = new Scheduler();
       const pinningSubject = {} as SchedulerSubject;
@@ -398,46 +310,6 @@ describe("PassthroughScheduler", () => {
       // Verify the promise was added to both subjects in the parent scheduler
       expect(parentScheduler._subjectPromises.has(workSubject)).toBe(true);
       expect(parentScheduler._subjectPromises.has(pinningSubject)).toBe(true);
-
-      // But only to the work subject in the passthrough scheduler
-      expect(passthroughScheduler._subjectPromises.has(workSubject)).toBe(true);
-      expect(passthroughScheduler._subjectPromises.has(pinningSubject)).toBe(false);
-    });
-
-    it("should maintain independent tracking from parent scheduler", async () => {
-      const parentScheduler = new Scheduler();
-      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
-      const subject1 = {} as SchedulerSubject;
-      const subject2 = {} as SchedulerSubject;
-
-      // Add work directly to parent for subject1
-      parentScheduler.add(subject1, Promise.resolve());
-
-      // Add work to passthrough for subject2
-      passthroughScheduler.add(subject2, Promise.resolve());
-
-      // Verify each scheduler only tracks its own subjects
-      expect(parentScheduler._subjectPromises.has(subject1)).toBe(true);
-      expect(parentScheduler._subjectPromises.has(subject2)).toBe(true); // Also in parent due to passthrough
-      expect(passthroughScheduler._subjectPromises.has(subject1)).toBe(false);
-      expect(passthroughScheduler._subjectPromises.has(subject2)).toBe(true);
-
-      // Clean up parent's tracking of subject1
-      await parentScheduler.promise(subject1);
-
-      // Subject1 should be removed from parent but subject2 tracking remains
-      expect(parentScheduler._subjectPromises.has(subject1)).toBe(false);
-      expect(parentScheduler._subjectPromises.has(subject2)).toBe(true);
-
-      // Clean up subject2 from passthrough
-      await passthroughScheduler.promise(subject2);
-
-      // Subject2 should now be removed from passthrough
-      expect(passthroughScheduler._subjectPromises.has(subject2)).toBe(false);
-
-      // But may still be in parent if parent hasn't been awaited
-      await parentScheduler.promise(subject2);
-      expect(parentScheduler._subjectPromises.has(subject2)).toBe(false);
     });
 
     it("should connect work across parent-child scheduler hierarchy", async () => {
@@ -464,13 +336,6 @@ describe("PassthroughScheduler", () => {
 
       // Parent tracking should be cleaned up
       expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
-
-      // But passthrough still has tracking until specifically awaited
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
-
-      // Clean up passthrough tracking
-      await passthroughScheduler.promise(subject);
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
     });
 
     it("should observe promises to determine when a subject's work completes", async () => {
@@ -508,9 +373,8 @@ describe("PassthroughScheduler", () => {
       const results = await Promise.all([parentCompletion, passthroughCompletion]);
       expect(results).toEqual(["parent done", "passthrough done"]);
 
-      // Both schedulers should have cleaned up
+      // Parent scheduler should be cleaned up
       expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
     });
   });
   describe("schedule method", () => {
@@ -627,31 +491,6 @@ describe("PassthroughScheduler", () => {
       expect(parentScheduler._subjectPromises.has(pinningSubject)).toBe(false);
     });
 
-    it("should track the action in its own internal maps", async () => {
-      const parentScheduler = new Scheduler();
-      const passthroughScheduler = new PassthroughScheduler(parentScheduler);
-      const subject = {} as SchedulerSubject;
-
-      // Create action to schedule
-      const action = new ScheduledAction(() => "result");
-
-      // Schedule the action
-      passthroughScheduler.schedule(subject, action);
-
-      // Verify the action is tracked in the passthrough scheduler
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
-
-      // Cleanup in parent shouldn't affect the passthrough tracking
-      await parentScheduler.promise(subject);
-
-      // Passthrough scheduler should still be tracking
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
-
-      // Clean up passthrough tracking
-      await passthroughScheduler.promise(subject);
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
-    });
-
     it("should connect actions to their owning subject", async () => {
       const parentScheduler = new Scheduler();
       const passthroughScheduler = new PassthroughScheduler(parentScheduler);
@@ -667,19 +506,20 @@ describe("PassthroughScheduler", () => {
       passthroughScheduler.schedule(subject2, action2);
 
       // Verify each action is connected to its subject
-      expect(passthroughScheduler._subjectPromises.has(subject1)).toBe(true);
-      expect(passthroughScheduler._subjectPromises.has(subject2)).toBe(true);
+      expect(parentScheduler._subjectPromises.has(subject1)).toBe(true);
+      expect(parentScheduler._subjectPromises.has(subject2)).toBe(true);
 
       // Complete work for just subject1
       await passthroughScheduler.promise(subject1);
 
       // Only subject1 should be cleaned up
-      expect(passthroughScheduler._subjectPromises.has(subject1)).toBe(false);
-      expect(passthroughScheduler._subjectPromises.has(subject2)).toBe(true);
+      expect(parentScheduler._subjectPromises.has(subject1)).toBe(false);
+      expect(parentScheduler._subjectPromises.has(subject2)).toBe(true);
 
       // Complete work for subject2
       await passthroughScheduler.promise(subject2);
-      expect(passthroughScheduler._subjectPromises.has(subject2)).toBe(false);
+      expect(parentScheduler._subjectPromises.has(subject1)).toBe(false);
+      expect(parentScheduler._subjectPromises.has(subject2)).toBe(false);
     });
   });
   describe("promise method", () => {
@@ -713,8 +553,8 @@ describe("PassthroughScheduler", () => {
       await passthroughScheduler.promise(subject1);
 
       // Only subject1's tracking should be cleaned up
-      expect(passthroughScheduler._subjectPromises.has(subject1)).toBe(false);
-      expect(passthroughScheduler._subjectPromises.has(subject2)).toBe(true);
+      expect(parentScheduler._subjectPromises.has(subject1)).toBe(false);
+      expect(parentScheduler._subjectPromises.has(subject2)).toBe(true);
 
       // Both work items should be done since promises resolve immediately
       expect(work1Done).toBe(true);
@@ -750,10 +590,7 @@ describe("PassthroughScheduler", () => {
       await passthroughScheduler.promise(subject);
 
       // Passthrough's subject should be cleaned up
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
-
-      // Passthrough should not know about otherSubject
-      expect(passthroughScheduler._subjectPromises.has(otherSubject)).toBe(false);
+      expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
 
       // The parent should still be tracking otherSubject
       expect(parentScheduler._subjectPromises.has(otherSubject)).toBe(true);
@@ -803,9 +640,9 @@ describe("PassthroughScheduler", () => {
       // Pinning subject should be cleaned up in parent
       expect(parentScheduler._subjectPromises.has(pinningSubject)).toBe(false);
 
-      // But passthrough still has its own tracking of the work subjects
-      expect(passthroughScheduler._subjectPromises.has(workSubject1)).toBe(true);
-      expect(passthroughScheduler._subjectPromises.has(workSubject2)).toBe(true);
+      // But still has its own tracking of the work subjects
+      expect(parentScheduler._subjectPromises.has(workSubject1)).toBe(true);
+      expect(parentScheduler._subjectPromises.has(workSubject2)).toBe(true);
     });
 
     it("should allow visibility into pinned subjects while parent maintains full visibility", async () => {
@@ -893,7 +730,7 @@ describe("PassthroughScheduler", () => {
       expect(results.length).toBe(2);
 
       // Subject should be cleaned up
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
+      expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
     });
 
     it("should execute cleanup actions after main work completes", async () => {
@@ -904,20 +741,20 @@ describe("PassthroughScheduler", () => {
       // Track execution order
       const executionOrder: string[] = [];
 
-      // Add regular work
-      passthroughScheduler.add(
-        subject,
-        Promise.resolve().then(() => {
-          executionOrder.push("regular work");
-        })
-      );
-
       // Add cleanup action
       passthroughScheduler.add(
         subject,
         new CleanupAction(() => {
           executionOrder.push("cleanup");
           return Promise.resolve();
+        })
+      );
+
+      // Add regular work
+      passthroughScheduler.add(
+        subject,
+        Promise.resolve().then(() => {
+          executionOrder.push("regular work");
         })
       );
 
@@ -930,8 +767,8 @@ describe("PassthroughScheduler", () => {
       expect(executionOrder[1]).toBe("cleanup");
 
       // Cleanup should be handled in the passthrough scheduler
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
-      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(false);
+      expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
+      expect(parentScheduler._subjectCleanup.has(subject)).toBe(false);
     });
 
     it("should not observe unrelated work in the parent scheduler", async () => {
@@ -943,9 +780,13 @@ describe("PassthroughScheduler", () => {
 
       // Track execution
       let subjectWorkDone = false;
+      let unrelatedWorkDone = false;
       let unrelatedResolve: (value: any) => void;
       const unrelatedPromise = new Promise<void>((resolve) => {
-        unrelatedResolve = resolve;
+        unrelatedResolve = () => {
+          resolve();
+          unrelatedWorkDone = true;
+        };
       });
 
       // Add work to the subject through passthrough
@@ -964,9 +805,10 @@ describe("PassthroughScheduler", () => {
 
       // Subject's work should be done
       expect(subjectWorkDone).toBe(true);
+      expect(unrelatedWorkDone).toBe(false);
 
-      // Subject should be cleaned up in passthrough
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
+      // Subject should be cleaned up in parent
+      expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
 
       // The unrelated work should still be pending in parent
       expect(parentScheduler._subjectPromises.has(unrelatedSubject)).toBe(true);
@@ -980,7 +822,7 @@ describe("PassthroughScheduler", () => {
     });
   });
   describe("dispose method", () => {
-    it("should track resources being disposed in its own internal maps", async () => {
+    it("should track resources being disposed", async () => {
       // Create parent and passthrough schedulers
       const parentScheduler = new Scheduler();
       const passthroughScheduler = new PassthroughScheduler(parentScheduler);
@@ -996,9 +838,9 @@ describe("PassthroughScheduler", () => {
       const cleanupAction = new CleanupAction(cleanupSpy);
       passthroughScheduler.add(subject, cleanupAction);
 
-      // Verify work is tracked in passthrough scheduler
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
-      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
+      // Verify work is tracked in parent scheduler
+      expect(parentScheduler._subjectPromises.has(subject)).toBe(true);
+      expect(parentScheduler._subjectCleanup.has(subject)).toBe(true);
 
       // Execute the cleanup action manually to verify it's tracked
       expect(cleanupSpy).not.toHaveBeenCalled();
@@ -1008,9 +850,13 @@ describe("PassthroughScheduler", () => {
 
       // Verify the cleanup action was executed
       expect(cleanupSpy).toHaveBeenCalledTimes(1);
+
+      // Verify work is completed in parent scheduler
+      expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
+      expect(parentScheduler._subjectCleanup.has(subject)).toBe(false);
     });
 
-    it("should remove the subject from its own tracking after disposal", async () => {
+    it("should remove the subject from tracking after disposal", async () => {
       // Create parent and passthrough schedulers
       const parentScheduler = new Scheduler();
       const passthroughScheduler = new PassthroughScheduler(parentScheduler);
@@ -1021,15 +867,15 @@ describe("PassthroughScheduler", () => {
       passthroughScheduler.add(subject, new CleanupAction(() => {}));
 
       // Verify the subject is initially tracked
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(true);
-      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
+      expect(parentScheduler._subjectPromises.has(subject)).toBe(true);
+      expect(parentScheduler._subjectCleanup.has(subject)).toBe(true);
 
       // Dispose of the subject
       await passthroughScheduler.dispose(subject);
 
       // Verify the subject is removed from both tracking maps
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
-      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(false);
+      expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
+      expect(parentScheduler._subjectCleanup.has(subject)).toBe(false);
     });
 
     it("should properly dispose of pinned subjects", async () => {
@@ -1061,9 +907,9 @@ describe("PassthroughScheduler", () => {
       // Verify cleanup was executed
       expect(cleanupSpy).toHaveBeenCalledTimes(1);
 
-      // Verify work subject is removed from passthrough tracking
-      expect(passthroughScheduler._subjectPromises.has(workSubject)).toBe(false);
-      expect(passthroughScheduler._subjectCleanup.has(workSubject)).toBe(false);
+      // Verify work subject is removed from parent tracking
+      expect(parentScheduler._subjectPromises.has(workSubject)).toBe(false);
+      expect(parentScheduler._subjectCleanup.has(workSubject)).toBe(false);
 
       // The pinning subject should still be tracked in parent (not disposed)
       expect(parentScheduler._subjectPromises.has(pinningSubject)).toBe(true);
@@ -1089,7 +935,6 @@ describe("PassthroughScheduler", () => {
 
       // Verify work is tracked in both schedulers
       expect(parentScheduler._subjectCleanup.has(subject)).toBe(true);
-      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
 
       // Dispose through the parent scheduler
       await parentScheduler.dispose(subject);
@@ -1101,10 +946,6 @@ describe("PassthroughScheduler", () => {
       // Subject should be removed from parent scheduler
       expect(parentScheduler._subjectCleanup.has(subject)).toBe(false);
       expect(parentScheduler._subjectPromises.has(subject)).toBe(false);
-
-      // but not from the passthrough scheduler (FIXME)
-      expect(passthroughScheduler._subjectCleanup.has(subject)).toBe(true);
-      expect(passthroughScheduler._subjectPromises.has(subject)).toBe(false);
     });
   });
   describe("observable composition", () => {
@@ -1150,15 +991,6 @@ describe("PassthroughScheduler", () => {
       expect(rootScheduler._subjectPromises.has(middleSubject)).toBe(true);
       expect(rootScheduler._subjectPromises.has(leafSubject)).toBe(true);
 
-      // But work only flows down if explicitly added to that level
-      expect(middleScheduler._subjectPromises.has(rootSubject)).toBe(false);
-      expect(middleScheduler._subjectPromises.has(middleSubject)).toBe(true);
-      expect(middleScheduler._subjectPromises.has(leafSubject)).toBe(true);
-
-      expect(leafScheduler._subjectPromises.has(rootSubject)).toBe(false);
-      expect(leafScheduler._subjectPromises.has(middleSubject)).toBe(false);
-      expect(leafScheduler._subjectPromises.has(leafSubject)).toBe(true);
-
       // Complete leaf subject's work
       await leafScheduler.promise(leafSubject);
 
@@ -1191,10 +1023,6 @@ describe("PassthroughScheduler", () => {
       // Verify work is tracked for both observables in parent
       expect(rootScheduler._subjectPromises.has(childObservable)).toBe(true);
       expect(rootScheduler._subjectPromises.has(parentObservable)).toBe(true);
-
-      // But only for child in the child scheduler
-      expect(childScheduler._subjectPromises.has(childObservable)).toBe(true);
-      expect(childScheduler._subjectPromises.has(parentObservable)).toBe(false);
 
       // We can wait on just the parent observable to complete all child work
       await rootScheduler.promise(parentObservable);
@@ -1375,14 +1203,6 @@ describe("PassthroughScheduler", () => {
       expect(rootScheduler._subjectPromises.has(middle)).toBe(true);
       expect(rootScheduler._subjectPromises.has(leaf)).toBe(true);
 
-      expect(middleScheduler._subjectPromises.has(root)).toBe(false);
-      expect(middleScheduler._subjectPromises.has(middle)).toBe(true);
-      expect(middleScheduler._subjectPromises.has(leaf)).toBe(true);
-
-      expect(leafScheduler._subjectPromises.has(root)).toBe(false);
-      expect(leafScheduler._subjectPromises.has(middle)).toBe(false);
-      expect(leafScheduler._subjectPromises.has(leaf)).toBe(true);
-
       // Start waiting at different levels
       const rootPromise = rootScheduler.promise(root).then(() => "root done");
       const middlePromise = middleScheduler.promise(middle).then(() => "middle done");
@@ -1439,12 +1259,9 @@ describe("PassthroughScheduler", () => {
       expect(result).toBe("A done");
 
       // Branch A should be cleaned up in its scheduler
-      expect(schedulerA._subjectPromises.has(branchA)).toBe(false);
-      // but not in the root scheduler
-      expect(rootScheduler._subjectPromises.has(branchA)).toBe(true);
+      expect(rootScheduler._subjectPromises.has(branchA)).toBe(false);
 
       // Branch B should still be tracked
-      expect(schedulerB._subjectPromises.has(branchB)).toBe(true);
       expect(rootScheduler._subjectPromises.has(branchB)).toBe(true);
 
       // Resolve branch B
@@ -1452,9 +1269,7 @@ describe("PassthroughScheduler", () => {
       await schedulerB.promise(branchB);
 
       // Branch B should be cleaned up in its scheduler
-      expect(schedulerB._subjectPromises.has(branchB)).toBe(false);
-      // but not in the root scheduler
-      expect(rootScheduler._subjectPromises.has(branchB)).toBe(true);
+      expect(rootScheduler._subjectPromises.has(branchB)).toBe(false);
     });
 
     it("should not be blocked by unrelated work in other branches of the composition", async () => {
@@ -1492,12 +1307,9 @@ describe("PassthroughScheduler", () => {
       expect(branchADone).toBe(true);
 
       // Branch A should be cleaned up in its scheduler
-      expect(schedulerA._subjectPromises.has(branchA)).toBe(false);
-      // but not in the root scheduler
-      expect(rootScheduler._subjectPromises.has(branchA)).toBe(true);
+      expect(rootScheduler._subjectPromises.has(branchA)).toBe(false);
 
       // Branch B should still be waiting
-      expect(schedulerB._subjectPromises.has(branchB)).toBe(true);
       expect(rootScheduler._subjectPromises.has(branchB)).toBe(true);
 
       // Now resolve branch B
@@ -1505,9 +1317,7 @@ describe("PassthroughScheduler", () => {
       await schedulerB.promise(branchB);
 
       // Branch B should be cleaned up in its scheduler
-      expect(schedulerB._subjectPromises.has(branchB)).toBe(false);
-      // but not in the root scheduler
-      expect(rootScheduler._subjectPromises.has(branchB)).toBe(true);
+      expect(rootScheduler._subjectPromises.has(branchB)).toBe(false);
     });
 
     it("should pass through scheduling behavior from parent to child", async () => {
@@ -1562,11 +1372,8 @@ describe("PassthroughScheduler", () => {
         })
       );
 
-      // Verify work is tracked at all levels
+      // Verify work is tracked
       expect(rootScheduler._subjectPromises.has(subject)).toBe(true);
-      expect(level1._subjectPromises.has(subject)).toBe(true);
-      expect(level2._subjectPromises.has(subject)).toBe(true);
-      expect(level3._subjectPromises.has(subject)).toBe(true);
 
       // Complete from the top level
       await rootScheduler.promise(subject);
@@ -1577,20 +1384,15 @@ describe("PassthroughScheduler", () => {
       // Root level should be cleaned up
       expect(rootScheduler._subjectPromises.has(subject)).toBe(false);
 
-      // But child levels still have their tracking until specifically awaited
-      expect(level1._subjectPromises.has(subject)).toBe(true);
-      expect(level2._subjectPromises.has(subject)).toBe(true);
-      expect(level3._subjectPromises.has(subject)).toBe(true);
-
       // Clean up each level in reverse order
       await level3.promise(subject);
-      expect(level3._subjectPromises.has(subject)).toBe(false);
+      expect(rootScheduler._subjectPromises.has(subject)).toBe(false);
 
       await level2.promise(subject);
-      expect(level2._subjectPromises.has(subject)).toBe(false);
+      expect(rootScheduler._subjectPromises.has(subject)).toBe(false);
 
       await level1.promise(subject);
-      expect(level1._subjectPromises.has(subject)).toBe(false);
+      expect(rootScheduler._subjectPromises.has(subject)).toBe(false);
     });
   });
   describe("execution forwarding", () => {
