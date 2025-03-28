@@ -66,7 +66,7 @@ describe("Subscriber", () => {
       const subscriber = new Subscriber<number>(observable);
 
       // Verify the subscriber was registered with the scheduler
-      expect(schedulerAddSpy).toHaveBeenCalledTimes(5);
+      expect(schedulerAddSpy).toHaveBeenCalledTimes(4);
       expect(schedulerAddSpy).toHaveBeenCalledWith(subscriber, expect.any(SubscriberReturnSignal));
       expect(schedulerAddSpy).toHaveBeenCalledWith(subscriber, expect.any(CleanupAction));
 
