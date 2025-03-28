@@ -38,9 +38,6 @@ export class DeferredPassthroughScheduler extends PassthroughScheduler implement
    * @param action - The action to be scheduled.
    */
   schedule(subject: SchedulerSubject, action: ScheduledAction<any>) {
-    if (this.pinningSubject) {
-      this.parent.add(this.pinningSubject, action);
-    }
     // we defer to the deferred scheduler to create the execution.
     this.deferred.schedule(subject, action);
     super.add(subject, action);
