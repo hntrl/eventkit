@@ -1,6 +1,5 @@
 import {
   CleanupAction,
-  ConsumerPromise,
   PromiseSet,
   type ScheduledAction,
   Scheduler,
@@ -25,10 +24,7 @@ export class StreamScheduler extends Scheduler implements SchedulerLike {
   }
 
   add(subject: SchedulerSubject, promise: PromiseLike<void>): void {
-    if (promise instanceof ConsumerPromise) {
-      // tracking the consumer promise will cause an infinite block
-      // since as apart of disposing it, we're waiting for it to resolve
-    } else if (promise instanceof SubscriberReturnSignal) {
+    if (promise instanceof SubscriberReturnSignal) {
       return super.add(subject, new CleanupAction(() => promise));
     } else {
       return super.add(subject, promise);
