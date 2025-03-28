@@ -42,6 +42,18 @@ export class StreamScheduler extends Scheduler implements SchedulerLike {
   }
 
   async promise(subject: SchedulerSubject): Promise<void> {
+    // FIXME: this is a hack that has the same effect as a kids spiderman bandaid on a bullet wound
+    // to the chest. The endemic problem with the stream/scheduler pattern is that we intentionally
+    // dont track the status of the consumer of the generator, so if we call `drain` immediately
+    // after we `push` a value, the work of "yielding" the value through an observable chain (that
+    // will subsequently schedule more work, which normally is handled since we're awaiting the
+    // ending generator to finish) gets added to the microtask queue **after** we await the work in
+    // `drain`. This means that when we init the drain promise in the call stack, the scheduler
+    // doesn't have any work, so it resolves as normal!
+    // This is a hack that places a "resolve microtask" at the end of the queue, which hopefully
+    // means that all the immediate values will be yielded through the chain before continuing this
+    // function. My faith in this fix is not high, so if there's any trouble with draining stream
+    // subjects this might be a good place to start looking.
     await new Promise((resolve) => setTimeout(resolve, 0));
     const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
     await promises;
