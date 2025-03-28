@@ -91,6 +91,8 @@ export class Scheduler implements SchedulerLike {
   /** @internal */
   _subjectPromises: Map<SchedulerSubject, PromiseSet> = new Map();
   /** @internal */
+  _subjectConsumers: Map<SchedulerSubject, Set<ConsumerPromise<any>>> = new Map();
+  /** @internal */
   _subjectCleanup: Map<SchedulerSubject, Set<CleanupAction>> = new Map();
 
   /**
@@ -114,6 +116,12 @@ export class Scheduler implements SchedulerLike {
       // work, but instead work that should be executed after all remaining subject
       // work has completed
       this._addCleanup(subject, promise);
+    } else if (promise instanceof ConsumerPromise) {
+      // Consumers are also tracked differently since they represent the reader of the
+      // observable, which if we involve in promise tracking would cause a circular
+      // promise chain in `dispose` since as apart of exiting the generator we're awaiting
+      // `dispose` to complete.
+      this._addConsumer(subject, promise);
     } else {
       this._add(subject, promise);
     }
@@ -139,8 +147,9 @@ export class Scheduler implements SchedulerLike {
    */
   async promise(subject: SchedulerSubject): Promise<void> {
     const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
+    const consumers = this._subjectConsumers.get(subject) ?? new Set();
     try {
-      await promises;
+      await Promise.all([...consumers, promises]);
     } finally {
       await this.dispose(subject);
     }
@@ -163,12 +172,7 @@ export class Scheduler implements SchedulerLike {
    * @returns A promise that resolves when the subject has been fully disposed
    */
   async dispose(subject: SchedulerSubject): Promise<void> {
-    let promises = this._subjectPromises.get(subject) ?? new PromiseSet();
-    // We want to intentionally ignore consumer promises here since `dispose` gets awaited in the
-    // generator methods. The consumer promise is often times the reader of the generator itself, so
-    // if we're waiting for dispose we'll be waiting for the last value to be yielded which in turn
-    // is waiting for dispose to finish, which causes a circular promise.
-    promises = promises.filter((promise) => !(promise instanceof ConsumerPromise));
+    const promises = this._subjectPromises.get(subject) ?? new PromiseSet();
     const cleanup = this._subjectCleanup.get(subject) ?? new Set();
     for (const action of cleanup) {
       action.execute();
@@ -191,6 +195,13 @@ export class Scheduler implements SchedulerLike {
     const existing = this._subjectCleanup.get(subject) ?? new Set();
     existing.add(cleanup);
     this._subjectCleanup.set(subject, existing);
+  }
+
+  /** @internal */
+  private _addConsumer(subject: SchedulerSubject, consumer: ConsumerPromise<any>) {
+    const existing = this._subjectConsumers.get(subject) ?? new Set();
+    existing.add(consumer);
+    this._subjectConsumers.set(subject, existing);
   }
 }
 

@@ -15,8 +15,6 @@ import { Signal } from "./signal";
  */
 export class PromiseSet implements PromiseLike<void> {
   /** @internal */
-  _promises: Set<PromiseLike<any>> = new Set();
-  /** @internal */
   _currentPromise: Promise<void> | null = null;
   /** @internal */
   _signal: Signal | null = null;
@@ -27,8 +25,7 @@ export class PromiseSet implements PromiseLike<void> {
    * Adds a promise that will be tracked by the PromiseSet.
    */
   add(promise: PromiseLike<any>) {
-    this._promises.add(promise);
-    const nextPromise = Promise.all(this._promises).then(() => Promise.resolve());
+    const nextPromise = Promise.all([this._currentPromise, promise]).then(() => Promise.resolve());
     this._currentPromise = nextPromise;
     nextPromise.then(
       () => this._resolve(nextPromise),
@@ -68,18 +65,6 @@ export class PromiseSet implements PromiseLike<void> {
     // Otherwise, reject the signal
     this._signal.reject(error);
     this._signal = null;
-  }
-
-  /**
-   * Returns a new PromiseSet that only contains promises that pass the filter function.
-   */
-  filter(predicate: (promise: PromiseLike<any>) => boolean) {
-    const newSet = new PromiseSet();
-    for (const promise of this._promises) {
-      if (!predicate(promise)) continue;
-      newSet.add(promise);
-    }
-    return newSet;
   }
 
   /**
