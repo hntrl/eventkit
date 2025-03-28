@@ -163,8 +163,8 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
    * @returns A Promise that resolves when all subscribers have been cancelled.
    */
   cancel(): Promise<void> {
-    // Since all subscriber work is expected to also be scheduled against the observable,
-    // we can just dispose the observable and all subscribers will also be disposed.
+    // Subscriber cancellation is handled using CleanupAction's defined in the constructor, so we
+    // can just dispose the observable and all subscribers will also be disposed.
     return this._scheduler.dispose(this);
   }
 

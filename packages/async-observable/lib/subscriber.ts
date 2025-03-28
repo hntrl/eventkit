@@ -74,16 +74,14 @@ export class Subscriber<T>
     this._observable = observable;
     this._returnSignal = new SubscriberReturnSignal();
     this._cancelSignal = new Signal<typeof kCancelSignal>();
-    // Adds the return signal that's representative of the state of the generator.
+    // Add the return signal that's representative of the state of the generator.
     this.scheduler.add(this, this._returnSignal);
     // Add a cleanup action that resolves the cancel signal when the subscriber is disposed of.
     this.scheduler.schedule(
       this,
-      new CleanupAction(() => {
-        this._cancelSignal.resolve(kCancelSignal);
-      })
+      new CleanupAction(() => this._cancelSignal.resolve(kCancelSignal))
     );
-    // Adds a cleanup action to the observable that will call cancel() on the subscriber.
+    // Add a cleanup action to the observable that will call cancel() on the subscriber.
     this.scheduler.schedule(this._observable, new CleanupAction(this.cancel.bind(this)));
   }
 
