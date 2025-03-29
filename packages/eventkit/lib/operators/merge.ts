@@ -81,16 +81,19 @@ export function mergeAll<O extends AsyncObservableInput<any>>(
         });
         // Add the inner subscriber to the set
         innerSubscribers.add(innerSub);
-        // If the inner subscriber errors, set the error
-        innerSub.catch((err) => (error = err));
         // If the inner subscriber completes, remove it from the set
-        innerSub.finally(() => {
-          innerSubscribers.delete(innerSub);
-          // If there are buffered inner observables, subscribe to the next one
-          if (observableBuffer.length > 0) {
-            subscribeToInner(observableBuffer.shift()!);
-          }
-        });
+        innerSub
+          .then(() => {
+            innerSubscribers.delete(innerSub);
+            // If there are buffered inner observables, subscribe to the next one
+            if (observableBuffer.length > 0 && !error) {
+              subscribeToInner(observableBuffer.shift()!);
+            }
+          })
+          .catch((err) => {
+            // If the inner subscriber errors, set the error
+            error = err;
+          });
       }
 
       // Function to check if we should complete
