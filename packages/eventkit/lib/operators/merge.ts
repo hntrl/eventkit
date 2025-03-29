@@ -119,10 +119,10 @@ export function mergeAll<O extends AsyncObservableInput<any>>(
           }
         }
       } finally {
-        sourceSub.cancel();
         for (const sub of innerSubscribers.values()) {
-          sub.cancel();
+          await sub.cancel();
         }
+        await sourceSub.cancel();
       }
     });
 }
