@@ -115,7 +115,7 @@ export function mergeAll<O extends AsyncObservableInput<any>>(
             // Neat little trick to schedule the next iteration of the loop
             // at the end of the call stack, which gives a chance for the inner
             // observables to emit more values.
-            await Promise.resolve();
+            await new Promise((resolve) => setTimeout(resolve, 0));
           }
         }
       } finally {
