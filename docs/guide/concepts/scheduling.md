@@ -66,17 +66,18 @@ The implementation of Stream achieves this by using this unit of control and alt
 
 ### Every observable can control the execution of its side effects
 
-As described in the [Observable Pattern](/guide/concepts/observable-pattern#push-vs-pull) guide, an observable is a push system that decides when to send data to its consumers. This is an important capability that lets us control the execution of its work (the **how**).
+As described in the [Observable Pattern](/guide/concepts/observable-pattern#push-vs-pull) guide, an observable is a push system that decides when to send data to its consumers. This is an important capability that lets us control the execution of its work (the **how**). In eventkit, we do this by providing a `Scheduler` object to the observable that manages the execution of its side effects.
 
 (See an example of this [here](#queue-scheduler))
 
 ## The `Scheduler` object
 
-The `Scheduler` object is the logical unit that coordinates all work associated with a subject (an AsyncObservable or a Subscriber) and gives us the control mentioned above. Eventkit covers most of the types of scheduling you need to do by offering a range of out-of-the-box schedulers, but the idea is that you can provide your own implementation if needed. The idea of a scheduler is pretty simple:
+The `Scheduler` object is the logical unit that coordinates all work associated with a subject. Eventkit covers most of the types of scheduling you need to do by offering a range of out-of-the-box schedulers, but the idea is that you can provide your own implementation if needed. The idea of a scheduler is pretty simple:
 
 - You can add work to a subject by calling `add()`
 - You can schedule work to be executed for a subject by calling `schedule()`
 - You can ask for the status of the completion of a subject (in the form of a Promise) by calling `promise()`
+- You can dispose of a subject early by calling `dispose()`
 
 When you call:
 
@@ -85,11 +86,25 @@ await subscriber;
 await observable.drain();
 ```
 
-You're effectively calling:
+you're effectively calling:
 
 ```ts
 await scheduler.promise(subscriber);
 await scheduler.promise(observable);
+```
+
+And when you call:
+
+```ts
+await subscriber.cancel();
+await observable.cancel();
+```
+
+you're effectively calling:
+
+```ts
+await scheduler.dispose(subscriber);
+await scheduler.dispose(observable);
 ```
 
 There's a couple of important things to note here about how schedulers work:
