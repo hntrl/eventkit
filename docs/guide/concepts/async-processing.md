@@ -39,7 +39,9 @@ Work is representative of anything that needs to be done in the future as a resu
 - Work that happens when an observable has finished (cleanup work)
 - Work that happens as a result of an error being thrown (error handling)
 
-The way that this gets tracked is through the implementation of a [Scheduler](#scheduler). One of the implementation details of the default scheduler is that when we add any work to a subscriber (the object returned by `.subscribe()`), we're adding the work to both the subscriber and the observable it comes from. This means that when we're waiting for an observable to finish, we're also implicitly waiting for all the work associated with the subscriber to finish.
+The way that this gets tracked is through the implementation of a [Scheduler](#scheduler). Each observable/subscriber has a scheduler that is responsible for tracking the work associated with it. By default, all eventkit objects use a default scheduler that handles the async behavior described in this guide, but you can also provide one of the standard schedulers that ship with eventkit, or implement your own to augment the behavior of the scheduler (More on that in the [Scheduling](/guide/concepts/scheduling) section).
+
+One of the implementation details of the default scheduler is that when we add any work to a subscriber (the object returned by `.subscribe()`), we're adding the work to both the subscriber and the observable it comes from. This means that when we're waiting for an observable to finish, we're also implicitly waiting for all the work associated with the subscriber to finish.
 
 ```ts
 import { AsyncObservable } from "eventkit";
@@ -168,7 +170,7 @@ console.log("done second");
 // done second
 ```
 
-We can await the subscriber multiple times because the subscriber isn't a real JavaScript `Promise` object. Instead it's known as a custom ["Thennable"](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#thenables), which means it has a custom `then` method which will be called every time the subscriber is in an await statement, which is asking the scheduler for the promise that represents the completion of its work.
+We can await the subscriber multiple times because the subscriber isn't a real JavaScript `Promise` object. Instead it's a custom ["Thennable"](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#thenables), which means it has a custom `then` method which will be called every time the subscriber is in an await statement. When you use an await statement, it's asking the scheduler for the promise that represents the completion of its work at **that point in time**, which means that if you await the same subscriber multiple times, you'll get a new promise each time.
 
 Since `await` is just syntactic sugar for `.then()`, you can also wait for a subscriber to finish by calling `.then()` on the subscriber object to register a callback.
 
