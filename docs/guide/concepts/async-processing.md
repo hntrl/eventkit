@@ -259,8 +259,9 @@ await stream.finally(() => console.log("done"));
 
 `finally` will add the callback that's provided to the scheduler and return a promise that resolves whenever that cleanup work has completed (which is at the discretion of the scheduler, but usually happens after all previous work has finished).
 
-::: tip
-Note that using `finally` will implicitly add the cleanup work to the subject, so awaiting the subject will also wait for the cleanup work to finish.
+Note that when you register a `finally` callback against an observable (i.e. `stream.finally()`), that cleanup work will only be executed once you `drain()` or `cancel()` the observable (and when all pending subscribers have completed). This isn't the case for a subscriber's `finally` callback, which will execute whenever the subscriber is disposed of either by the observable's generator finishing or by the subscriber being cancelled.
+
+Also note that using `finally` will implicitly add the cleanup work to the subject, so awaiting the subject will also wait for the cleanup work to finish.
 
 ```ts
 import { AsyncObservable } from "eventkit";
@@ -281,7 +282,7 @@ console.log("after");
 // 🧹 cleaning up
 // after
 ```
-:::
+
 ::: warning
 A common misconception is that `finally` will wait for **all** cleanup work to finish before resolving. This is not the case. `finally` will only wait for the callback provided to finish, which will happen concurrently with the rest of the cleanup work when the subject is disposed of.
 
@@ -313,46 +314,69 @@ console.log("done");
 
 ## Error handling
 
-There's a couple of different ways that errors are handled in eventkit.
+Handling errors in eventkit takes on a bit of a unique shape from how errors are handled in plain JavaScript because of the distributed nature of observables. If you think about how errors are thrown in a function or a promise, we can expect that when an error is thrown, it will only be thrown once and will halt the execution of a function. Because a subscriber uses the values yielded by an observable and schedules its own independent execution, each one of those executions can throw an error independently. In other words, **multiple** errors can happen in the execution of an observable.
 
-### In subscriber callbacks
-
-The default behavior of a subscriber is to immediately throw an error if one occurs in any execution of its callback. For instance:
+Let's take an example of an observable that doesn't error to give a baseline into how work is handled in eventkit.
 
 ```ts
 import { AsyncObservable } from "eventkit";
 
 const myObservable = new AsyncObservable(async function* () {
-  yield* [1, 2, 3];
+  yield* [1, 2];
 });
 
-await myObservable.subscribe((value) => {
+await myObservable.subscribe(async (value) => {
+  await delay(1000);
+  console.log(value);
+});
+```
+
+We can represent the work that occurs in the observable over time like this:
+
+![error-handling](/assets/images/error-handling-baseline-marble-dark.png){.dark-only .reference-image}
+![error-handling](/assets/images/error-handling-baseline-marble-light.png){.light-only .reference-image}
+
+Now let's say that we have some condition where a callback throws an error.
+
+```ts
+await myObservable.subscribe(async (value) => {
+  await delay(1000);
   if (value === 2) {
     throw new Error("oh no");
   }
   console.log(value);
 });
-
-// outputs:
-// 1
-// Error: oh no
 ```
 
-::: warning
-It's worth noting that depending on what scheduler is used, the work may still be executing even after the error has been thrown. For example with the default scheduler, it's behavior is to execute all scheduled work immediately, so that callback might have been called before the error is thrown. (i.e. the callback will be called 3 times regardless if an error is thrown in any callback execution or not). The work isn't implicitly cancelled when an error is encountered, but the promise that comes from awaiting the subscriber will reject immediately.
+We can represent how that error will be propagated through the observable over time like this:
 
-This means that its good practice to await at least **one** of the subjects that are associated with the subscriber (like a parent observable or the subscriber itself), otherwise an unhandled rejection will occur when an error is thrown.
+![error-handling](/assets/images/error-handling-callback-marble-dark.png){.dark-only .reference-image}
+![error-handling](/assets/images/error-handling-callback-marble-light.png){.light-only .reference-image}
 
-(Note this isn't the case for all schedulers. Details on how errors are handled can be found in their respective reference docs.)
-:::
+What this demonstrates is that any time an error occurs (which could be in the generator function or in the callback as demonstrated above), the error will **immediately** be thrown to the promise that called for the work to finish. An important thing to note here is that because the error is thrown in the middle of the work, we've lost the ability to observe the status of the rest of the work (i.e. the completion of `callback(2)` is no longer tracked). This can be especially problematic if multiple errors get thrown in the same execution:
 
-#### Higher-order error handling on callbacks
+```ts
+await myObservable.subscribe(async (value) => {
+  await delay(1000);
+  throw new Error("oh no"); // always throw an error
+});
+```
 
-If we can reasonably expect that callbacks are executed in order (this isn't guaranteed, but we're saying this because values are yielded sequentially and we need to have some way to demonstrate the problem here), then a callback that rejects in the middle of the sequence will leave the resolution of any proceeding work in limbo. Eventkit provides two operators for mitigating this: `dlq()` and `retry()`.
+![error-handling](/assets/images/error-handling-unhandled-callback-marble-dark.png){.dark-only .reference-image}
+![error-handling](/assets/images/error-handling-unhandled-callback-marble-light.png){.light-only .reference-image}
 
-##### `dlq()`
 
-DLQ stands for ["Dead Letter Queue"](https://en.wikipedia.org/wiki/Dead_letter_queue), and is often used in messaging systems to represent a queue of messages that couldn't be delivered. In eventkit, it's used to handle errors that occur in a callback by sending them to a different observable.
+**Why is this?** By default, eventkit objects use this behavior because it's the most intuitive way to handle errors using async/await. If an error occurs somewhere, we want to immediately know about it so that we can handle it appropriately rather than deferring it. While it might seem better to wait for all the work to complete and then collect any errors that occurred, this is problematic because we might either (1) be perpetuating bad application state since we can't take any corrective action against it until after the observable has completed, or (2) might never know about the error at all since observable executions can be indefinite.
+
+As mentioned in the [Observable Pattern](/guide/concepts/observable-pattern) guide, async/await is prime for representing a single value that will be available at some point in the future (either as a resolved value or rejected error). It's how we represent completion in eventkit, but it's also the mechanism by which we raise errors as soon as they occur. Since we've asserted that multiple errors can occur in the execution of an observable, how do we appropriately handle a collection of errors over time?
+
+#### Using the `dlq()` operator
+
+With the observable pattern, we've established a really neat way to represent values over time. And since we can represent errors as values, we can use the same pattern to represent errors over time.
+
+DLQ stands for ["Dead Letter Queue"](https://en.wikipedia.org/wiki/Dead_letter_queue), and is often used in messaging systems to represent a queue of messages that couldn't be delivered. In eventkit, it's used to handle errors that occur in subscriber callbacks by sending them to a different observable.
+
+The `dlq()` operator takes an observable and returns a new observable that emits the errors that occur in the original observable's subscriber callbacks.
 
 ```ts
 import { AsyncObservable, dlq } from "eventkit";
@@ -383,9 +407,13 @@ await myObservable.drain();
 // 3
 ```
 
-##### `retry()`
+::: warning
+Note that the `dlq()` operator will **only** catch errors that occur in subscriber callbacks. If an error occurs during cleanup or in the generator function, the error will propagate in the same way as mentioned above. Because of this, it's important to recommended that you use `try/catch` in the generator or cleanup work to handle errors that occur in those areas.
+:::
 
-The retry operator offers a standard way to handle errors in a callback by retrying the callback a certain number of times before eventually re-throwing the error.
+#### Using the `retry()` operator
+
+Often times we want to handle callbacks in such a way that we can allow errors to occur, but still propagate them if they continue to occur. This is especially helpful in areas where errors are expected to occur (think network requests, database transactions, dom updates, etc.). The `retry()` operator is a standard way to handle this by retrying the callback using the specified strategy a certain number of times before eventually re-throwing the error.
 
 ```ts
 import { AsyncObservable, retry } from "eventkit";
@@ -394,13 +422,16 @@ const myObservable = new AsyncObservable(async function* () {
   yield* [1, 2, 3];
 });
 
-await myObservable.pipe(retry({ limit: 3 })).subscribe((value) => {
-  if (Math.random() <= 0.5) {
-    console.log("whoops", value);
-    throw new Error(`oh no ${value}`);
+await myObservable
+  .pipe(retry({ limit: 3 }))
+  .subscribe((value) => {
+    if (Math.random() <= 0.5) {
+      console.log("whoops", value);
+      throw new Error(`oh no ${value}`);
+    }
+    console.log(value);
   }
-  console.log(value);
-});
+);
 
 // example output:
 // 1
@@ -413,33 +444,69 @@ await myObservable.pipe(retry({ limit: 3 })).subscribe((value) => {
 // Error: oh no 3
 ```
 
-### In the generator function
+#### Using `try/catch`
 
-If an error occurs in the generator function:
+You can use the native `try/catch` block in areas where you want to handle errors.
+
+```ts
+import { AsyncObservable } from "eventkit";
+
+// in the generator function
+const myObservable = new AsyncObservable(async function* () {
+  try {
+    yield await fetch("...");
+  } catch (err) {
+    console.log("error in generator function:", err);
+    return;
+  }
+});
+
+// in the subscriber callback
+const sub = myObservable.subscribe(async (value) => {
+  try {
+    await doSomethingWithValue(value);
+  } catch (err) {
+    console.log("error in subscriber callback:", err);
+  }
+});
+
+// in the cleanup work
+sub.finally(async () => {
+  try {
+    await doSomeCleanup();
+  } catch (err) {
+    console.log("error in cleanup:", err);
+  }
+});
+
+await sub; // no errors will be thrown here
+```
+
+Since the execution of an observable's generator is stable (it outputs values/errors exactly in the order they're yielded and can be observed in its own definition), we intentionally don't use the same error semantics as we do for subscriber callbacks as mentioned above. What this means is that errors thrown in the generator function will always be thrown immediately and will always cause any subsequent work to be left hanging, regardless if you impose a `dlq` or `retry` operator on the observable. Because of this, it's important to use `try/catch` in the generator function to handle errors if you want to avoid work being left hanging.
 
 ```ts
 import { AsyncObservable } from "eventkit";
 
 const myObservable = new AsyncObservable(async function* () {
-  yield 1;
-  throw new Error("oh no");
-  yield 3;
+  try {
+    yield await fetch("...");
+  } catch (err) {
+    console.log("error in generator function:", err);
+    return;
+  }
 });
 
-await myObservable.subscribe(console.log);
+await myObservable.subscribe((value) => console.log("value:", value));
 
-// outputs:
-// 1
-// Error: oh no
+// output:
+// error in generator function: Error: oh no
 ```
 
-We can expect that `console.log(3)` will never be called because the error will be thrown before the value is yielded, so that callback will never be scheduled.
+### How errors propagate
 
-::: tip
 When calling `AsyncObservable.drain()` or awaiting a Subscriber, the promise that gets returned is representative of the current work thats being executed. Subsequently awaiting any promises after an error gets thrown won't yield the error rejection since the work that was rejected has already been discarded.
 
 ::: code-group
-
 ```ts [AsyncObservable]
 import { AsyncObservable } from "eventkit";
 
@@ -456,7 +523,6 @@ await myObservable.drain();
 // undefined
 await myObservable.drain();
 ```
-
 ```ts [Subscriber]
 import { AsyncObservable } from "eventkit";
 
@@ -473,21 +539,15 @@ await sub;
 // undefined
 await sub;
 ```
-
 :::
 
-::: warning
-Note that we can't apply any of the error handling operators to the generator function because an error thrown there is an implicit cancellation of the generator (and subsequently the observable). If you want to better handle errors in the generator function, you'll have to use your own error handling logic.
-:::
-
-### When cleaning up
+#### During cleanup
 
 If we define cleanup work either by adding a `finally` callback or using a `try/finally` block in the generator, any errors that occur in the cleanup work will be thrown to the promise that called for the cleanup work.
 
 For instance, if we're waiting for the natural completion of a subscriber and we have cleanup work that throws an error, that error will be thrown to the promise that's awaiting the subscriber.
 
 ::: code-group
-
 ```ts [try/finally]
 import { AsyncObservable } from "eventkit";
 
@@ -504,7 +564,6 @@ const sub = myObservable.subscribe(console.log);
 // Error: oh no
 await sub;
 ```
-
 ```ts [finally()]
 import { AsyncObservable } from "eventkit";
 
@@ -518,13 +577,11 @@ sub.finally(() => throw new Error("oh no"));
 // Error: oh no
 await sub;
 ```
-
 :::
 
 Or if we do an early cancel of a subscriber, any errors that occur in the cleanup work will be thrown to the promise returned by `cancel()`.
 
 ::: code-group
-
 ```ts [try/finally]
 import { AsyncObservable } from "eventkit";
 
@@ -542,7 +599,6 @@ const sub = myObservable.subscribe(console.log);
 // Error: oh no
 await sub.cancel();
 ```
-
 ```ts [finally()]
 import { AsyncObservable } from "eventkit";
 
@@ -557,5 +613,4 @@ sub.finally(() => throw new Error("oh no"));
 // Error: oh no
 await sub.cancel();
 ```
-
 :::
