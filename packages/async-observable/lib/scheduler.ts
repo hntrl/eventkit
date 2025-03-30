@@ -30,7 +30,7 @@ export class ScheduledAction<T> implements PromiseLike<T> {
    * @template T The type of the value that will be returned by the callback.
    * @param callback The function that will be called when the action is executed.
    */
-  constructor(private readonly callback: () => PromiseOrValue<T>) {}
+  constructor(readonly callback: () => PromiseOrValue<T>) {}
 
   /**
    * Executes the action. This will call the callback and resolve or reject the action's promise
