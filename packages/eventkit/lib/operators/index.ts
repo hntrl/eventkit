@@ -7,6 +7,7 @@ export * from "./filter";
 export * from "./map";
 export * from "./merge";
 export * from "./partition";
+export * from "./pipe";
 export * from "./reduce";
 export * from "./retry";
 export * from "./takeUntil";
