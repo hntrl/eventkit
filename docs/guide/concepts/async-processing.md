@@ -385,9 +385,9 @@ const myObservable = new AsyncObservable(async function* () {
   yield* [1, 2, 3];
 });
 
-const [handledObservable, dlq] = myObservable.pipe(dlq());
+const [handledObservable, errors] = myObservable.pipe(dlq());
 
-dlq.subscribe(async (error) => {
+errors.subscribe(async (error) => {
   console.log("sending error to logging service:", error);
   await logError(error);
 });
