@@ -29,10 +29,13 @@ export class DLQScheduler extends PassthroughScheduler implements SchedulerLike 
       super.schedule(
         subject,
         new CallbackAction(async () => {
+          action._hasExecuted = true;
           try {
-            await action.execute();
+            const result = await action.callback();
+            action.signal.resolve(result);
           } catch (err) {
             this.onError(err);
+            action.signal.resolve(undefined);
           }
         })
       );
