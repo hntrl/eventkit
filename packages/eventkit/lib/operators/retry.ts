@@ -54,20 +54,24 @@ export class RetryScheduler extends PassthroughScheduler implements SchedulerLik
           let currentDelay = this.delay;
           action._hasExecuted = true;
 
-          while (retryCount < this.limit) {
+          while (retryCount <= this.limit) {
             try {
               const result = await action.callback();
               action.signal.resolve(result);
+              break;
             } catch (err) {
-              retryCount++;
-              if (retryCount >= this.limit) {
-                // All retries exhausted, let the error propagate
+              // All retries exhausted, let the error propagate
+              if (retryCount === this.limit) {
+                // Avoids unhandled promise rejection for the signal, since the error is re-thrown
+                // here it shouldn't be an issue
+                action.signal.then(null, () => {});
                 action.signal.reject(err);
                 throw err;
               }
+              retryCount++;
               if (this.delay > 0) {
-              await new Promise((resolve) => setTimeout(resolve, currentDelay));
-              // Calculate the next delay based on the backoff strategy
+                await new Promise((resolve) => setTimeout(resolve, currentDelay));
+                // Calculate the next delay based on the backoff strategy
                 if (this.backoff === "linear") currentDelay += this.delay;
                 else if (this.backoff === "exponential") currentDelay *= 2;
                 else if (this.backoff === "constant") currentDelay = this.delay;
