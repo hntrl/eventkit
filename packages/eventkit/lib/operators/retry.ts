@@ -65,18 +65,12 @@ export class RetryScheduler extends PassthroughScheduler implements SchedulerLik
                 action.signal.reject(err);
                 throw err;
               }
+              if (this.delay > 0) {
               await new Promise((resolve) => setTimeout(resolve, currentDelay));
               // Calculate the next delay based on the backoff strategy
-              switch (this.backoff) {
-                case "linear":
-                  currentDelay += this.delay;
-                  continue;
-                case "exponential":
-                  currentDelay *= 2;
-                  continue;
-                case "constant":
-                  // Do nothing, constant delay is already applied
-                  continue;
+                if (this.backoff === "linear") currentDelay += this.delay;
+                else if (this.backoff === "exponential") currentDelay *= 2;
+                else if (this.backoff === "constant") currentDelay = this.delay;
               }
             }
           }
