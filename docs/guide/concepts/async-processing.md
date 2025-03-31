@@ -407,6 +407,9 @@ await myObservable.drain();
 // 3
 ```
 
+![error-handling](/assets/images/error-handling-dlq-marble-dark.png){.dark-only .reference-image}
+![error-handling](/assets/images/error-handling-dlq-marble-light.png){.light-only .reference-image}
+
 ::: warning
 Note that the `dlq()` operator will **only** catch errors that occur in subscriber callbacks. If an error occurs during cleanup or in the generator function, the error will propagate in the same way as mentioned above. Because of this, it's important to recommended that you use `try/catch` in the generator or cleanup work to handle errors that occur in those areas.
 :::
