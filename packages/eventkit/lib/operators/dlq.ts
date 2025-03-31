@@ -64,7 +64,7 @@ export function dlq<T>(): UnaryFunction<
   return (source) => {
     const errors$ = new Stream<any>({ scheduler: source._scheduler });
     // Scheduler that catches errors and buffers them
-    const scheduler = new DLQScheduler(errors$.push, source._scheduler, source);
+    const scheduler = new DLQScheduler((err) => errors$.push(err), source._scheduler, source);
     // Observable that uses the scheduler
     const handled$ = source.pipe(withOwnScheduler(scheduler));
     // Return the original observable and the errors observable
