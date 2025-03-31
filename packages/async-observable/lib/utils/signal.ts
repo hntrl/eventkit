@@ -32,10 +32,16 @@ export class Signal<T = void> implements PromiseLike<T> {
   }
 
   /** Resolves the underlying promise with the given value. */
-  resolve(_: T | PromiseLike<T>) {}
+  resolve(value: T | PromiseLike<T>) {
+    this._status = "resolved";
+    this._promise = Promise.resolve(value);
+  }
 
   /** Rejects the underlying promise with the given reason. */
-  reject(_?: any) {}
+  reject(reason?: any) {
+    this._status = "rejected";
+    this._promise = Promise.reject(reason);
+  }
 
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
