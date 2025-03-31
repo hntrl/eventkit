@@ -7,6 +7,7 @@ import {
 } from "@eventkit/async-observable";
 
 import { type QueueSchedulerInit } from "../schedulers";
+import { InvalidConcurrencyLimitError } from "../utils/errors";
 
 /**
  * A scheduler that maintains separate queues for each subject with a concurrency limit applied
@@ -41,7 +42,7 @@ export class SubjectQueueScheduler extends Scheduler implements SchedulerLike {
 
     this.concurrency = init.concurrency ?? 1;
     if (this.concurrency < 1) {
-      throw new Error("Concurrency must be at least 1");
+      throw new InvalidConcurrencyLimitError();
     }
   }
 

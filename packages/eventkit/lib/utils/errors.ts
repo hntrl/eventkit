@@ -13,3 +13,11 @@ export class ArgumentOutOfRangeError extends Error {
     this.name = "ArgumentOutOfRangeError";
   }
 }
+
+export class InvalidConcurrencyLimitError extends Error {
+  /** @internal */
+  constructor() {
+    super("invalid concurrency limit");
+    this.name = "InvalidConcurrencyLimitError";
+  }
+}

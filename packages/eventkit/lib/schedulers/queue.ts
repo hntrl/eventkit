@@ -6,6 +6,8 @@ import {
   CleanupAction,
 } from "@eventkit/async-observable";
 
+import { InvalidConcurrencyLimitError } from "../utils/errors";
+
 /**
  * Configuration options for initializing queue schedulers.
  */
@@ -50,7 +52,7 @@ export class QueueScheduler extends Scheduler implements SchedulerLike {
 
     this.concurrency = init.concurrency ?? 1;
     if (this.concurrency < 1) {
-      throw new Error("Concurrency must be at least 1");
+      throw new InvalidConcurrencyLimitError();
     }
   }
 
