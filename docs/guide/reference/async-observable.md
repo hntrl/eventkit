@@ -1,3 +1,0 @@
-# `AsyncObservable`
-
-Under construction 🚧

@@ -1,4 +1,4 @@
-import { DefaultTheme, defineConfig } from "vitepress";
+import { type DefaultTheme, defineConfig } from "vitepress";
 
 import eventkitPkg from "../../packages/eventkit/package.json";
 
@@ -20,9 +20,7 @@ export default defineConfig({
       provider: "local",
     },
     nav: nav(),
-    sidebar: {
-      "/guide/": { base: "/guide/", items: sidebar() },
-    },
+    sidebar: sidebar(),
 
     footer: {
       message:
@@ -38,8 +36,8 @@ function nav(): DefaultTheme.NavItem[] {
   return [
     {
       text: "Docs",
-      link: "/guide/what-is-eventkit",
-      activeMatch: "/guide/",
+      link: "/what-is-eventkit",
+      activeMatch: "/",
     },
     {
       text: eventkitPkg.version,

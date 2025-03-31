@@ -51,7 +51,7 @@ The observable pattern is a push system. An observable is a producer of any numb
 
 ## Using AsyncObservable
 
-AsyncObservable is eventkit's implementation of the observable pattern. The implementation is slightly different than the Observable primitive that is familiar to the JavaScript ecosystem, so it's named this way to avoid confusion (more on this in the [Motivations](/guide/motivations) section).
+AsyncObservable is eventkit's implementation of the observable pattern. The implementation is slightly different than the Observable primitive that is familiar to the JavaScript ecosystem, so it's named this way to avoid confusion (more on this in the [Motivations](/motivations) section).
 
 Eventkit relies on the [async iterator/generator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator) pattern as the mechanism to yield values to its subscribers. This means that the producer of the observable is an async generator function in itself.
 
@@ -83,7 +83,7 @@ output 2
 output 3
 ```
 
-It's worth noting that as a result of yielding values, the observable is not sequentially waiting for each value to be logged via the subscriber's callback before continuing (hence the name AsyncObservable). Instead, the execution of the subscriber's callback with the value that's yielded is added to a [Scheduler](/guide/concepts/async-processing#scheduler) which controls the execution behavior of the observable.
+It's worth noting that as a result of yielding values, the observable is not sequentially waiting for each value to be logged via the subscriber's callback before continuing (hence the name AsyncObservable). Instead, the execution of the subscriber's callback with the value that's yielded is added to a [Scheduler](/concepts/async-processing#scheduler) which controls the execution behavior of the observable.
 
 For instance, given the following example:
 
@@ -129,7 +129,7 @@ A couple of things to note here:
 
 We can better control this execution in the following ways:
 
-1. Providing a different Scheduler to the AsyncObservable to control the behavior of the callbacks (an example of this in [Scheduling](/guide/concepts/scheduling#queue-scheduler))
+1. Providing a different Scheduler to the AsyncObservable to control the behavior of the callbacks (an example of this in [Scheduling](/concepts/scheduling#queue-scheduler))
 2. Awaiting the subscriber, which will resolve when all the values in the observable have been yielded and all callbacks have finished executing
 3. Awaiting the `drain()` method of the AsyncObservable, which will resolve when all current subscribers have finished executing
 
@@ -195,7 +195,7 @@ This is a shorthand that subscribes to the observable and iterates over the valu
 2. All values emitted by the observable will be handled sequentially, negating a large benefit of AsyncObservable.
 3. This can potentially block the observable from ever resolving if the for await loop isn't managed properly.
 
-The only notable exception to this is when you're subscribing to an observable inside of an observable (i.e. [operators](/guide/concepts/transforming-data#creating-custom-operators)) since the execution of an observable is inherently tracked as apart of its life cycle.
+The only notable exception to this is when you're subscribing to an observable inside of an observable (i.e. [operators](/concepts/transforming-data#creating-custom-operators)) since the execution of an observable is inherently tracked as apart of its life cycle.
 
 ### Disposing AsyncObservable Executions
 
@@ -268,11 +268,11 @@ await myObservable.cancel();
 
 ### AsyncObservable lifecycle
 
-A big benefit that comes from using AsyncObservable is that it provides a way to observe the executions and side effects that come from the observable, including any errors that are thrown. This is described in more detail in the [Async Processing](/guide/concepts/async-processing) section.
+A big benefit that comes from using AsyncObservable is that it provides a way to observe the executions and side effects that come from the observable, including any errors that are thrown. This is described in more detail in the [Async Processing](/concepts/async-processing) section.
 
 ## Observables are like functions
 
-A common gotcha with the observable pattern is the baseline assumption is that an observable acts like a pub/sub system or EventEmitter. This is not the case (although an observable does act as a good abstraction for this, see [Creating Streams](/guide/concepts/creating-streams)).
+A common gotcha with the observable pattern is the baseline assumption is that an observable acts like a pub/sub system or EventEmitter. This is not the case (although an observable does act as a good abstraction for this, see [Creating Streams](/concepts/creating-streams)).
 
 Consider the following example:
 

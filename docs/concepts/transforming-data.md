@@ -4,11 +4,11 @@ outline: [2, 6]
 
 # Transforming Data
 
-Transforming data is a core part of eventkit. It happens through the use of operators, which are powerful utility functions that allow you to manipulate, transform, filter, and combine [observables](/guide/concepts/observable-pattern) (like [Streams](/guide/concepts/creating-streams)) in a declarative way. They form a crucial part of the reactive programming patterns that eventkit employs, and enables you to create complex data processing pipelines.
+Transforming data is a core part of eventkit. It happens through the use of operators, which are powerful utility functions that allow you to manipulate, transform, filter, and combine [observables](/concepts/observable-pattern) (like [Streams](/concepts/creating-streams)) in a declarative way. They form a crucial part of the reactive programming patterns that eventkit employs, and enables you to create complex data processing pipelines.
 
 ## Introduction to Operators
 
-In eventkit, operators are functions that take an [observable](/guide/concepts/observable-pattern) as input, and return a new observable that (most commonly) subscribes to the provided observable, transforms the data in some way, and yield that transformed data to the subscriber.
+In eventkit, operators are functions that take an [observable](/concepts/observable-pattern) as input, and return a new observable that (most commonly) subscribes to the provided observable, transforms the data in some way, and yield that transformed data to the subscriber.
 
 For example, the `map` operator is synonymous to the Array method with the same name.
 
@@ -95,7 +95,7 @@ await processed$.subscribe(console.log);
 
 ## Available Operators
 
-Eventkit provides a variety of built-in operators to handle common transformations. A complete reference of all operators can be found [here](/guide/reference/operators).
+Eventkit provides a variety of built-in operators to handle common transformations. A complete reference of all operators can be found [here](/reference/operators).
 
 ## Creating Custom Operators
 
@@ -156,7 +156,7 @@ await doubledEvens.subscribe((value) => {
 ```
 
 ::: info
-`source.AsyncObservable` is a pattern used to declare that the returned observable is a child of the source observable. This is used for scheduling purposes and allows us to add any work of the child observable to the parent observable's scheduler. More details can be found [here](/guide/concepts/scheduling#composing-observables).
+`source.AsyncObservable` is a pattern used to declare that the returned observable is a child of the source observable. This is used for scheduling purposes and allows us to add any work of the child observable to the parent observable's scheduler. More details can be found [here](/concepts/scheduling#composing-observables).
 :::
 
 ::: tip

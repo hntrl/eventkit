@@ -67,7 +67,7 @@ await stream.drain();
 console.log(value); // 4
 ```
 
-`.pipe()` and `filter()` are apart of a larger set of operators that allow you to express your stream logic in a declarative way (more on this in [Transforming Data](/guide/concepts/transforming-data)).
+`.pipe()` and `filter()` are apart of a larger set of operators that allow you to express your stream logic in a declarative way (more on this in [Transforming Data](/concepts/transforming-data)).
 
 ### It's like an "EventEmitter"
 
@@ -81,7 +81,7 @@ Streams in eventkit also share some philosophical similarities with the Web Stre
 
 ## Basics of streams
 
-A Stream is a special type of [AsyncObservable](/guide/concepts/observable-pattern#using-asyncobservable) that allows you to push values into it at any time. This makes it perfect for representing events that occur over time, like user interactions, network responses, or any other asynchronous data source.
+A Stream is a special type of [AsyncObservable](/concepts/observable-pattern#using-asyncobservable) that allows you to push values into it at any time. This makes it perfect for representing events that occur over time, like user interactions, network responses, or any other asynchronous data source.
 
 ### `preprocess()`
 
@@ -111,7 +111,7 @@ stream.push({ type: "increment", value: -1 }); // ZodError
 
 ### `scheduler`
 
-Scheduling is a more advanced concept that allows you to control how the stream's subscribers process values (which you can learn about [here](/guide/concepts/scheduling)).
+Scheduling is a more advanced concept that allows you to control how the stream's subscribers process values (which you can learn about [here](/concepts/scheduling)).
 
 To give a basic example, say that you wanted to handle all of the callbacks in the stream sequentially:
 
@@ -308,6 +308,6 @@ await dbOps$.drain();
 ```
 :::
 
-This is especially useful when you need to enact stronger consistency guarantees (see [Event Sourcing](/guide/examples/event-sourcing)).
+This is especially useful when you need to enact stronger consistency guarantees (see [Event Sourcing](/examples/event-sourcing)).
 
-More can be read about how this works [here](/guide/concepts/scheduling#composing-observables).
+More can be read about how this works [here](/concepts/scheduling#composing-observables).
