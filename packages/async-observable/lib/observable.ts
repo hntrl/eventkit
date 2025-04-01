@@ -13,31 +13,21 @@ import {
  * Represents any number of values over any amount of time by way of an async
  * generator that can be subscribed to and cancelled from.
  *
- * AsyncObservable implements AsyncIterable<T>, which means it can be used
- * in for-await-of loops. Doing so will create a new Subscriber and register it
- * with the AsyncObservable. The Subscriber will be unregistered (and have
- * `cancel()` called) from the AsyncObservable once the for-await-of loop has
- * returned (either by a terminating statement like return or throw), or once
- * the observable generator has completed. While you can't access the internal
- * Subscriber object that gets created when using this syntax, you can still
- * 'cancel' by exiting the loop early, and you can still wait for the loop to
- * complete externally by awaiting the AsyncObservable.
- *
- * AsyncObservable also implements SubscriptionLike, providing a cancel() method
- * that can be used to cancel all subscribers at once. When cancelled, all subscribers
- * will be notified and their resources will be released.
- *
- * The class supports functional composition through the pipe() method, allowing
- * operators to be chained together to transform the stream of values. This enables
- * powerful data transformation pipelines with async/await semantics.
- *
- * AsyncObservable provides Promise-like behavior through methods such as drain(),
- * catch(), and finally(), making it easy to handle completion and errors. It also
- * implements the disposable pattern when Symbol.dispose or Symbol.asyncDispose are
- * available in the runtime.
- *
  * AsyncObservable instances can be created from common iterable and
  * stream-like types by using the {@link from} method.
+ *
+ * @example
+ * ```ts
+ * const observable = new AsyncObservable(async function* () {
+ *   yield 1;
+ *   yield 2;
+ *   yield 3;
+ * });
+ * ```
+ *
+ * @template T - The type of the values emitted by the AsyncObservable.
+ * @see [Observable Pattern](/concepts/observable-pattern)
+ * @hideconstructor
  */
 export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   /** @internal */
@@ -85,14 +75,13 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   }
 
   /**
-   * Returns a bound AsyncObservable (using {@link #AsyncObservable}) that
-   * will emit values from this AsyncObservable in order. This effectively
-   * creates a distinct "dummy" observable that acts as a generic wrapper
+   * Returns a bound AsyncObservable that will emit values from this AsyncObservable in order.
+   * This effectively creates a distinct "dummy" observable that acts as a generic wrapper
    * around the current AsyncObservable.
    *
    * @returns A new AsyncObservable that wraps this AsyncObservable and emits the same values.
    */
-  stub() {
+  stub(): AsyncObservable<T> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const source = this;
     return new this.AsyncObservable<T>(async function* () {
@@ -151,7 +140,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   /**
    * Cancels all subscribers from this AsyncObservable. This will stop the
    * execution of all active subscribers and remove them from the internal
-   * subscriber list. While {@link #then} will resolve when all subscribers
+   * subscriber list. While {@link drain} will resolve when all subscribers
    * have completed, this method will send an early interrupt signal to all
    * subscribers, causing them to exit their generator prematurely.
    *
@@ -179,8 +168,8 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   /**
    * Used to stitch together functional operators into a chain.
    *
-   * @returns The AsyncObservable of all the operators having been called
-   * in the order they were passed in.
+   * @returns {any} The output of all the operators having been called in the order they were
+   * passed in with the AsyncObservable as the first argument.
    */
   pipe(...operations: UnaryFunction<any, any>[]): unknown {
     // we still want to return a dummy observable if no operations are provided

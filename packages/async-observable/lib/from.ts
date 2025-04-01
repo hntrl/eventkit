@@ -90,8 +90,9 @@ export function isArrayLike<T>(x: any): x is ArrayLike<T> {
 }
 
 /**
- * Tests to see if the object is an eventkit {@link Observable}
+ * Tests to see if the object can be used as an {@link AsyncObservable}.
  * @param obj The object to test
+ * @group Utilities
  */
 export function isAsyncObservable(obj: any): obj is AsyncObservable<unknown> {
   // The !! is to ensure that this publicly exposed function returns
@@ -100,11 +101,11 @@ export function isAsyncObservable(obj: any): obj is AsyncObservable<unknown> {
 }
 
 /**
- * Creates an AsyncObservable from an Array, an array-like object, a Promise,
- * an iterable object, or an AsyncObservable-like object.
+ * Creates an AsyncObservable from an {@link AsyncObservableInput} like object
  *
  * @param input The source to create an AsyncObservable from
  * @returns An AsyncObservable that emits the values from the source
+ * @group Utilities
  */
 export function from<O extends AsyncObservableInput<any>>(
   input: O

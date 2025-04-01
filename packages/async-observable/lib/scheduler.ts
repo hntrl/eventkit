@@ -12,8 +12,12 @@ import { Signal } from "./utils/signal";
  * until `execute()` is called and then resolve or reject based on the callback's return value.
  * Multiple accesses of the action's promise will return the same promise, but the action will only
  * execute whenever `execute()` is called and the callback is resolved.
+ *
+ * @group Scheduling
  */
 export class ScheduledAction<T> implements PromiseLike<T> {
+  /** @hidden */
+  readonly callback: () => PromiseOrValue<T>;
   /** @internal */
   _hasExecuted = false;
   /** @internal */
@@ -30,11 +34,14 @@ export class ScheduledAction<T> implements PromiseLike<T> {
    * @template T The type of the value that will be returned by the callback.
    * @param callback The function that will be called when the action is executed.
    */
-  constructor(readonly callback: () => PromiseOrValue<T>) {}
+  constructor(callback: () => PromiseOrValue<T>) {
+    this.callback = callback;
+  }
 
   /**
    * Executes the action. This will call the callback and resolve or reject the action's promise
-   * based on the callback's return value.
+   * based on the callback's return value. If the action has already been executed, this method
+   * will return a promise representing the already executed callback.
    */
   async execute() {
     if (this._hasExecuted) return;
@@ -60,6 +67,7 @@ export class ScheduledAction<T> implements PromiseLike<T> {
 
 /**
  * Represents an action that will be executed as a result of an observable yielding a value.
+ * @group Scheduling
  */
 export class CallbackAction<T> extends ScheduledAction<T> {}
 
@@ -70,6 +78,8 @@ export class CallbackAction<T> extends ScheduledAction<T> {}
  * that can be identified by the scheduler to control when the action is executed. Classes that
  * utilize a scheduler will add CleanupAction's, and the scheduler is expected to execute them
  * when the subject's work has completed.
+ *
+ * @group Scheduling
  */
 export class CleanupAction extends ScheduledAction<any> {}
 
@@ -86,6 +96,8 @@ export class CleanupAction extends ScheduledAction<any> {}
  * The default behavior of this class is to instantly execute the action passed to `schedule`, but
  * this method can be overridden in an extension of this class to provide a different behavior
  * (i.e. a callback queue or deferring execution).
+ *
+ * @group Scheduling
  */
 export class Scheduler implements SchedulerLike {
   /** @internal */
@@ -216,6 +228,8 @@ export class Scheduler implements SchedulerLike {
  * scheduler won't have any visibility into any other work that's being done by the parent
  * scheduler. (i.e. we can independently await three distinct observable's that are observing a
  * parent observable, or we can await the parent observable directly)
+ *
+ * @group Scheduling
  */
 export class PassthroughScheduler implements SchedulerLike {
   constructor(

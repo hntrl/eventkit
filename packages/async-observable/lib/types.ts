@@ -24,10 +24,21 @@ export type PromiseOrValue<T> = T | Promise<T>;
  * Usually used to describe {@link OperatorFunction} - it always takes a single
  * parameter (the source AsyncObservable) and returns another AsyncObservable.
  */
-export interface UnaryFunction<T, R> {
-  (value: T): R;
-}
+export type UnaryFunction<T, R> = (value: T) => R;
 
+/**
+ * A function type interface that represents an operator that transforms an AsyncObservable of type
+ * T into an AsyncObservable of type R.
+ *
+ * Operators are the building blocks for transforming, filtering, and manipulating observables.
+ * They take a source observable as input and return a new observable with the applied
+ * transformation.
+ *
+ * @template T - The type of the source AsyncObservable's values
+ * @template R - The type of the resulting AsyncObservable's values
+ *
+ * @see [Transforming Data](/concepts/transforming-data)
+ */
 export type OperatorFunction<T, R> = UnaryFunction<AsyncObservable<T>, AsyncObservable<R>>;
 
 /**
@@ -36,8 +47,12 @@ export type OperatorFunction<T, R> = UnaryFunction<AsyncObservable<T>, AsyncObse
  *
  * Used to describe {@link OperatorFunction} with the only one type:
  * `OperatorFunction<T, T>`.
+ *
+ * @template T - The type of the source AsyncObservable's values
+ *
+ * @see [Transforming Data](/concepts/transforming-data)
  */
-export type MonoTypeOperatorFunction<T, R> = OperatorFunction<T, R>;
+export type MonoTypeOperatorFunction<T> = OperatorFunction<T, T>;
 
 /** Subscription Interfaces */
 
@@ -55,15 +70,51 @@ export interface SubscriptionLike {
 /** @internal */
 export type SchedulerSubject = AsyncObservable<any> | Subscriber<any>;
 
+/**
+ * The interface that defines the core scheduling capabilities in eventkit.
+ * A scheduler is the logical unit that coordinates all work associated with a subject.
+ */
 export interface SchedulerLike {
+  /**
+   * Adds work to a subject. Work is represented as promise-like objects.
+   * A subject is considered "complete" when all of its work promises have resolved.
+   * @param subject The observable or subscriber to add work to
+   * @param promise The work to be added, represented as a promise
+   */
   add(subject: SchedulerSubject, promise: PromiseLike<void>): void;
+
+  /**
+   * Schedules work to be executed for a subject. This may internally call `add()`
+   * to add the work and orchestrate/defer/forward the work's execution if needed.
+   * @param subject The observable or subscriber to schedule work for
+   * @param action The scheduled action representing the work to be executed
+   */
   schedule(subject: SchedulerSubject, action: ScheduledAction<any>): void;
+
+  /**
+   * Returns a promise that resolves when all work associated with the subject is complete.
+   * This is what's called when you `await observable.drain()` or `await subscriber`.
+   * @param subject The observable or subscriber to wait for completion
+   * @returns A promise that resolves when all work is complete
+   */
   promise(subject: SchedulerSubject): Promise<void>;
+
+  /**
+   * Disposes of a subject early, canceling any pending work.
+   * This is what's called when you `await observable.cancel()` or `await subscriber.cancel()`.
+   * @param subject The observable or subscriber to dispose
+   * @returns A promise that resolves when disposal is complete
+   */
   dispose(subject: SchedulerSubject): Promise<void>;
 }
 
 /** Observable Interfaces */
 
+/**
+ * Describes what types can be used as observable inputs in the {@link from} function
+ *
+ * @template T - The type of the values emitted by an AsyncObservable created from this input
+ */
 export type AsyncObservableInput<T> =
   | AsyncObservable<T>
   | InteropAsyncObservable<T>
@@ -85,6 +136,7 @@ export interface InteropAsyncObservable<T> {
  * `O extends AsyncObservableInput<any>` and you pass in
  * `AsyncObservable<number>`, or `Promise<number>`, etc, it will type as
  * `number`.
+ * @template O - The type thats emitted by the observable type
  */
 export type ObservedValueOf<O> = O extends AsyncObservableInput<infer T> ? T : never;
 

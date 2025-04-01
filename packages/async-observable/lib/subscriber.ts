@@ -1,6 +1,6 @@
 import { type AsyncObservable } from "./observable";
 import { CallbackAction, CleanupAction } from "./scheduler";
-import { type SubscriptionLike, type AsyncObserver, type SchedulerLike } from "./types";
+import { type SubscriptionLike, type SchedulerLike, type SubscriberCallback } from "./types";
 import { Signal } from "./utils/signal";
 
 /**
@@ -23,34 +23,14 @@ export const kCancelSignal = Symbol("cancelSignal");
 export class SubscriberReturnSignal extends Signal<void> {}
 
 /**
- * Represents an active execution and consumer of an async generator (like
- * AsyncObservable).
- *
- * A Subscriber is both an AsyncIterable and a PromiseLike, allowing it to be
- * used in for-await-of loops and with await. When used as a Promise, it
- * resolves when the generator completes or errors. If any errors occur during
- * the execution or cleanup of the generator, they will always be sent to the
- * promise's rejection handler. This means that you should always `await` the
- * Subscriber somewhere to tack any errors that occur onto a different closure
- * as to avoid uncaught errors.
- *
- * The Subscriber also implements SubscriptionLike, providing an cancel()
- * method that can be used to cancel the execution of the generator. When
- * cancelled, the Subscriber will call the generator's return() method and
- * wait for any work associated with the Subscriber to complete.
- *
- * It's worth noting that when using Subscriber as an async iterator (i.e. in a
- * for-await-of loop), Subscriber does not attempt to clone the values of the
- * generator across multiple accesses of the iterator object. This means that
- * if you use Subscriber in multiple for-await-of loops that run in parallel
- * (i.e. by calling the [Symbol.asyncIterator]() method in multiple places),
- * the sequence of values returned by the `next()` method won't be consistent
- * with the sequence of values emitted by the generator.
+ * Represents an active execution of an observable.
  *
  * Subscribers are a common type in eventkit, but is rarely used as a public
  * interface. They should be initialized using the {@link
  * AsyncObservable.subscribe} method or by using the AsyncObservable like an
  * async iterator.
+ *
+ * @template T - The type of values being handled by the subscriber
  */
 export class Subscriber<T>
   implements SubscriptionLike, PromiseLike<void>, AsyncIterable<T, void, void>
@@ -90,8 +70,8 @@ export class Subscriber<T>
   /** SubscriptionLike */
 
   /**
-   * Cancels the generator, meaning that the generator will be disposed of,
-   * and any resources held by the generator will be released.
+   * Cancels the subscriber, meaning that the generator will be disposed of,
+   * and any resources held by the subscriber will be released.
    *
    * Calling this method starts an immediate cleanup of the Subscriber. In the
    * case that you want to be notified of when the subscriber has closed
@@ -106,7 +86,7 @@ export class Subscriber<T>
    * use the Subscriber in an await expression to yield the state of the
    * generator's execution.
    *
-   * @returns A promise that resolves when the generator has been cleaned up.
+   * @returns A promise that resolves when the subscriber has been cleaned up.
    */
   cancel(): Promise<void> {
     return this[Symbol.asyncIterator]()
@@ -181,6 +161,14 @@ export class Subscriber<T>
 
   /** AsyncIterable<T, void, void> */
 
+  /**
+   * Returns a promise that resolves with the next iterator result from the generator. You should
+   * only use this method if you constructed a Subscriber independently of {@link
+   * AsyncObservable.subscribe} or {@link CallbackSubscriber}. Using this method in that instance
+   * will hijack the execution of the generator which can cause unexpected behavior.
+   *
+   * @returns A promise that resolves with the next iterator result from the generator.
+   */
   next(): Promise<IteratorResult<T>> {
     return this[Symbol.asyncIterator]().next();
   }
@@ -293,7 +281,7 @@ export class ConsumerPromise<T> implements PromiseLike<T> {
  * observable values through a callback function. When a value is emitted by the observable,
  * the callback is scheduled to be executed via the observable's scheduler.
  *
- * This class is typically used internally by the AsyncObservable.subscribe() method to create
+ * This class is typically used internally by the {@link AsyncObservable.subscribe} method to create
  * a subscription that processes values through user-provided callbacks.
  *
  * @template T The type of values emitted by the observable
