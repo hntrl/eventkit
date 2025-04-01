@@ -51,6 +51,7 @@ export interface SubscriptionLike {
 
 /** Scheduler Interfaces */
 
+/** @internal */
 export type SchedulerSubject = AsyncObservable<any> | Subscriber<any>;
 
 export interface SchedulerLike {
@@ -71,6 +72,7 @@ export type AsyncObservableInput<T> =
   | Iterable<T>
   | ReadableStreamLike<T>;
 
+/** @ignore */
 export interface InteropAsyncObservable<T> {
   [Symbol.asyncObservable](): AsyncIterable<T>;
 }

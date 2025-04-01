@@ -10,6 +10,7 @@
  * externally from the promise creation.
  *
  * @template T The type of value that the wrapped Promise resolves to, defaults to void
+ * @internal
  */
 export class Signal<T = void> implements PromiseLike<T> {
   /** @internal */

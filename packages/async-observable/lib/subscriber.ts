@@ -3,6 +3,10 @@ import { CallbackAction, CleanupAction } from "./scheduler";
 import { type SubscriptionLike, type AsyncObserver, type SchedulerLike } from "./types";
 import { Signal } from "./utils/signal";
 
+/**
+ * Unique symbol thats used to identify the cancellation of a subscriber.
+ * @internal
+ */
 export const kCancelSignal = Symbol("cancelSignal");
 
 /**
@@ -110,6 +114,7 @@ export class Subscriber<T>
       .then(() => Promise.resolve());
   }
 
+  /** @internal */
   get [kCancelSignal]() {
     return this._cancelSignal.asPromise();
   }
@@ -180,6 +185,7 @@ export class Subscriber<T>
     return this[Symbol.asyncIterator]().next();
   }
 
+  /** @internal */
   [Symbol.asyncIterator]() {
     // We return iterator methods like this so we don't expose those private
     // control flow methods to the outside world.
@@ -249,6 +255,7 @@ export class Subscriber<T>
  * function that returns a Promise, which is only executed when the ConsumerPromise is created.
  *
  * @template T The type of value that the wrapped Promise resolves to
+ * @internal
  */
 export class ConsumerPromise<T> implements PromiseLike<T> {
   private _promise: Promise<T>;
@@ -317,6 +324,11 @@ export class CallbackSubscriber<T> extends Subscriber<T> {
       }
     });
   }
+
+  /** @ignore */
+  next() {
+    return super.next();
+  }
 }
 
 // Even though Subscriber only conditionally implements disposer symbols if it's
@@ -324,7 +336,9 @@ export class CallbackSubscriber<T> extends Subscriber<T> {
 // exists on the prototype when it is available.
 
 export interface Subscriber<T> {
+  /** @ignore */
   [Symbol.dispose](): void;
+  /** @ignore */
   [Symbol.asyncDispose](): Promise<void>;
 }
 

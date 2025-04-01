@@ -69,6 +69,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
    * propagates to all derived observables.
    *
    * @returns A new AsyncObservable that is bound to the current instance.
+   * @ignore
    */
   get AsyncObservable() {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -197,7 +198,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
    */
   static from = from;
 
-  /** AsyncGenerator<T> */
+  /** AsyncGenerator<T> @ignore */
   [Symbol.asyncIterator](): AsyncGenerator<T> {
     const subscriber = new Subscriber(this);
     this._subscribers.add(subscriber);
@@ -245,7 +246,9 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
 // that it exists on the prototype when it is available.
 
 export interface AsyncObservable<T> {
+  /** @ignore */
   [Symbol.dispose](): void;
+  /** @ignore */
   [Symbol.asyncDispose](): Promise<void>;
 }
 
@@ -258,20 +261,26 @@ if (typeof Symbol.asyncDispose === "symbol") {
 }
 
 export interface AsyncObservable<T> {
+  /** @ignore */
   pipe(): AsyncObservable<T>;
+  /** @ignore */
   pipe<A>(op1: UnaryFunction<AsyncObservable<T>, A>): A;
+  /** @ignore */
   pipe<A, B>(op1: UnaryFunction<AsyncObservable<T>, A>, op2: UnaryFunction<A, B>): B;
+  /** @ignore */
   pipe<A, B, C>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,
     op3: UnaryFunction<B, C>
   ): C;
+  /** @ignore */
   pipe<A, B, C, D>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,
     op3: UnaryFunction<B, C>,
     op4: UnaryFunction<C, D>
   ): D;
+  /** @ignore */
   pipe<A, B, C, D, E>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,
@@ -279,6 +288,7 @@ export interface AsyncObservable<T> {
     op4: UnaryFunction<C, D>,
     op5: UnaryFunction<D, E>
   ): E;
+  /** @ignore */
   pipe<A, B, C, D, E, F>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,
@@ -287,6 +297,7 @@ export interface AsyncObservable<T> {
     op5: UnaryFunction<D, E>,
     op6: UnaryFunction<E, F>
   ): F;
+  /** @ignore */
   pipe<A, B, C, D, E, F, G>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,
@@ -296,6 +307,7 @@ export interface AsyncObservable<T> {
     op6: UnaryFunction<E, F>,
     op7: UnaryFunction<F, G>
   ): G;
+  /** @ignore */
   pipe<A, B, C, D, E, F, G, H>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,
@@ -306,6 +318,7 @@ export interface AsyncObservable<T> {
     op7: UnaryFunction<F, G>,
     op8: UnaryFunction<G, H>
   ): H;
+  /** @ignore */
   pipe<A, B, C, D, E, F, G, H, I>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,
@@ -317,6 +330,7 @@ export interface AsyncObservable<T> {
     op8: UnaryFunction<G, H>,
     op9: UnaryFunction<H, I>
   ): I;
+  /** @ignore */
   pipe<A, B, C, D, E, F, G, H, I>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,
@@ -329,6 +343,7 @@ export interface AsyncObservable<T> {
     op9: UnaryFunction<H, I>,
     ...operations: OperatorFunction<any, any>[]
   ): AsyncObservable<unknown>;
+  /** @ignore */
   pipe<A, B, C, D, E, F, G, H, I>(
     op1: UnaryFunction<AsyncObservable<T>, A>,
     op2: UnaryFunction<A, B>,

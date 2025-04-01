@@ -12,6 +12,8 @@ import { Signal } from "./signal";
  *
  * Note that a PromiseSet is primarily used to track the resolution of promises added to it, but
  * not necessarily the values that get returned since we can't yield that in a meaningful way
+ *
+ * @internal
  */
 export class PromiseSet implements PromiseLike<void> {
   /** @internal */

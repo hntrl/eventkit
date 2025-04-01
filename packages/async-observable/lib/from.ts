@@ -7,6 +7,7 @@ import {
   type ReadableStreamLike,
 } from "./types";
 
+/** @internal */
 export enum AsyncObservableInputType {
   Own,
   InteropAsyncObservable,
@@ -17,6 +18,7 @@ export enum AsyncObservableInputType {
   ReadableStreamLike,
 }
 
+/** @internal */
 export function getAsyncObservableInputType(input: unknown): AsyncObservableInputType {
   if (input instanceof AsyncObservable) {
     return AsyncObservableInputType.Own;
