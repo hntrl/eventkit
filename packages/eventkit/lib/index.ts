@@ -1,3 +1,22 @@
+/**
+ * ::: code-group
+ * ```sh [npm]
+ * npm install eventkit
+ * ```
+ * ```sh [yarn]
+ * yarn add eventkit
+ * ```
+ * ```sh [pnpm]
+ * pnpm add eventkit
+ * ```
+ * ```sh [bun]
+ * bun add eventkit
+ * ```
+ * :::
+ *
+ * @packageDocumentation
+ */
+
 export * from "./operators";
 export * from "./schedulers";
 export * from "./stream";
