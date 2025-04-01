@@ -106,5 +106,9 @@ function sidebar(): DefaultTheme.SidebarItem[] {
         },
       ],
     },
+    {
+      text: "typedoc",
+      items: typedocSidebar,
+    },
   ];
 }
