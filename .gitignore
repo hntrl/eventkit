@@ -12,6 +12,7 @@ typings/
 # Generated
 dist/
 .wireit
+docs/reference
 tsup.config.bundled_*.mjs
 
 # Copied Package Files
