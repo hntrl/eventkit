@@ -19,7 +19,7 @@
     "publish": "node scripts/publish.js",
     "version": "node scripts/version.js",
     "docs:types": "node scripts/typedoc.js",
-    "docs:dev": "pnpm docs:types --watch & vitepress dev docs",
+    "docs:dev": "trap 'kill $(jobs -p)' EXIT; pnpm docs:types --watch & vitepress dev docs",
     "docs:build": "pnpm docs:types && vitepress build docs",
     "docs:preview": "pnpm docs:types && vitepress preview docs"
   },

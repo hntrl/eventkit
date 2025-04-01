@@ -57,7 +57,28 @@ async function watchAndRun() {
     process.exit(1);
   }
 
-  const watcher = watch("packages/", { recursive: true }, async (eventType, filename) => {
+  let watcher = null;
+  let isShuttingDown = false;
+
+  const cleanup = () => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    if (watcher) {
+      console.log("typedoc: closing file watcher...");
+      watcher.close();
+    }
+
+    console.log("typedoc: process terminated");
+    process.exit(0);
+  };
+
+  // Handle various termination signals
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
+  process.on("exit", cleanup);
+
+  watcher = watch("packages/", { recursive: true }, async (eventType, filename) => {
     if (
       filename &&
       filename[0] !== "_" &&
@@ -70,12 +91,6 @@ async function watchAndRun() {
     }
   });
   console.log("typedoc: listening for changes in packages/*");
-
-  // Handle process termination
-  process.on("SIGINT", () => {
-    watcher.close();
-    process.exit(0);
-  });
 }
 
 // If this script is run directly, run typedoc or watch based on flags
