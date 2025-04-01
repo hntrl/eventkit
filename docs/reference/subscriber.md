@@ -1,3 +1,0 @@
-# `Subscriber`
-
-Under construction 🚧

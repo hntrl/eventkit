@@ -1,5 +1,6 @@
 import { type DefaultTheme, defineConfig } from "vitepress";
 
+import typedocSidebar from "../reference/typedoc-sidebar.json";
 import eventkitPkg from "../../packages/eventkit/package.json";
 
 // https://vitepress.dev/reference/site-config
@@ -87,27 +88,6 @@ function sidebar(): DefaultTheme.SidebarItem[] {
     },
     {
       text: "Reference",
-      collapsed: true,
-      items: [
-        { text: "Stream", link: "reference/stream" },
-        { text: "AsyncObservable", link: "reference/async-observable" },
-        { text: "Subscriber", link: "reference/subscriber" },
-        { text: "Scheduler", link: "reference/scheduler" },
-        {
-          text: "Operators",
-          collapsed: false,
-          link: "reference/operators",
-          items: [
-            { text: "map", link: "reference/operators/map" },
-            { text: "filter", link: "reference/operators/filter" },
-            { text: "reduce", link: "reference/operators/reduce" },
-            { text: "scan", link: "reference/operators/scan" },
-          ],
-        },
-      ],
-    },
-    {
-      text: "typedoc",
       items: typedocSidebar,
     },
   ];

@@ -1,3 +1,0 @@
-# `Scheduler`
-
-Under construction 🚧

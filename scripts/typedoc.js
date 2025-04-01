@@ -21,7 +21,7 @@ const config = {
   },
   disableSources: true,
   categorizeByGroup: true,
-  out: "./docs/typedoc",
+  out: "./docs/reference",
   docsRoot: "./docs",
   plugin: ["typedoc-plugin-markdown", "typedoc-vitepress-theme", "typedoc-plugin-frontmatter"],
   indexFormat: "table",
