@@ -5,8 +5,8 @@ import {
   type SubscriptionLike,
   type UnaryFunction,
   type OperatorFunction,
-  type AsyncObserver,
   type SchedulerLike,
+  type SubscriberCallback,
 } from "./types";
 
 /**
@@ -137,7 +137,7 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
    * will be passed the value as an argument.
    * @returns A new Subscriber that can be used to unsubscribe from the AsyncObservable.
    */
-  subscribe(callback?: AsyncObserver<T>): Subscriber<T> {
+  subscribe(callback?: SubscriberCallback<T>): Subscriber<T> {
     if (!callback) callback = () => {};
     const subscriber = new CallbackSubscriber(this, callback);
     this._subscribers.add(subscriber);

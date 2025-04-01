@@ -41,9 +41,10 @@ export type MonoTypeOperatorFunction<T, R> = OperatorFunction<T, R>;
 
 /** Subscription Interfaces */
 
-export interface AsyncObserver<T> {
-  (this: Subscriber<T>, value: T): PromiseOrValue<any>;
-}
+/**
+ * The function signature for a subscriber callback.
+ */
+export type SubscriberCallback<T> = (this: Subscriber<T>, value: T) => PromiseOrValue<any>;
 
 export interface SubscriptionLike {
   cancel(): Promise<void>;

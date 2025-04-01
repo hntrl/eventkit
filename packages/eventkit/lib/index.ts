@@ -32,7 +32,7 @@ export {
   type UnaryFunction,
   type OperatorFunction,
   type MonoTypeOperatorFunction,
-  type AsyncObserver,
+  type SubscriberCallback,
   type SubscriptionLike,
   type SchedulerSubject,
   type SchedulerLike,

@@ -307,7 +307,7 @@ export class CallbackSubscriber<T> extends Subscriber<T> {
    */
   constructor(
     observable: AsyncObservable<T>,
-    protected callback: AsyncObserver<T>
+    protected callback: SubscriberCallback<T>
   ) {
     super(observable);
     this.scheduler.add(this, this._tryIteratorWithCallback());
