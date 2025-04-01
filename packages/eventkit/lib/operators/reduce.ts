@@ -14,7 +14,6 @@ import { type OperatorFunction } from "@eventkit/async-observable";
  * @param accumulator The accumulator function called on each source value.
  * @param seed The initial accumulation value.
  * @group Operators
- * @category Aggregation
  */
 export function reduce<V, A>(
   accumulator: (acc: A, value: V, index: number) => A,

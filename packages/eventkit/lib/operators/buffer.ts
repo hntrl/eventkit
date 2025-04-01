@@ -15,7 +15,6 @@ type BufferNotifier = typeof kBufferNotifier;
  * @param pushNotifier An observable that emits a value when the buffer should be emitted and a new
  * buffer should be started.
  * @group Operators
- * @category Transformation
  */
 export function buffer<T>(pushNotifier: AsyncObservable<any>): OperatorFunction<T, T[]> {
   return (source) =>
@@ -46,7 +45,6 @@ export function buffer<T>(pushNotifier: AsyncObservable<any>): OperatorFunction<
  * on every other value from the source. A new buffer is started at the
  * beginning of the source by default.
  * @group Operators
- * @category Transformation
  */
 export function bufferCount<T>(
   bufferSize: number,

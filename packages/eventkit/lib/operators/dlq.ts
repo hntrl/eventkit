@@ -75,7 +75,6 @@ export class DLQScheduler extends PassthroughScheduler implements SchedulerLike 
  * and the error will be raised as normal.
  *
  * @group Operators
- * @category Error Handling
  */
 export function dlq<T>(): UnaryFunction<
   AsyncObservable<T>,

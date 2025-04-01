@@ -16,7 +16,6 @@ import { mergeAll, mergeMap } from "./merge";
  * errors.
  *
  * @group Operators
- * @category Join
  */
 export function concat<T, A extends readonly unknown[]>(
   ...otherSources: [...AsyncObservableInputTuple<A>]
@@ -37,7 +36,6 @@ export function concat<T, A extends readonly unknown[]>(
  * Note: `concatAll` is equivalent to `mergeAll` with the concurrency parameter set to `1`.
  *
  * @group Operators
- * @category Join
  */
 export function concatAll<O extends AsyncObservableInput<any>>(): OperatorFunction<
   O,
@@ -58,7 +56,6 @@ export function concatAll<O extends AsyncObservableInput<any>>(): OperatorFuncti
  * Note: `concatMap` is equivalent to `mergeMap` with the concurrency parameter set to `1`.
  *
  * @group Operators
- * @category Join
  */
 export function concatMap<T, O extends AsyncObservableInput<any>>(
   predicate: (value: T, index: number) => O

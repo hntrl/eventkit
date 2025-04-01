@@ -16,7 +16,6 @@ import { map } from "./map";
  * and error when any provided observable errors.
  *
  * @group Operators
- * @category Join
  */
 export function merge<T, A extends readonly unknown[]>(
   ...otherSources: [...AsyncObservableInputTuple<A>]
@@ -29,7 +28,6 @@ export function merge<T, A extends readonly unknown[]>(
  * different observable that will be merged into the output observable using {@link mergeAll}.
  *
  * @group Operators
- * @category Join
  */
 export function mergeMap<T, O extends AsyncObservableInput<any>>(
   predicate: (value: T, index: number) => O,
@@ -51,7 +49,6 @@ export function mergeMap<T, O extends AsyncObservableInput<any>>(
  * it will be added to a queue and subscribed to when a previous inner observable has completed.
  *
  * @group Operators
- * @category Join
  */
 export function mergeAll<O extends AsyncObservableInput<any>>(
   concurrency: number = Infinity

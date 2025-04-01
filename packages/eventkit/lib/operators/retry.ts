@@ -135,7 +135,6 @@ export class RetryScheduler extends PassthroughScheduler implements SchedulerLik
  *
  * @param strategy - The strategy for the retry scheduler.
  * @group Operators
- * @category Error Handling
  */
 export function retry<T>(strategy?: RetryStrategy): OperatorFunction<T, T> {
   return (source) => {

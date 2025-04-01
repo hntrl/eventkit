@@ -52,7 +52,6 @@ export class DeferredPassthroughScheduler extends PassthroughScheduler implement
  *
  * @param scheduler - The scheduler to defer execution to.
  * @group Operators
- * @category Scheduling
  */
 export function withScheduler<T>(scheduler: SchedulerLike): OperatorFunction<T, T> {
   return (source) => {
@@ -70,7 +69,6 @@ export function withScheduler<T>(scheduler: SchedulerLike): OperatorFunction<T, 
  *
  * @param scheduler - The scheduler to apply to the observable.
  * @group Operators
- * @category Scheduling
  */
 export function withOwnScheduler<T>(scheduler: SchedulerLike): OperatorFunction<T, T> {
   return (source) => {

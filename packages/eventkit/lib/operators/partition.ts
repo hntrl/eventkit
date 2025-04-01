@@ -18,7 +18,6 @@ type PartitionOperatorFunction<T, L = T, R = Exclude<T, L>> = UnaryFunction<
  * the value is emitted on the second observable in the array. The `index` parameter is the number
  * `i` for the i-th source emission that has happened since the subscription, starting from 0.
  * @group Operators
- * @category Transformation
  */
 export function partition<T, S extends T>(
   predicate: (value: T, index: number) => value is S

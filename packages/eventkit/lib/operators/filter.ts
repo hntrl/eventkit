@@ -9,7 +9,6 @@ import { type TruthyTypesOf } from "../utils/types";
  * @param predicate A function that evaluates each value emitted by the source Observable.
  * Returns true to keep the value, false to drop it.
  * @group Operators
- * @category Filtering
  */
 export function filter<T, S extends T>(
   predicate?: (value: T, index: number) => value is S

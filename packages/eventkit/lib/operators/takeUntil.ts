@@ -13,7 +13,6 @@ type StopNotification = typeof kStopNotification;
  *
  * @param stopNotifier An observable that signals when to stop taking values from the source.
  * @group Operators
- * @category Filtering
  */
 export function takeUntil<T>(stopNotifier: AsyncObservable<any>): OperatorFunction<T, T> {
   return (source) =>
