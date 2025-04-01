@@ -1,0 +1,28 @@
+{
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme", "typedoc-plugin-frontmatter"],
+  "entryPoints": ["packages/eventkit", "packages/eventkit-http"],
+  "entryPointStrategy": "packages",
+  "packageOptions": {
+    "excludeInternal": true,
+    "categorizeByGroup": true,
+    "excludeCategories": true,
+    "sort": ["kind", "instance-first", "alphabetical-ignoring-documents"],
+    "entryPoints": ["lib/index.ts"]
+  },
+  "router": "structure",
+  "navigation": {
+    "includeGroups": true,
+    "includeCategories": false
+  },
+  "frontmatterGlobals": {
+    "outline": [2, 3]
+  },
+  "disableSources": true,
+  "out": "./docs/reference",
+  "docsRoot": "./docs",
+  "indexFormat": "table",
+  "parametersFormat": "table",
+  "maxTypeConversionDepth": 5,
+  "useCodeBlocks": true,
+  "sanitizeComments": true
+}

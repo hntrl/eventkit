@@ -1,52 +1,18 @@
 const { execSync } = require("node:child_process");
 const { watch } = require("node:fs");
-const td = require("typedoc");
-
-/** @type {import("typedoc").Configuration.TypeDocOptions} */
-const config = {
-  entryPoints: ["packages/eventkit"],
-  entryPointStrategy: "packages",
-  packageOptions: {
-    excludeInternal: true,
-    sort: ["kind", "instance-first", "alphabetical-ignoring-documents"],
-    entryPoints: ["lib/index.ts"],
-  },
-  router: "structure",
-  navigation: {
-    includeGroups: true,
-    includeCategories: true,
-  },
-  frontmatterGlobals: {
-    outline: [2, 3],
-  },
-  disableSources: true,
-  categorizeByGroup: true,
-  out: "./docs/reference",
-  docsRoot: "./docs",
-  plugin: ["typedoc-plugin-markdown", "typedoc-vitepress-theme", "typedoc-plugin-frontmatter"],
-  indexFormat: "table",
-  parametersFormat: "table",
-  maxTypeConversionDepth: 5,
-  useCodeBlocks: true,
-  sanitizeComments: true,
-};
 
 async function typedoc() {
+  console.log("typedoc: rebuilding...");
   try {
     execSync("pnpm build", { stdio: "inherit" });
   } catch (error) {
     return false;
   }
-
-  const app = await td.Application.bootstrapWithPlugins(config, [
-    new td.TypeDocReader(),
-    new td.PackageJsonReader(),
-    new td.TSConfigReader(),
-  ]);
-  const project = await app.convert();
-  if (!project) return false;
-  app.validate(project);
-  await app.generateOutputs(project);
+  try {
+    execSync("pnpm typedoc", { stdio: "inherit" });
+  } catch (error) {
+    return false;
+  }
   return true;
 }
 
@@ -59,6 +25,8 @@ async function watchAndRun() {
 
   let watcher = null;
   let isShuttingDown = false;
+  let typedocPromise = null;
+  let shouldRerun = false;
 
   const cleanup = () => {
     if (isShuttingDown) return;
@@ -78,16 +46,20 @@ async function watchAndRun() {
   process.on("SIGTERM", cleanup);
   process.on("exit", cleanup);
 
-  watcher = watch("packages/", { recursive: true }, async (eventType, filename) => {
-    if (
-      filename &&
-      filename[0] !== "_" &&
-      filename.includes("/lib/") &&
-      !filename.includes("dist") &&
-      !filename.includes(".wireit")
-    ) {
-      console.log("typedoc: rebuilding...");
-      await typedoc();
+  watcher = watch("./", { recursive: true }, async (eventType, filename) => {
+    const isSourceChange =
+      filename.includes("/lib/") && !filename.includes("dist") && !filename.includes(".wireit");
+    if (filename && filename[0] !== "_" && (isSourceChange || filename.includes("typedoc.json"))) {
+      if (typedocPromise) shouldRerun = true;
+      else {
+        typedocPromise = typedoc().then(async () => {
+          if (shouldRerun) {
+            await typedoc();
+            shouldRerun = false;
+          }
+          typedocPromise = null;
+        });
+      }
     }
   });
   console.log("typedoc: listening for changes in packages/*");
