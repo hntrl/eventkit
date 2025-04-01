@@ -4,7 +4,7 @@ const td = require("typedoc");
 
 /** @type {import("typedoc").Configuration.TypeDocOptions} */
 const config = {
-  entryPoints: ["packages/eventkit", "packages/eventkit-cloudflare"],
+  entryPoints: ["packages/eventkit"],
   entryPointStrategy: "packages",
   packageOptions: {
     excludeInternal: true,
