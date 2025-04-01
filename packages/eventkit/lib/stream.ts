@@ -286,4 +286,18 @@ export class Stream<T> extends AsyncObservable<T> {
   asObservable(): AsyncObservable<T> {
     return this.stub();
   }
+
+  /**
+   * These are properties that exist on Stream because they're inherited from AsyncObservable. We
+   * redefine here so we can hide them from the docs since they don't really make sense as stream
+   * propertiess
+   */
+
+  /** @internal */
+  static from = from;
+
+  /** @internal */
+  stub(): AsyncObservable<T> {
+    return this.stub();
+  }
 }
