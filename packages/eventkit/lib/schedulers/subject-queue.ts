@@ -21,8 +21,7 @@ import { InvalidConcurrencyLimitError } from "../utils/errors";
  * but need to ensure that actions belonging to the same subject are processed in sequence
  * or with limited concurrency.
  *
- * @extends Scheduler
- * @implements SchedulerLike
+ * @group Scheduling
  */
 export class SubjectQueueScheduler extends Scheduler implements SchedulerLike {
   /** @internal */

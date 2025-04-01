@@ -3,8 +3,7 @@
  * observable, but no such index or position exists in that sequence.
  *
  * @see {@link elementAt}
- * @see {@link take}
- * @see {@link takeLast}
+ * @group Errors
  */
 export class ArgumentOutOfRangeError extends Error {
   /** @internal */
@@ -14,6 +13,13 @@ export class ArgumentOutOfRangeError extends Error {
   }
 }
 
+/**
+ * An error thrown when an invalid concurrency limit is provided to an operator.
+ *
+ * @see {@link QueueScheduler}
+ * @see {@link SubjectQueueScheduler}
+ * @group Errors
+ */
 export class InvalidConcurrencyLimitError extends Error {
   /** @internal */
   constructor() {

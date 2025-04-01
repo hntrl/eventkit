@@ -14,6 +14,9 @@ import { mergeAll, mergeMap } from "./merge";
  * and waiting for each one to complete before subscribing to the next. The output observable will
  * complete when all provided observables have completed, and error when any provided observable
  * errors.
+ *
+ * @group Operators
+ * @category Join
  */
 export function concat<T, A extends readonly unknown[]>(
   ...otherSources: [...AsyncObservableInputTuple<A>]
@@ -32,6 +35,9 @@ export function concat<T, A extends readonly unknown[]>(
  * the incoming observables collect in an unbounded buffer.
  *
  * Note: `concatAll` is equivalent to `mergeAll` with the concurrency parameter set to `1`.
+ *
+ * @group Operators
+ * @category Join
  */
 export function concatAll<O extends AsyncObservableInput<any>>(): OperatorFunction<
   O,
@@ -50,6 +56,9 @@ export function concatAll<O extends AsyncObservableInput<any>>(): OperatorFuncti
  * the incoming observables collect in an unbounded buffer.
  *
  * Note: `concatMap` is equivalent to `mergeMap` with the concurrency parameter set to `1`.
+ *
+ * @group Operators
+ * @category Join
  */
 export function concatMap<T, O extends AsyncObservableInput<any>>(
   predicate: (value: T, index: number) => O

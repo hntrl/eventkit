@@ -9,21 +9,60 @@ import {
 
 import { withOwnScheduler } from "./withScheduler";
 
-export type RetryStrategy =
-  | {
-      limit?: number;
-      // if a backoff is provided, delay must be provided
-      delay: number;
-      backoff: RetryBackoff;
-    }
-  | {
-      limit?: number;
-      delay?: number;
-      backoff?: never;
-    };
+/**
+ * Configuration options for the retry operator.
+ *
+ * This type defines the parameters that control retry behavior when an error occurs
+ * in an observable chain. It allows configuring the number of retry attempts,
+ * delay between retries, and the backoff strategy for increasing delays.
+ */
+export type RetryStrategy = {
+  /**
+   * Maximum number of retry attempts before giving up.
+   * If not specified, defaults to 1.
+   */
+  limit?: number;
+  /**
+   * Time in milliseconds to wait before each retry attempt.
+   * Required when using a backoff strategy.
+   */
+  delay?: number;
+  /**
+   * Strategy for increasing delay between retry attempts.
+   */
+  backoff?: RetryBackoff;
+};
 
+/**
+ * Defines how the delay between retry attempts increases.
+ *
+ * - `constant`: The delay remains the same for all retry attempts
+ * - `linear`: The delay increases linearly with each retry (delay * retryCount)
+ * - `exponential`: The delay increases exponentially with each retry (delay * (2^retryCount))
+ */
 export type RetryBackoff = "constant" | "linear" | "exponential";
 
+/**
+ * A scheduler that implements retry logic for callback actions.
+ *
+ * This scheduler wraps callback actions with retry logic that will catch errors
+ * and retry the callback according to the specified retry strategy. The retry
+ * strategy can include a limit on the number of retries, a delay between retries,
+ * and a backoff strategy for increasing the delay between retries.
+ *
+ * When an error occurs in a callback action, the scheduler will:
+ * 1. Catch the error
+ * 2. If retries are not exhausted, wait for the specified delay
+ * 3. Retry the callback
+ * 4. If all retries are exhausted, reject the action's signal with the error
+ *
+ * Note that this only affects callback actions (subscriber callbacks). Other types
+ * of actions like generator execution or cleanup work are passed through to the
+ * parent scheduler without retry logic.
+ *
+ * @see {@link retry} for usage with observables
+ * @internal
+ */
 export class RetryScheduler extends PassthroughScheduler implements SchedulerLike {
   private readonly limit: number;
   private readonly delay: number;
@@ -95,6 +134,8 @@ export class RetryScheduler extends PassthroughScheduler implements SchedulerLik
  * the error will be raised as normal.
  *
  * @param strategy - The strategy for the retry scheduler.
+ * @group Operators
+ * @category Error Handling
  */
 export function retry<T>(strategy?: RetryStrategy): OperatorFunction<T, T> {
   return (source) => {

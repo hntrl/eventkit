@@ -8,6 +8,8 @@ import { type OperatorFunction } from "@eventkit/async-observable";
  * determine whether or not to increment the count. Return `true` to increment the count,
  * and return `false` to keep the count the same. If the predicate is not provided, every value
  * will be counted.
+ * @group Operators
+ * @category Aggregation
  */
 export function count<T>(
   predicate?: (value: T, index: number) => boolean

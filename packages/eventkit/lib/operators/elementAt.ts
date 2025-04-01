@@ -13,6 +13,8 @@ import { ArgumentOutOfRangeError } from "../utils/errors";
  * @param index Is the number `i` for the i-th source emission that has happened
  * since the subscription, starting from the number `0`.
  * @param defaultValue The default value returned for missing indices.
+ * @group Operators
+ * @category Filtering
  */
 export function elementAt<T, D = T>(index: number, defaultValue?: D): OperatorFunction<T, T | D> {
   if (index < 0) {

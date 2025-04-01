@@ -1,6 +1,5 @@
 import {
   AsyncObservable,
-  type AsyncObserver,
   CallbackSubscriber,
   Scheduler,
   type SchedulerLike,
@@ -12,8 +11,24 @@ import {
   type SchedulerSubject,
   Signal,
   SubscriberReturnSignal,
+  type SubscriberCallback,
+  from,
 } from "@eventkit/async-observable";
 
+/**
+ * A specialized scheduler for Stream objects that manages the flow of values to subscribers.
+ *
+ * The StreamScheduler extends the base Scheduler to handle the requirements of Stream objects:
+ * - It manages deferred execution of scheduled actions through a wrapped scheduler
+ * - It tracks "subscriber ticks" to ensure all values are properly propagated to subscribers
+ * - It ignores the generator lifecycle since we know that the generator will always be running
+ *   and will always yield values to the subscriber (until cancelled).
+ *
+ * This scheduler is crucial for the Stream implementation as it ensures that values pushed
+ * to a Stream are properly delivered to all subscribers before the Stream is considered drained.
+ *
+ * @internal
+ */
 export class StreamScheduler extends Scheduler implements SchedulerLike {
   private deferred: SchedulerLike;
   private _subscriberTicks = new Map<Subscriber<any>, Set<Signal>>();
@@ -72,6 +87,7 @@ export class StreamScheduler extends Scheduler implements SchedulerLike {
   // will be scheduled, we resolve the tick, effectively blocking the stream from
   // draining until we know all the values have been propagated to all subscribers.
 
+  /** @internal */
   addSubscriberTick(subscriber: Subscriber<any>) {
     const ticks = this._subscriberTicks.get(subscriber) ?? new Set();
     const signal = new Signal();
@@ -80,6 +96,7 @@ export class StreamScheduler extends Scheduler implements SchedulerLike {
     this.add(subscriber, signal);
   }
 
+  /** @internal */
   resolveSubscriberTick(subscriber: Subscriber<any>) {
     const ticks = this._subscriberTicks.get(subscriber) ?? new Set();
     const [tick, ...rest] = ticks;
@@ -89,7 +106,15 @@ export class StreamScheduler extends Scheduler implements SchedulerLike {
   }
 }
 
-export interface StreamInit<T> {
+/**
+ * Configuration options for creating a Stream.
+ *
+ * This type defines optional parameters that can be passed to the Stream constructor
+ * to customize its behavior, including preprocessing of values and scheduler configuration.
+ *
+ * @template T - The type of values emitted by the Stream
+ */
+export type StreamInit<T> = {
   /**
    * Function to preprocess values before they are pushed to observers.
    * This can be used to validate values before they are emitted.
@@ -103,7 +128,7 @@ export interface StreamInit<T> {
    * If not provided, the default Scheduler will be used.
    */
   scheduler?: SchedulerLike | (new () => SchedulerLike);
-}
+};
 
 /**
  * A Stream is a special type of AsyncObservable that allows values to be
@@ -153,7 +178,7 @@ export class Stream<T> extends AsyncObservable<T> {
    * You can still use the returned Subscriber object like a Promise which can
    * be awaited to wait for the Stream to be closed.
    */
-  subscribe(callback?: AsyncObserver<T>): Subscriber<T> {
+  subscribe(callback?: SubscriberCallback<T>): Subscriber<T> {
     const scheduler = this.scheduler;
     return super.subscribe(function (this: Subscriber<T>, value: T) {
       // By this point, the work of resolving the tick is in itself inside of a

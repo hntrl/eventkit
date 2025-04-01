@@ -19,8 +19,7 @@ import {
  * through to a parent scheduler, but overrides the scheduling behavior to use a different
  * scheduler for execution.
  *
- * @extends PassthroughScheduler
- * @implements SchedulerLike
+ * @group Scheduling
  */
 export class DeferredPassthroughScheduler extends PassthroughScheduler implements SchedulerLike {
   constructor(
@@ -37,6 +36,7 @@ export class DeferredPassthroughScheduler extends PassthroughScheduler implement
    *
    * @param subject - The subject that "owns" the action.
    * @param action - The action to be scheduled.
+   * @group Operators
    */
   schedule(subject: SchedulerSubject, action: ScheduledAction<any>) {
     // we defer to the deferred scheduler to create the execution.
@@ -51,6 +51,8 @@ export class DeferredPassthroughScheduler extends PassthroughScheduler implement
  * control the execution of side effects independently of the source observable.
  *
  * @param scheduler - The scheduler to defer execution to.
+ * @group Operators
+ * @category Scheduling
  */
 export function withScheduler<T>(scheduler: SchedulerLike): OperatorFunction<T, T> {
   return (source) => {
@@ -67,6 +69,8 @@ export function withScheduler<T>(scheduler: SchedulerLike): OperatorFunction<T, 
  * side effects from the source observable entirely.
  *
  * @param scheduler - The scheduler to apply to the observable.
+ * @group Operators
+ * @category Scheduling
  */
 export function withOwnScheduler<T>(scheduler: SchedulerLike): OperatorFunction<T, T> {
   return (source) => {

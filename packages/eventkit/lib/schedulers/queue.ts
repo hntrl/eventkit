@@ -10,6 +10,7 @@ import { InvalidConcurrencyLimitError } from "../utils/errors";
 
 /**
  * Configuration options for initializing queue schedulers.
+ * @group Scheduling
  */
 export interface QueueSchedulerInit {
   /**
@@ -31,8 +32,7 @@ export interface QueueSchedulerInit {
  * effects, especially when they involve asynchronous operations that might otherwise
  * complete out of order.
  *
- * @extends Scheduler
- * @implements SchedulerLike
+ * @group Scheduling
  */
 export class QueueScheduler extends Scheduler implements SchedulerLike {
   /** @internal */

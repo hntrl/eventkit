@@ -11,6 +11,20 @@ import {
 import { Stream } from "../stream";
 import { withOwnScheduler } from "./withScheduler";
 
+/**
+ * A scheduler that catches errors from callback actions and redirects them to a handler function.
+ *
+ * This scheduler is used by the `dlq()` operator to implement a dead letter queue pattern for
+ * handling errors in subscriber callbacks without interrupting the observable chain.
+ *
+ * When a callback action is scheduled, it wraps the action in a new one that catches any errors
+ * and passes them to the `onError` handler while resolving the original action successfully.
+ * This allows the observable chain to continue processing values even when errors occur in
+ * subscriber callbacks.
+ *
+ * @see {@link dlq} for usage with observables
+ * @internal
+ */
 export class DLQScheduler extends PassthroughScheduler implements SchedulerLike {
   constructor(
     protected readonly onError: (err: any) => void,
@@ -59,6 +73,9 @@ export class DLQScheduler extends PassthroughScheduler implements SchedulerLike 
  * Note: this will only yield errors that happen in subscriber callbacks. If an error occurs
  * elsewhere (like in cleanup or in the observable's generator), that implies a cancellation
  * and the error will be raised as normal.
+ *
+ * @group Operators
+ * @category Error Handling
  */
 export function dlq<T>(): UnaryFunction<
   AsyncObservable<T>,

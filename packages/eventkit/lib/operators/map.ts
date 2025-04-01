@@ -2,6 +2,8 @@ import { type OperatorFunction } from "@eventkit/async-observable";
 
 /**
  * Applies a given predicate function to each value emitted by the source observable.
+ * @group Operators
+ * @category Transformation
  */
 export function map<T, R>(predicate: (value: T, index: number) => R): OperatorFunction<T, R> {
   return (source) =>

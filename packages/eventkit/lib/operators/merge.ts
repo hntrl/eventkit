@@ -14,6 +14,9 @@ import { map } from "./map";
  * will subscribe to all provided observables and yield all values yielded by all of the provided
  * observables. The output observable will complete when all provided observables have completed,
  * and error when any provided observable errors.
+ *
+ * @group Operators
+ * @category Join
  */
 export function merge<T, A extends readonly unknown[]>(
   ...otherSources: [...AsyncObservableInputTuple<A>]
@@ -24,6 +27,9 @@ export function merge<T, A extends readonly unknown[]>(
 /**
  * Applies a predicate function to each value yielded by the source observable, which returns a
  * different observable that will be merged into the output observable using {@link mergeAll}.
+ *
+ * @group Operators
+ * @category Join
  */
 export function mergeMap<T, O extends AsyncObservableInput<any>>(
   predicate: (value: T, index: number) => O,
@@ -43,6 +49,9 @@ export function mergeMap<T, O extends AsyncObservableInput<any>>(
  * A concurrency limit can be provided to limit the number of inner observables that are subscribed
  * to at any given time. If an inner observable gets yielded when the concurrency limit is reached,
  * it will be added to a queue and subscribed to when a previous inner observable has completed.
+ *
+ * @group Operators
+ * @category Join
  */
 export function mergeAll<O extends AsyncObservableInput<any>>(
   concurrency: number = Infinity
