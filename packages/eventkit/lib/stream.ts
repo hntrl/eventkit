@@ -298,6 +298,6 @@ export class Stream<T> extends AsyncObservable<T> {
 
   /** @internal */
   stub(): AsyncObservable<T> {
-    return this.stub();
+    return super.stub();
   }
 }
