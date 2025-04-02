@@ -152,6 +152,7 @@ async function* dematerializeEventSource<T>(source: EventSource) {
       }
     }
   } finally {
+    source.close();
     controller.abort();
   }
 }
@@ -211,6 +212,7 @@ async function* materializeEventSource<T>(source: EventSource) {
       }
     }
   } finally {
+    source.close();
     controller.abort();
   }
 }
