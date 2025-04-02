@@ -1,25 +1,27 @@
 import { AsyncObservable } from "eventkit";
-import { type ErrorEvent, type MessageEvent } from "undici-types";
+import { ErrorEvent, EventSource } from "eventsource";
+import { type MessageEvent as UnidiciMessageEvent } from "undici-types";
+
+import { addGlobalEventListener, parseMessageEvent } from "./utils";
 
 /**
- * Represents the different types of events that can be emitted by an EventSource.
+ * Represents the different native event objects that can be emitted by an EventSource.
  * This type union covers all possible event types: error, message, and open events.
  *
  * @template T - The type of data contained in message events
  */
-type EventSourceEvent<T> =
-  | {
-      type: "error";
-      data: ErrorEvent;
-    }
-  | {
-      type: "message";
-      data: MessageEvent<T>;
-    }
-  | {
-      type: "open";
-      data: Event;
-    };
+export type EventSourceEvent<T> = ErrorEvent | UnidiciMessageEvent<T> | Event;
+
+/**
+ * Represents a message event emitted by an EventSource.
+ *
+ * @template T - The type of data contained in message events
+ */
+export type EventSourceMessage<T> = {
+  id?: string;
+  type: string;
+  data: T;
+};
 
 /**
  * A drop-in replacement for the standard EventSource class that provides an Observable interface
@@ -36,6 +38,7 @@ type EventSourceEvent<T> =
  * // Get raw message data
  * source.asObservable<string>().subscribe(data => {
  *   console.log("Received:", data);
+ *   // { id: undefined, type: "message", data: "hello" }
  * });
  *
  * // Get full event objects including metadata
@@ -68,7 +71,7 @@ class EventSourceObservable extends EventSource {
    * @template T - The type of data contained in message events
    */
   asObservable<T>(opts: { dematerialize: true }): AsyncObservable<EventSourceEvent<T>>;
-  asObservable<T>(opts?: { dematerialize: false }): AsyncObservable<T>;
+  asObservable<T>(opts?: { dematerialize: false }): AsyncObservable<EventSourceMessage<T>>;
   asObservable<T>(opts?: { dematerialize: boolean }): AsyncObservable<any> {
     if (opts?.dematerialize === true) {
       return eventSourceObservable<T>(this, { dematerialize: true });
@@ -105,7 +108,7 @@ export function eventSourceObservable<T>(
   if (opts?.dematerialize) {
     return new AsyncObservable<EventSourceEvent<T>>(() => dematerializeEventSource(source));
   }
-  return new AsyncObservable<T>(() => materializeEventSource(source));
+  return new AsyncObservable<EventSourceMessage<T>>(() => materializeEventSource(source));
 }
 
 /**
@@ -113,40 +116,35 @@ export function eventSourceObservable<T>(
  * including metadata like event type and raw event data.
  *
  * @param source - The EventSource instance to read events from
- * @returns An async generator that yields EventSourceEvent objects
+ * @returns An async generator that yields EventSourceEvent instances
  * @template T - The type of data contained in message events
  * @internal
  */
 async function* dematerializeEventSource<T>(source: EventSource) {
-  const { signal, abort } = new AbortController();
+  const controller = new AbortController();
   try {
     let eventBuffer: EventSourceEvent<T>[] = [];
 
-    // prettier-ignore
-    source.addEventListener(
-      "message",
-      (event) => eventBuffer.push({ type: "message", data: event }),
-      { signal }
-    );
-    // prettier-ignore
-    source.addEventListener(
-      "error",
-      (event) => eventBuffer.push({ type: "error", data: event }),
-      { signal }
-    );
-    // prettier-ignore
-    source.addEventListener(
-      "open",
-      (event) => eventBuffer.push({ type: "open", data: event }),
-      { signal }
+    addGlobalEventListener(
+      source,
+      (event) => {
+        if (event instanceof MessageEvent) {
+          eventBuffer.push(parseMessageEvent<T>(event));
+        } else {
+          eventBuffer.push(event);
+        }
+      },
+      { signal: controller.signal }
     );
 
-    while (!signal.aborted) {
-      if (source.readyState === EventSource.CLOSED) break;
+    while (!controller.signal.aborted) {
       if (eventBuffer.length > 0) {
         const events = [...eventBuffer];
         eventBuffer = [];
         yield* events;
+      } else if (source.readyState === EventSource.CLOSED) {
+        // If the event source is closed, we break out of the loop
+        break;
       } else {
         // Schedule the next iteration of the loop at the end of the call stack, which gives a
         // chance for the event source to emit more values.
@@ -154,7 +152,7 @@ async function* dematerializeEventSource<T>(source: EventSource) {
       }
     }
   } finally {
-    abort();
+    controller.abort();
   }
 }
 
@@ -168,21 +166,44 @@ async function* dematerializeEventSource<T>(source: EventSource) {
  * @internal
  */
 async function* materializeEventSource<T>(source: EventSource) {
-  const { signal, abort } = new AbortController();
+  const controller = new AbortController();
   try {
-    let messageBuffer: T[] = [];
+    let messageBuffer: EventSourceMessage<T>[] = [];
     let error: ErrorEvent | null = null;
 
-    source.addEventListener("message", (event) => messageBuffer.push(event.data), { signal });
-    source.addEventListener("error", (event) => (error = event), { signal });
+    addGlobalEventListener(
+      source,
+      (event) => {
+        if (event instanceof MessageEvent) {
+          const parsed = parseMessageEvent<T>(event);
+          messageBuffer.push({
+            // lastEventId will be an empty string if id isn't present
+            id: parsed.lastEventId || undefined,
+            type: parsed.type,
+            data: parsed.data,
+          });
+        } else if (event instanceof ErrorEvent) {
+          // Error events get emitted for arbitrary reasons in the eventsource impl, so we need to
+          // check if the event is an actual error
+          if (event.code || event.message) {
+            error = event;
+          }
+        }
+      },
+      { signal: controller.signal }
+    );
 
-    while (!signal.aborted) {
-      if (source.readyState === EventSource.CLOSED) break;
-      if (error !== null) throw error;
+    while (!controller.signal.aborted) {
       if (messageBuffer.length > 0) {
         const messages = [...messageBuffer];
         messageBuffer = [];
         yield* messages;
+      } else if (error !== null) {
+        // If an error event was emitted, we throw it
+        throw error;
+      } else if (source.readyState === EventSource.CLOSED) {
+        // If the event source is closed, we break out of the loop
+        break;
       } else {
         // Schedule the next iteration of the loop at the end of the call stack, which gives a
         // chance for the event source to emit more values.
@@ -190,6 +211,6 @@ async function* materializeEventSource<T>(source: EventSource) {
       }
     }
   } finally {
-    abort();
+    controller.abort();
   }
 }
