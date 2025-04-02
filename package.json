@@ -35,6 +35,7 @@
     "eslint-plugin-import-helpers": "^2.0.1",
     "globals": "^16.0.0",
     "jsonfile": "^6.1.0",
+    "msw": "^2.7.3",
     "prettier": "^3.5.1",
     "semver": "^7.7.1",
     "typedoc": "^0.28.1",
