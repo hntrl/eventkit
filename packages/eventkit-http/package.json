@@ -62,9 +62,11 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.14",
+    "@types/ws": "^8.18.1",
     "tsup": "^8.3.6",
     "typescript": "^5.7.3",
     "undici-types": "^7.5.0",
-    "wireit": "^0.14.11"
+    "wireit": "^0.14.11",
+    "ws": "^8.18.1"
   }
 }
