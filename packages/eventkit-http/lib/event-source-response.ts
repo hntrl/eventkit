@@ -1,7 +1,6 @@
 import { QueueScheduler, type Subscriber, withScheduler, type AsyncObservable } from "eventkit";
 
 type EventSourceSerializer<T> = (event: T, index: number) => Uint8Array;
-type EventSourceTransformStream<T> = TransformStream<{ event: T; index: number }, Uint8Array>;
 
 /**
  * Configuration options for customizing how events are serialized into SSE format.
@@ -68,8 +67,8 @@ export type EventSourceResponseInit<T> = ResponseInit & {
 export class EventSourceResponse<T> extends Response {
   /** Internal counter for event IDs */
   private eventIndex = 0;
-  /** The transform stream that converts events to SSE format */
-  private readonly outputStream: EventSourceTransformStream<T>;
+  /** The writable stream that writes events to the client */
+  private readonly writable: WritableStream<{ event: T; index: number }>;
   /** The source observable that provides the events */
   protected readonly observable: AsyncObservable<T>;
   /** The subscriber that handles the event stream */
@@ -94,7 +93,7 @@ export class EventSourceResponse<T> extends Response {
       },
     });
     const scheduler = new QueueScheduler({ concurrency: 1 });
-    this.outputStream = getTransformStream(serializer, () => this.subscriber?.cancel());
+    this.writable = stream.writable;
     this.observable = observable.pipe(withScheduler(scheduler));
     this.subscriber = this._subscribe();
   }
@@ -104,11 +103,15 @@ export class EventSourceResponse<T> extends Response {
    * @internal
    */
   private _subscribe() {
-    const writer = this.outputStream.writable.getWriter();
-    return this.observable.subscribe(async (event) => {
+    const writer = this.writable.getWriter();
+    const sub = this.observable.subscribe(async (event) => {
       this.eventIndex++;
       await writer.write({ event, index: this.eventIndex });
     });
+    sub.finally(() => {
+      writer.close();
+    });
+    return sub;
   }
 }
 
@@ -119,7 +122,7 @@ function getTransformStream<T>(
   return new TransformStream<{ event: T; index: number }, Uint8Array>({
     async transform(message, controller) {
       try {
-        const serialized = await serializer(message.event, message.index);
+        const serialized = serializer(message.event, message.index);
         controller.enqueue(serialized);
       } catch (error) {
         controller.terminate();
