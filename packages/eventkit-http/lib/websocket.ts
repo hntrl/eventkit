@@ -1,5 +1,11 @@
 import { AsyncObservable } from "eventkit";
-import { type CloseEvent, type ErrorEvent, type MessageEvent } from "undici-types";
+import {
+  type CloseEvent,
+  type ErrorEvent,
+  type MessageEvent as UnidiciMessageEvent,
+} from "undici-types";
+
+import { addGlobalEventListener, parseMessageEvent } from "./utils";
 
 /**
  * Represents the different types of events that can be emitted by a WebSocket.
@@ -7,23 +13,7 @@ import { type CloseEvent, type ErrorEvent, type MessageEvent } from "undici-type
  *
  * @template T - The type of data contained in message events
  */
-type WebSocketEvent<T> =
-  | {
-      type: "close";
-      data: CloseEvent;
-    }
-  | {
-      type: "error";
-      data: ErrorEvent;
-    }
-  | {
-      type: "message";
-      data: MessageEvent<T>;
-    }
-  | {
-      type: "open";
-      data: Event;
-    };
+type WebSocketEvent<T> = CloseEvent | ErrorEvent | UnidiciMessageEvent<T> | Event;
 
 /**
  * A drop-in replacement for the standard WebSocket class that provides an Observable interface
@@ -125,49 +115,39 @@ export function websocketObservable<T>(
  * @internal
  */
 async function* dematerializeWebsocket<T>(source: WebSocket) {
-  const { signal, abort } = new AbortController();
+  const controller = new AbortController();
   try {
     let eventBuffer: WebSocketEvent<T>[] = [];
 
-    // prettier-ignore
-    source.addEventListener(
-      "close",
-      (event) => eventBuffer.push({ type: "close", data: event }),
-      { signal }
-    );
-    // prettier-ignore
-    source.addEventListener(
-      "message",
-      (event) => eventBuffer.push({ type: "message", data: event }),
-      { signal }
-    );
-    // prettier-ignore
-    source.addEventListener(
-      "error",
-      (event) => eventBuffer.push({ type: "error", data: event }),
-      { signal }
-    );
-    // prettier-ignore
-    source.addEventListener(
-      "open",
-      (event) => eventBuffer.push({ type: "open", data: event }),
-      { signal }
+    addGlobalEventListener(
+      source,
+      (event) => {
+        if (event instanceof MessageEvent) {
+          eventBuffer.push(parseMessageEvent<T>(event));
+        } else {
+          eventBuffer.push(event);
+        }
+      },
+      { signal: controller.signal }
     );
 
-    while (!signal.aborted) {
-      if (source.readyState === WebSocket.CLOSED) break;
+    while (!controller.signal.aborted) {
       if (eventBuffer.length > 0) {
         const events = [...eventBuffer];
         eventBuffer = [];
         yield* events;
+      } else if (source.readyState === WebSocket.CLOSED) {
+        // If the websocket is closed, we break out of the loop
+        break;
       } else {
         // Schedule the next iteration of the loop at the end of the call stack, which gives a
-        // chance for the event source to emit more values.
+        // chance for the websocket to emit more values.
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
     }
   } finally {
-    abort();
+    source.close();
+    controller.abort();
   }
 }
 
@@ -181,21 +161,36 @@ async function* dematerializeWebsocket<T>(source: WebSocket) {
  * @internal
  */
 async function* materializeWebsocket<T>(source: WebSocket) {
-  const { signal, abort } = new AbortController();
+  const controller = new AbortController();
   try {
     let messageBuffer: T[] = [];
     let error: ErrorEvent | null = null;
+    let closed = false;
 
-    source.addEventListener("message", (event) => messageBuffer.push(event.data), { signal });
-    source.addEventListener("error", (event) => (error = event), { signal });
+    addGlobalEventListener(
+      source,
+      (event) => {
+        if (event instanceof MessageEvent) {
+          const parsed = parseMessageEvent<T>(event);
+          messageBuffer.push(parsed.data);
+        } else if (event.type === "error") {
+          error = event as ErrorEvent;
+        } else if (event.type === "close") {
+          closed = true;
+        }
+      },
+      { signal: controller.signal }
+    );
 
-    while (!signal.aborted) {
-      if (source.readyState === WebSocket.CLOSED) break;
-      if (error !== null) throw error;
+    while (!controller.signal.aborted) {
       if (messageBuffer.length > 0) {
         const messages = [...messageBuffer];
         messageBuffer = [];
         yield* messages;
+      } else if (error !== null) {
+        throw error;
+      } else if (closed || source.readyState === WebSocket.CLOSED) {
+        break;
       } else {
         // Schedule the next iteration of the loop at the end of the call stack, which gives a
         // chance for the event source to emit more values.
@@ -203,6 +198,7 @@ async function* materializeWebsocket<T>(source: WebSocket) {
       }
     }
   } finally {
-    abort();
+    source.close();
+    controller.abort();
   }
 }
