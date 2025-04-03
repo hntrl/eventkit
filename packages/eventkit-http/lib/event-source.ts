@@ -4,6 +4,10 @@ import { type MessageEvent as UnidiciMessageEvent } from "undici-types";
 
 import { addGlobalEventListener, parseMessageEvent } from "./utils";
 
+// FIXME: This EventSource implementation requires the use of the `eventsource` package.
+// We should try to find a way to use the native EventSource implementation
+// when targeting environments that support it.
+
 /**
  * Represents the different native event objects that can be emitted by an EventSource.
  * This type union covers all possible event types: error, message, and open events.
