@@ -1,11 +1,10 @@
 import { AsyncObservable } from "eventkit";
-import {
-  type CloseEvent,
-  type ErrorEvent,
-  type MessageEvent as UnidiciMessageEvent,
-} from "undici-types";
+import { WebSocket } from "ws";
 
-import { addGlobalEventListener, parseMessageEvent } from "./utils";
+// FIXME: This WebSocket implementation requires the use of the `ws` package.
+// We should try to find a way to use the native WebSocket implementation
+// when targeting environments that support it. (it would mean we can make the
+// websocket implementation look virtually the same to the event-source implementation)
 
 /**
  * Represents the different types of events that can be emitted by a WebSocket.
@@ -13,7 +12,11 @@ import { addGlobalEventListener, parseMessageEvent } from "./utils";
  *
  * @template T - The type of data contained in message events
  */
-type WebSocketEvent<T> = CloseEvent | ErrorEvent | UnidiciMessageEvent<T> | Event;
+type WebSocketEvent<T> =
+  | WebSocket.CloseEvent
+  | WebSocket.ErrorEvent
+  | (Omit<WebSocket.MessageEvent, "data"> & { data: T })
+  | WebSocket.Event;
 
 /**
  * A drop-in replacement for the standard WebSocket class that provides an Observable interface
@@ -115,29 +118,41 @@ export function websocketObservable<T>(
  * @internal
  */
 async function* dematerializeWebsocket<T>(source: WebSocket) {
-  const controller = new AbortController();
+  let eventBuffer: WebSocketEvent<T>[] = [];
+  let closed = false;
+
+  const closeListener = (event: WebSocket.CloseEvent) => {
+    eventBuffer.push(event);
+    closed = true;
+  };
+  const errorListener = (event: WebSocket.ErrorEvent) => {
+    eventBuffer.push(event);
+  };
+  const messageListener = (event: WebSocket.MessageEvent) => {
+    try {
+      event.data = JSON.parse(event.data as string);
+      eventBuffer.push(event);
+    } catch {
+      // Do nothing
+      eventBuffer.push(event);
+    }
+  };
+  const openListener = (event: WebSocket.Event) => {
+    eventBuffer.push(event);
+  };
+
   try {
-    let eventBuffer: WebSocketEvent<T>[] = [];
+    source.addEventListener("close", closeListener);
+    source.addEventListener("error", errorListener);
+    source.addEventListener("message", messageListener);
+    source.addEventListener("open", openListener);
 
-    addGlobalEventListener(
-      source,
-      (event) => {
-        if (event instanceof MessageEvent) {
-          eventBuffer.push(parseMessageEvent<T>(event));
-        } else {
-          eventBuffer.push(event);
-        }
-      },
-      { signal: controller.signal }
-    );
-
-    while (!controller.signal.aborted) {
+    while (true) {
       if (eventBuffer.length > 0) {
         const events = [...eventBuffer];
         eventBuffer = [];
         yield* events;
-      } else if (source.readyState === WebSocket.CLOSED) {
-        // If the websocket is closed, we break out of the loop
+      } else if (closed || source.readyState === WebSocket.CLOSED) {
         break;
       } else {
         // Schedule the next iteration of the loop at the end of the call stack, which gives a
@@ -147,7 +162,10 @@ async function* dematerializeWebsocket<T>(source: WebSocket) {
     }
   } finally {
     source.close();
-    controller.abort();
+    source.removeEventListener("close", closeListener);
+    source.removeEventListener("error", errorListener);
+    source.removeEventListener("message", messageListener);
+    source.removeEventListener("open", openListener);
   }
 }
 
@@ -161,28 +179,32 @@ async function* dematerializeWebsocket<T>(source: WebSocket) {
  * @internal
  */
 async function* materializeWebsocket<T>(source: WebSocket) {
-  const controller = new AbortController();
+  let messageBuffer: T[] = [];
+  let error: WebSocket.ErrorEvent | null = null;
+  let closed = false;
+
+  const closeListener = () => {
+    closed = true;
+  };
+  const errorListener = (event: WebSocket.ErrorEvent) => {
+    error = event;
+  };
+  const messageListener = (event: WebSocket.MessageEvent) => {
+    try {
+      const data: T = JSON.parse(event.data as string);
+      messageBuffer.push(data);
+    } catch {
+      // Do nothing
+      messageBuffer.push(event.data as T);
+    }
+  };
+
   try {
-    let messageBuffer: T[] = [];
-    let error: ErrorEvent | null = null;
-    let closed = false;
+    source.addEventListener("close", closeListener);
+    source.addEventListener("error", errorListener);
+    source.addEventListener("message", messageListener);
 
-    addGlobalEventListener(
-      source,
-      (event) => {
-        if (event instanceof MessageEvent) {
-          const parsed = parseMessageEvent<T>(event);
-          messageBuffer.push(parsed.data);
-        } else if (event.type === "error") {
-          error = event as ErrorEvent;
-        } else if (event.type === "close") {
-          closed = true;
-        }
-      },
-      { signal: controller.signal }
-    );
-
-    while (!controller.signal.aborted) {
+    while (true) {
       if (messageBuffer.length > 0) {
         const messages = [...messageBuffer];
         messageBuffer = [];
@@ -193,12 +215,14 @@ async function* materializeWebsocket<T>(source: WebSocket) {
         break;
       } else {
         // Schedule the next iteration of the loop at the end of the call stack, which gives a
-        // chance for the event source to emit more values.
+        // chance for the websocket to emit more values.
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
     }
   } finally {
     source.close();
-    controller.abort();
+    source.removeEventListener("close", closeListener);
+    source.removeEventListener("error", errorListener);
+    source.removeEventListener("message", messageListener);
   }
 }

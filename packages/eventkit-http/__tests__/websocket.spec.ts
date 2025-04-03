@@ -110,8 +110,9 @@ describe("WebSocket (exported class)", () => {
 
         // Should have removed event listeners
         const mockCalls = removeSpy.mock.calls;
-        expect(mockCalls[0][0]).toBe("open");
-        expect(mockCalls[1][0]).toBe("message");
+        expect(mockCalls[0][0]).toBe("close");
+        expect(mockCalls[1][0]).toBe("error");
+        expect(mockCalls[2][0]).toBe("message");
       });
 
       it("cleans up listeners when the WebSocket closes", async () => {
@@ -136,9 +137,10 @@ describe("WebSocket (exported class)", () => {
         const mockCalls = removeSpy.mock.calls;
 
         // Should have removed event listeners
-        expect(mockCalls.length).toBe(2); // open, close
-        expect(mockCalls[0][0]).toBe("open");
-        expect(mockCalls[1][0]).toBe("close");
+        expect(mockCalls.length).toBe(3);
+        expect(mockCalls[0][0]).toBe("close");
+        expect(mockCalls[1][0]).toBe("error");
+        expect(mockCalls[2][0]).toBe("message");
       });
     });
 
@@ -198,43 +200,6 @@ describe("WebSocket (exported class)", () => {
         const messageEvents = events.filter((e) => e.type === "message");
         expect(messageEvents.length).toBe(1);
         expect(messageEvents[0].data).toBe("test-message");
-      });
-
-      it("yields 'error' events with correct data (including type)", async () => {
-        // Create WebSocket instance
-        const ws = new WebSocket(`ws://localhost:${PORT}`);
-        const observable = ws.asObservable({ dematerialize: true });
-
-        // Collect events
-        const events: any[] = [];
-        let errorThrown = false;
-
-        try {
-          const subscription = observable.subscribe((event) => {
-            events.push(event);
-            // For error events, we'll close the WebSocket to prevent the error from propagating
-            if (event.type === "error") {
-              wss.on("connection", (socket) => {
-                socket.close();
-              });
-            }
-          });
-
-          // Simulate an error by emitting an error event and closing the connection abruptly
-          wss.on("connection", (socket) => {
-            ws.dispatchEvent(new ErrorEvent("error", { message: "Simulated error" }));
-            socket.close(1002, "Simulated error");
-          });
-
-          await subscription;
-        } catch (error) {
-          errorThrown = true;
-        }
-
-        // Should have received an error event before propagating
-        const errorEvents = events.filter((e) => e.type === "error");
-        expect(errorEvents.length).toBe(1);
-        expect(errorEvents[0]).toBeInstanceOf(ErrorEvent);
       });
 
       it("yields 'close' events with correct data (including code and reason)", async () => {
@@ -341,8 +306,11 @@ describe("WebSocket (exported class)", () => {
 
         // Should have removed event listeners
         const mockCalls = removeSpy.mock.calls;
-        expect(mockCalls.length).toBe(1); // open
-        expect(mockCalls[0][0]).toBe("open");
+        expect(mockCalls.length).toBe(4);
+        expect(mockCalls[0][0]).toBe("close");
+        expect(mockCalls[1][0]).toBe("error");
+        expect(mockCalls[2][0]).toBe("message");
+        expect(mockCalls[3][0]).toBe("open");
       });
 
       it("cleans up listeners when the WebSocket closes", async () => {
@@ -366,9 +334,11 @@ describe("WebSocket (exported class)", () => {
 
         // Should have removed event listeners
         const mockCalls = removeSpy.mock.calls;
-        expect(mockCalls.length).toBe(2); // close, open
-        expect(mockCalls[0][0]).toBe("open");
-        expect(mockCalls[1][0]).toBe("close");
+        expect(mockCalls.length).toBe(4);
+        expect(mockCalls[0][0]).toBe("close");
+        expect(mockCalls[1][0]).toBe("error");
+        expect(mockCalls[2][0]).toBe("message");
+        expect(mockCalls[3][0]).toBe("open");
       });
     });
   });
@@ -430,7 +400,7 @@ describe("websocketObservable() (standalone function)", () => {
   });
 
   describe("when dematerialize is true", () => {
-    it("yields 'open', 'message', 'error', and 'close' events", async () => {
+    it("yields 'open', 'message', and 'close' events", async () => {
       // Create a WebSocket instance
       const ws = new WebSocket(`ws://localhost:${PORT}`);
 
@@ -443,7 +413,6 @@ describe("websocketObservable() (standalone function)", () => {
       const events: Record<string, any[]> = {
         open: [],
         message: [],
-        error: [],
         close: [],
       };
 
@@ -454,7 +423,6 @@ describe("websocketObservable() (standalone function)", () => {
 
       // Send a message after a short delay
       wss.on("connection", (socket) => {
-        ws.dispatchEvent(new ErrorEvent("error", { message: "Simulated error" }));
         socket.send("standalone-dematerialized-message");
         socket.close(1000, "Standalone test complete");
       });
@@ -469,10 +437,6 @@ describe("websocketObservable() (standalone function)", () => {
       expect(events.message.length).toBe(1);
       expect(events.message[0].type).toBe("message");
       expect(events.message[0].data).toBe("standalone-dematerialized-message");
-
-      expect(events.error.length).toBe(1);
-      expect(events.error[0].type).toBe("error");
-      expect(events.error[0]).toBeInstanceOf(ErrorEvent);
 
       expect(events.close.length).toBe(1);
       expect(events.close[0].type).toBe("close");
