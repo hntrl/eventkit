@@ -130,6 +130,9 @@ importers:
       eventsource:
         specifier: ^3.0.6
         version: 3.0.6
+      ws:
+        specifier: ^8.18.1
+        version: 8.18.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.14
@@ -149,9 +152,6 @@ importers:
       wireit:
         specifier: ^0.14.11
         version: 0.14.11
-      ws:
-        specifier: ^8.18.1
-        version: 8.18.1
 
 packages:
 

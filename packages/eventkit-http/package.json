@@ -58,7 +58,8 @@
   },
   "dependencies": {
     "eventkit": "workspace:*",
-    "eventsource": "^3.0.6"
+    "eventsource": "^3.0.6",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.14",
@@ -66,10 +67,6 @@
     "tsup": "^8.3.6",
     "typescript": "^5.7.3",
     "undici-types": "^7.5.0",
-    "wireit": "^0.14.11",
-    "ws": "^8.18.1"
-  },
-  "engines": {
-    "node": ">=22.0.0"
+    "wireit": "^0.14.11"
   }
 }
