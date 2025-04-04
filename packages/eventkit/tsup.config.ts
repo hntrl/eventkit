@@ -10,6 +10,8 @@ export default defineConfig([
     format: ["cjs", "esm"],
     outDir: "dist",
     dts: true,
+    noExternal: [/(.*)/],
+    splitting: false,
     banner: {
       js: createBanner(pkg.name, pkg.version),
     },
