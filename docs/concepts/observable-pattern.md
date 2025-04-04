@@ -8,7 +8,7 @@ In programming, you often write code or instructions with the expectation that t
 
 The observable pattern is one of many answers to this problem. It allows you to write code or instructions that will be executed in parallel and their results later recaptured in an arbitrary order. Rather than calling a function and waiting for it to finish, you define the mechanism by which data is retrieved and transformed in the form of an "observable", watch for any data that is yielded by "observing" the observable, and responding accordingly. Eventkit uses this pattern as its core mechanism for handling asynchronous data.
 
-You can think of an observable as a first-class object that represents a collection of events over time. They're like Promises but for multiple values. Instead of waiting for a producer to evaluate a value and then distribute it to a consumer (like a synchronous function call or a promise), an observable is different in that as it's evaluating, a consumer is responding to anything that is yielded by the producer, which can happen multiple times as the producer is executing.
+You can think of an observable as a first-class object that represents a collection of values over time. They're like Promises but for multiple values. Instead of waiting for a producer to evaluate a value and then distribute it to a consumer (like a synchronous function call or a promise), an observable is different in that as it's evaluating, a consumer is responding to anything that is yielded by the producer, which can happen multiple times as the producer is executing.
 
 An advantage of this pattern is that it allows you to define tasks that consume this collection in a way that is interdependent of each other. If you think about how a function works, it doesn't care about how its return value is being used, it just passes it to the caller. Observables act as a similar abstraction, with the key difference being that they can return multiple values over time.
 
@@ -195,7 +195,7 @@ This is a shorthand that subscribes to the observable and iterates over the valu
 2. All values emitted by the observable will be handled sequentially, negating a large benefit of AsyncObservable.
 3. This can potentially block the observable from ever resolving if the for await loop isn't managed properly.
 
-The only notable exception to this is when you're subscribing to an observable inside of an observable (i.e. [operators](/concepts/transforming-data#creating-custom-operators)) since the execution of an observable is inherently tracked as apart of its life cycle.
+The only notable exception to this is when you're subscribing to an observable inside of an observable (i.e. [operators](/concepts/transforming-data#creating-custom-operators)) since the execution of an observable is inherently tracked as apart of its life cycle, and we largely want to keep the order of emissions one-to-one with the source.
 
 ### Disposing AsyncObservable Executions
 

@@ -77,7 +77,7 @@ The `Scheduler` object is the logical unit that coordinates all work associated 
 - You can add work to a subject by calling `add()`
 - You can schedule work to be executed for a subject by calling `schedule()`
 - You can ask for the status of the completion of a subject (in the form of a Promise) by calling `promise()`
-- You can dispose of a subject early by calling `dispose()`
+- You can dispose of a subject by calling `dispose()`
 
 When you call:
 
@@ -110,7 +110,7 @@ await scheduler.dispose(observable);
 There's a couple of important things to note here about how schedulers work:
 
 - All work is represented as promise-like objects, so we can assert that a subject is considered "complete" when all of those "work promises" have resolved.
-- Every observable has its own scheduler instance which will typically only keep track of two subjects: the observable itself, and any direct subscribers that were created from it.
+- Every observable has its own scheduler object that acts as its source of truth in regards to the work associated with it.
 - When `schedule()` is called, that doesn't implicitly mean that the work will be added to the subject. Typically the `schedule()` method will call `add()` internally to add the work, and orchestrate/defer/forward the work's execution if needed.
 
 ::: info

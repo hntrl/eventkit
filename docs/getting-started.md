@@ -5,19 +5,15 @@ In this guide, we'll walk through the fundamentals and tell you how to go from 0
 ## Installation
 
 ::: code-group
-
 ```sh [npm]
 npm install eventkit
 ```
-
 ```sh [yarn]
 yarn add eventkit
 ```
-
 ```sh [pnpm]
 pnpm add eventkit
 ```
-
 ```sh [bun]
 bun add eventkit
 ```

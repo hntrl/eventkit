@@ -407,6 +407,8 @@ await myObservable.drain();
 // 3
 ```
 
+We can represent how those error values get propagated like this:
+
 ![error-handling](/assets/images/error-handling-dlq-marble-dark.png){.dark-only .reference-image}
 ![error-handling](/assets/images/error-handling-dlq-marble-light.png){.light-only .reference-image}
 
