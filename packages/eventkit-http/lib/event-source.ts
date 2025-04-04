@@ -1,12 +1,7 @@
 import { AsyncObservable } from "eventkit";
-import { ErrorEvent, EventSource } from "eventsource";
-import { type MessageEvent as UnidiciMessageEvent } from "undici-types";
+import { type ErrorEvent } from "undici-types";
 
 import { addGlobalEventListener, parseMessageEvent } from "./utils";
-
-// FIXME: This EventSource implementation requires the use of the `eventsource` package.
-// We should try to find a way to use the native EventSource implementation
-// when targeting environments that support it.
 
 /**
  * Represents the different native event objects that can be emitted by an EventSource.
@@ -14,7 +9,7 @@ import { addGlobalEventListener, parseMessageEvent } from "./utils";
  *
  * @template T - The type of data contained in message events
  */
-export type EventSourceEvent<T> = ErrorEvent | UnidiciMessageEvent<T> | Event;
+export type EventSourceEvent<T> = ErrorEvent | (Omit<MessageEvent, "data"> & { data: T }) | Event;
 
 /**
  * Represents a message event emitted by an EventSource.
@@ -26,6 +21,44 @@ export type EventSourceMessage<T> = {
   type: string;
   data: T;
 };
+
+interface EventSourceObservable extends EventSource {
+  /**
+   * Converts the EventSource into an AsyncObservable that yields either raw message data
+   * or full event objects depending on the options provided.
+   *
+   * @param opts - Configuration options for the observable
+   * @param opts.dematerialize - When true, yields full event objects including metadata.
+   *                            When false or omitted, yields only the message data.
+   * @returns An AsyncObservable that yields either raw message data or full event objects
+   * @template T - The type of data contained in message events
+   */
+  asObservable<T>(opts: { dematerialize: true }): AsyncObservable<EventSourceEvent<T>>;
+  asObservable<T>(opts?: { dematerialize: false }): AsyncObservable<EventSourceMessage<T>>;
+  asObservable(opts?: { dematerialize: boolean }): AsyncObservable<any>;
+}
+
+type EventSourceObservableCtor = new (
+  ...args: ConstructorParameters<typeof EventSource>
+) => EventSourceObservable;
+
+function getEventSourceImpl(): EventSourceObservableCtor {
+  if (typeof globalThis.EventSource !== "function") {
+    return class {
+      constructor() {
+        throw new Error("EventSource is not supported in this environment");
+      }
+    } as any;
+  }
+  return class extends globalThis.EventSource {
+    asObservable<T>(opts?: { dematerialize: boolean }): AsyncObservable<any> {
+      if (opts?.dematerialize === true) {
+        return eventSourceObservable<T>(this, { dematerialize: true });
+      }
+      return eventSourceObservable<T>(this, { dematerialize: false });
+    }
+  };
+}
 
 /**
  * A drop-in replacement for the standard EventSource class that provides an Observable interface
@@ -63,29 +96,10 @@ export type EventSourceMessage<T> = {
  *
  * @see [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/EventSource)
  */
-class EventSourceObservable extends EventSource {
-  /**
-   * Converts the EventSource into an AsyncObservable that yields either raw message data
-   * or full event objects depending on the options provided.
-   *
-   * @param opts - Configuration options for the observable
-   * @param opts.dematerialize - When true, yields full event objects including metadata.
-   *                            When false or omitted, yields only the message data.
-   * @returns An AsyncObservable that yields either raw message data or full event objects
-   * @template T - The type of data contained in message events
-   */
-  asObservable<T>(opts: { dematerialize: true }): AsyncObservable<EventSourceEvent<T>>;
-  asObservable<T>(opts?: { dematerialize: false }): AsyncObservable<EventSourceMessage<T>>;
-  asObservable<T>(opts?: { dematerialize: boolean }): AsyncObservable<any> {
-    if (opts?.dematerialize === true) {
-      return eventSourceObservable<T>(this, { dematerialize: true });
-    }
-    return eventSourceObservable<T>(this, { dematerialize: false });
-  }
-}
-Object.defineProperty(EventSourceObservable, "name", { value: "EventSource" });
+const EventSourceImpl = getEventSourceImpl();
+Object.defineProperty(EventSourceImpl, "name", { value: "EventSource" });
 
-export { EventSourceObservable as EventSource };
+export { EventSourceImpl as EventSource };
 
 /**
  * Creates an AsyncObservable from an EventSource instance.
@@ -174,7 +188,7 @@ async function* materializeEventSource<T>(source: EventSource) {
   const controller = new AbortController();
   try {
     let messageBuffer: EventSourceMessage<T>[] = [];
-    let error: ErrorEvent | null = null;
+    let error: any | null = null;
 
     addGlobalEventListener(
       source,
@@ -187,11 +201,14 @@ async function* materializeEventSource<T>(source: EventSource) {
             type: parsed.type,
             data: parsed.data,
           });
-        } else if (event instanceof ErrorEvent) {
-          // Error events get emitted for arbitrary reasons in the eventsource impl, so we need to
-          // check if the event is an actual error
-          if (event.code || event.message) {
-            error = event;
+        } else if (event.type === "error") {
+          // there seems to be a bug in the undici-types package where the error event
+          // doesn't have the code and message properties set.
+          // regardless, error events can be emitted arbitrarily, so we need to check
+          // the error actually has the code and message properties set.
+          const errorEvent = event as unknown as { code: number; message: string };
+          if (typeof errorEvent.code === "number" && typeof errorEvent.message === "string") {
+            error = errorEvent;
           }
         }
       },

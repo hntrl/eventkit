@@ -14,11 +14,6 @@
  * ```
  * :::
  *
- * ::: warning
- * `@eventkit/http` requires Node.js v22 or higher, or an environment that supports the
- * WebSocket API.
- * :::
- *
  * @packageDocumentation
  */
 

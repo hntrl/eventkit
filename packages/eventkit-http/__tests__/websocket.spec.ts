@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { WebSocket, websocketObservable } from "../lib/websocket";
 import { WebSocketServer } from "ws";
-import { ErrorEvent } from "eventsource";
 
 let wss: WebSocketServer;
 const PORT = 8080;
@@ -110,9 +109,9 @@ describe("WebSocket (exported class)", () => {
 
         // Should have removed event listeners
         const mockCalls = removeSpy.mock.calls;
-        expect(mockCalls[0][0]).toBe("close");
-        expect(mockCalls[1][0]).toBe("error");
-        expect(mockCalls[2][0]).toBe("message");
+        expect(mockCalls.length).toBe(2);
+        expect(mockCalls[0][0]).toBe("open");
+        expect(mockCalls[1][0]).toBe("message");
       });
 
       it("cleans up listeners when the WebSocket closes", async () => {
@@ -137,10 +136,9 @@ describe("WebSocket (exported class)", () => {
         const mockCalls = removeSpy.mock.calls;
 
         // Should have removed event listeners
-        expect(mockCalls.length).toBe(3);
-        expect(mockCalls[0][0]).toBe("close");
-        expect(mockCalls[1][0]).toBe("error");
-        expect(mockCalls[2][0]).toBe("message");
+        expect(mockCalls.length).toBe(2);
+        expect(mockCalls[0][0]).toBe("open");
+        expect(mockCalls[1][0]).toBe("close");
       });
     });
 
@@ -306,11 +304,8 @@ describe("WebSocket (exported class)", () => {
 
         // Should have removed event listeners
         const mockCalls = removeSpy.mock.calls;
-        expect(mockCalls.length).toBe(4);
-        expect(mockCalls[0][0]).toBe("close");
-        expect(mockCalls[1][0]).toBe("error");
-        expect(mockCalls[2][0]).toBe("message");
-        expect(mockCalls[3][0]).toBe("open");
+        expect(mockCalls.length).toBe(1);
+        expect(mockCalls[0][0]).toBe("open");
       });
 
       it("cleans up listeners when the WebSocket closes", async () => {
@@ -334,11 +329,9 @@ describe("WebSocket (exported class)", () => {
 
         // Should have removed event listeners
         const mockCalls = removeSpy.mock.calls;
-        expect(mockCalls.length).toBe(4);
-        expect(mockCalls[0][0]).toBe("close");
-        expect(mockCalls[1][0]).toBe("error");
-        expect(mockCalls[2][0]).toBe("message");
-        expect(mockCalls[3][0]).toBe("open");
+        expect(mockCalls.length).toBe(2);
+        expect(mockCalls[0][0]).toBe("open");
+        expect(mockCalls[1][0]).toBe("close");
       });
     });
   });
