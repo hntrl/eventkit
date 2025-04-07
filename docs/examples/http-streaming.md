@@ -2,7 +2,7 @@
 
 HTTP has entrenched itself as the defacto standard for how we send data over the internet. Particularly with modern web applications and JavaScript, the transactional nature of an HTTP request/response is a powerful way to reason about how data moves between client and server. However, it's become common-place to treat the request/response objects as a single, atomic blob of data, even though HTTP was designed to be a protocol for streaming data. This departure from the original design has led to a lot of hacks and abstractions to try to emulate streaming behavior even when JavaScript already has the primitives needed to support it. We largely think this is because that the API's to support this, up until recently, have been hard to reason about and not very ergonomic.
 
-Observables are, at heart, a way to represent a collection of values over time, which makes it a natural fit for representing streams of HTTP data. We can use observables to consume/produce HTTP data streams in a way that's easy and takes advantage of all the transformation, composability, lifecycle, and side effect management bonuses that observables provide.
+Observables are, at heart, a way to represent a collection of values over time, which makes it a natural fit for representing streams of HTTP data. We can use observables to consume/produce HTTP data streams in a way that's easy to understand and takes advantage of all the transformation, composability, lifecycle, and side effect management bonuses that observables provide.
 
 ::: tip INFO
 The examples dotted throughout this guide demonstrate how you can use eventkit primitives to send data streams to an HTTP client. Eventkit doesn't have any opinion on how the actual HTTP server is implemented, so long as the server knows how to handle standard objects like [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) or [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response). The examples below are using express/hono-like syntax, but some parts are intentionally left missing for the sake of brevity.
@@ -36,7 +36,8 @@ app.get("/stream", (req, res) => {
 import { AsyncObservable, map } from "eventkit";
 
 const res = await fetch("/stream");
-// the body of the response is a ReadableStream which we can create an AsyncObservable from
+// the body of the response is a ReadableStream which we can create
+// an AsyncObservable from
 const obs = AsyncObservable.from(res.body);
 
 function appendElement(content: string) {
@@ -47,7 +48,7 @@ function appendElement(content: string) {
 
 const decoder = new TextDecoder();
 const sub = obs
-  // because the ReadableStream emits buffers, we need to decode them
+  // because ReadableStream emits buffers, we need to decode them
   .pipe(map((v) => decoder.decode(v)))
   .subscribe((v) => appendElement(v));
 
@@ -107,9 +108,17 @@ const obs = eventSource.asObservable();
 obs.subscribe((event) => console.log(event));
 ```
 
+In the native implementation of `EventSource`, the way that state/data is yielded is through adding event listeners to the event source instance (see what types of events are available [here](https://developer.mozilla.org/en-US/docs/Web/API/EventSource#events)). By default, the EventSource observable will only yield actual message event data, and throw an error whenever an error event is emitted. If you want to be able to observe the actual [Event](https://developer.mozilla.org/en-US/docs/Web/API/Event) objects, you can pass in the `dematerialize` option to the `asObservable` method:
+
+```ts
+const obs = eventSource.asObservable({ dematerialize: true });
+// instead of just yielding message data, the observable will yield 'open', 'message', 'error', and
+// (if the `event` field is defined on the message) keyed event objects.
+```
+
 ### `EventSourceResponse`
 
-As the server counter-part to `EventSource`, `EventSourceResponse` is a class that allows you to represent an `AsyncObservable` as an HTTP response. You can create it by constructing the response as you would with a normal response, but instead of passing in a stream you pass in an `AsyncObservable`:
+As the natural counter-part to `EventSource`, `EventSourceResponse` is a class that allows you to represent an `AsyncObservable` as an SSE response. You can create it by constructing the response as you would with a normal response, but instead of passing in a stream you pass in an observable:
 
 ```ts
 import { EventSourceResponse } from "@eventkit/http";
@@ -141,15 +150,14 @@ return new EventSourceResponse(obs, {
 })
 
 // will emit events like:
-
 // id: 0
 // event: increment
 // data: 0
-
+//
 // id: 2
 // event: increment
 // data: 1
-
+//
 // ...etc
 ```
 
@@ -180,6 +188,22 @@ app.get("/fibonacci", (req, res) => {
     }
   });
 });
+```
+
+We can expect the serialized output to look something like this:
+
+```
+id: 0
+event: fibonacci
+data: 0
+
+<after 8 events>
+
+id: 7
+event: fibonacci
+data: 21
+
+...etc
 ```
 
 Browsers know how to handle SSE responses, so you can either visit the endpoint directly, or embed it in your page like this:
@@ -263,8 +287,15 @@ const ws = new WebSocket("ws://localhost");
 const obs = ws.asObservable();
 ```
 
+In the native implementation of `WebSocket`, the way that state/data is yielded is through adding event listeners to the websocket instance (see what types of events are available [here](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket#events)). By default, the WebSocket observable will only yield actual message event data, and throw an error whenever an error event is emitted. If you want to be able to observe the actual [Event](https://developer.mozilla.org/en-US/docs/Web/API/Event) objects, you can pass in the `dematerialize` option to the `asObservable` method:
+
+```ts
+const obs = ws.asObservable({ dematerialize: true });
+// instead of just yielding message data, the observable will yield 'open', 'message', 'error', and 'close' event objects
+```
+
 ::: tip
-Websockets "as an observable" only represent the receiving end of the connection. If you want to also be able to observe the sending side of the connection, you can use a `Stream` class to act as the mechanism handle the work of actually sending data through the websocket.
+Websockets "as an observable" only represent the receiving end of the connection. If you want to also be able to observe data as it's being sent, a common pattern is to use a `Stream`, add a subscription to handle the work of actually sending data through the websocket, and then push events to the `Stream` instead of pushing them to the websocket directly.
 
 ```ts
 import { Stream } from "eventkit";
@@ -286,5 +317,8 @@ tx.subscribe((event) => {
 rx.subscribe((event) => {
   console.log(`received: ${event}`);
 });
+
+// push events to all tx subscribers and the websocket
+tx.push("hello");
 ```
 :::
