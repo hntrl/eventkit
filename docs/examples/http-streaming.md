@@ -58,6 +58,8 @@ await sub;
 appendElement("done");
 ```
 
+You can see the full example and test this out yourself [here](https://github.com/hntrl/eventkit/tree/main/examples/http-streaming).
+
 ## HTTP Utilities
 
 In addition to HTTP being a streaming protocol, the HTTP protocol also maintains several standardized formats for representing streams of data. Things like [Server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) and WebSockets are examples of protocols that use HTTP as a transport mechanism. Eventkit provides the `@eventkit/http` package to help you interface with HTTP this way using observables.
