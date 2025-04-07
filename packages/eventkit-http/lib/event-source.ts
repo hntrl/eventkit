@@ -22,43 +22,13 @@ export type EventSourceMessage<T> = {
   data: T;
 };
 
-interface EventSourceObservable extends EventSource {
-  /**
-   * Converts the EventSource into an AsyncObservable that yields either raw message data
-   * or full event objects depending on the options provided.
-   *
-   * @param opts - Configuration options for the observable
-   * @param opts.dematerialize - When true, yields full event objects including metadata.
-   *                            When false or omitted, yields only the message data.
-   * @returns An AsyncObservable that yields either raw message data or full event objects
-   * @template T - The type of data contained in message events
-   */
-  asObservable<T>(opts: { dematerialize: true }): AsyncObservable<EventSourceEvent<T>>;
-  asObservable<T>(opts?: { dematerialize: false }): AsyncObservable<EventSourceMessage<T>>;
-  asObservable(opts?: { dematerialize: boolean }): AsyncObservable<any>;
-}
-
-type EventSourceObservableCtor = new (
-  ...args: ConstructorParameters<typeof EventSource>
-) => EventSourceObservable;
-
-function getEventSourceImpl(): EventSourceObservableCtor {
-  if (typeof globalThis.EventSource !== "function") {
-    return class {
-      constructor() {
-        throw new Error("EventSource is not supported in this environment");
-      }
-    } as any;
-  }
-  return class extends globalThis.EventSource {
-    asObservable<T>(opts?: { dematerialize: boolean }): AsyncObservable<any> {
-      if (opts?.dematerialize === true) {
-        return eventSourceObservable<T>(this, { dematerialize: true });
-      }
-      return eventSourceObservable<T>(this, { dematerialize: false });
+const EventSource: typeof globalThis.EventSource =
+  globalThis.EventSource ??
+  class {
+    constructor() {
+      throw new Error("EventSource is not supported in this environment");
     }
   };
-}
 
 /**
  * A drop-in replacement for the standard EventSource class that provides an Observable interface
@@ -96,10 +66,29 @@ function getEventSourceImpl(): EventSourceObservableCtor {
  *
  * @see [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/EventSource)
  */
-const EventSourceImpl = getEventSourceImpl();
-Object.defineProperty(EventSourceImpl, "name", { value: "EventSource" });
+class EventSourceObservable extends EventSource {
+  /**
+   * Converts the EventSource into an AsyncObservable that yields either raw message data
+   * or full event objects depending on the options provided.
+   *
+   * @param opts - Configuration options for the observable
+   * @param opts.dematerialize - When true, yields full event objects including metadata.
+   *                            When false or omitted, yields only the message data.
+   * @returns An AsyncObservable that yields either raw message data or full event objects
+   * @template T - The type of data contained in message events
+   */
+  asObservable<T>(opts: { dematerialize: true }): AsyncObservable<EventSourceEvent<T>>;
+  asObservable<T>(opts?: { dematerialize: false }): AsyncObservable<EventSourceMessage<T>>;
+  asObservable<T>(opts?: { dematerialize: boolean }): AsyncObservable<any> {
+    if (opts?.dematerialize === true) {
+      return eventSourceObservable<T>(this, { dematerialize: true });
+    }
+    return eventSourceObservable<T>(this, { dematerialize: false });
+  }
+}
+Object.defineProperty(EventSourceObservable, "name", { value: "EventSource" });
 
-export { EventSourceImpl as EventSource };
+export { EventSourceObservable as EventSource };
 
 /**
  * Creates an AsyncObservable from an EventSource instance.

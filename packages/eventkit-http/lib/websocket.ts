@@ -15,43 +15,13 @@ type WebSocketEvent<T> =
   | (Omit<MessageEvent, "data"> & { data: T })
   | Event;
 
-interface WebSocketObservable extends WebSocket {
-  /**
-   * Converts the WebSocket into an AsyncObservable that yields either raw message data
-   * or full event objects depending on the options provided.
-   *
-   * @param opts - Configuration options for the observable
-   * @param opts.dematerialize - When true, yields full event objects including metadata.
-   *                            When false or omitted, yields only the message data.
-   * @returns An AsyncObservable that yields either raw message data or full event objects
-   * @template T - The type of data contained in message events
-   */
-  asObservable<T>(opts: { dematerialize: true }): AsyncObservable<WebSocketEvent<T>>;
-  asObservable<T>(opts?: { dematerialize?: false }): AsyncObservable<T>;
-  asObservable(opts?: { dematerialize?: boolean }): AsyncObservable<any>;
-}
-
-type WebSocketObservableCtor = new (
-  ...args: ConstructorParameters<typeof WebSocket>
-) => WebSocketObservable;
-
-function getWebSocketImpl(): WebSocketObservableCtor {
-  if (typeof globalThis.WebSocket !== "function") {
-    return class {
-      constructor() {
-        throw new Error("WebSocket is not supported in this environment");
-      }
-    } as any;
-  }
-  return class extends globalThis.WebSocket {
-    asObservable<T>(opts?: { dematerialize?: boolean }): AsyncObservable<any> {
-      if (opts?.dematerialize === true) {
-        return websocketObservable<T>(this, { dematerialize: true });
-      }
-      return websocketObservable<T>(this, { dematerialize: false });
+const WebSocket: typeof globalThis.WebSocket =
+  globalThis.WebSocket ??
+  class {
+    constructor() {
+      throw new Error("WebSocket is not supported in this environment");
     }
   };
-}
 
 /**
  * A drop-in replacement for the standard WebSocket class that provides an Observable interface
@@ -91,10 +61,29 @@ function getWebSocketImpl(): WebSocketObservableCtor {
  *
  * @see [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
  */
-const WebSocketImpl = getWebSocketImpl();
-Object.defineProperty(WebSocketImpl, "name", { value: "WebSocket" });
+class WebSocketObservable extends WebSocket {
+  /**
+   * Converts the WebSocket into an AsyncObservable that yields either raw message data
+   * or full event objects depending on the options provided.
+   *
+   * @param opts - Configuration options for the observable
+   * @param opts.dematerialize - When true, yields full event objects including metadata.
+   *                            When false or omitted, yields only the message data.
+   * @returns An AsyncObservable that yields either raw message data or full event objects
+   * @template T - The type of data contained in message events
+   */
+  asObservable<T>(opts: { dematerialize: true }): AsyncObservable<WebSocketEvent<T>>;
+  asObservable<T>(opts?: { dematerialize?: false }): AsyncObservable<T>;
+  asObservable<T>(opts?: { dematerialize?: boolean }): AsyncObservable<any> {
+    if (opts?.dematerialize === true) {
+      return websocketObservable<T>(this, { dematerialize: true });
+    }
+    return websocketObservable<T>(this, { dematerialize: false });
+  }
+}
+Object.defineProperty(WebSocketObservable, "name", { value: "WebSocket" });
 
-export { WebSocketImpl as WebSocket };
+export { WebSocketObservable as WebSocket };
 
 /**
  * Creates an AsyncObservable from a WebSocket instance.
