@@ -1,0 +1,19 @@
+{
+  "name": "worker-b",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint ./src",
+    "dev": "tsx src/server.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "eventkit": "workspace:*",
+    "hono": "^4.7.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

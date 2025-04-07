@@ -1,0 +1,163 @@
+<html>
+  <head>
+    <script type="module" src="eventkit.js"></script>
+    <style>
+      .stream-section {
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      .output {
+        white-space: pre-wrap;
+        font-family: monospace;
+        padding: 20px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        margin-top: 10px;
+        min-height: 100px;
+      }
+      h2 {
+        margin-top: 0;
+      }
+      button {
+        padding: 8px 16px;
+        margin: 5px;
+        border: none;
+        border-radius: 4px;
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      button:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+      }
+      .input-group {
+        margin: 10px 0;
+      }
+      input[type="text"] {
+        padding: 8px;
+        margin-right: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Streaming Demo</h1>
+
+    <div class="stream-section">
+      <h2>Observable</h2>
+      <p>This stream emits predefined messages with delays</p>
+      <button id="startObservable">Start Stream</button>
+      <div id="observableOutput" class="output"></div>
+    </div>
+
+    <div class="stream-section">
+      <h2>Stream</h2>
+      <p>This stream can receive messages from multiple clients</p>
+      <p><em>hint: open this in a second tab and push messages</em></p>
+      <div class="input-group">
+        <input type="text" id="messageInput" placeholder="Enter message to push">
+        <button id="pushMessage">Push Message</button>
+      </div>
+      <div id="sharedOutput" class="output"></div>
+    </div>
+
+    <script type="module">
+      import { AsyncObservable, map } from "./eventkit.js";
+
+      // Observable Stream Section
+      const startButton = document.getElementById('startObservable');
+      const observableOutput = document.getElementById('observableOutput');
+
+      startButton.addEventListener('click', async () => {
+        try {
+          startButton.disabled = true;
+          observableOutput.textContent = '';
+
+          const res = await fetch("/observable-stream");
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          if (!res.body) throw new Error("Response body is null");
+
+          const obs = AsyncObservable.from(res.body);
+          const decoder = new TextDecoder();
+
+          const sub = obs
+            .pipe(map((buffer) => decoder.decode(buffer)))
+            .subscribe((text) => {
+              observableOutput.textContent += text;
+            });
+
+          await sub;
+          observableOutput.textContent += "\nStream complete!";
+          startButton.disabled = false;
+        } catch (error) {
+          console.error("Error:", error);
+          observableOutput.textContent = `Error: ${error.message}`;
+          startButton.disabled = false;
+        }
+      });
+
+      // Shared Stream Section
+      const messageInput = document.getElementById('messageInput');
+      const pushButton = document.getElementById('pushMessage');
+      const sharedOutput = document.getElementById('sharedOutput');
+
+      // Start listening to shared stream immediately
+      (async () => {
+        try {
+          const res = await fetch("/shared-stream");
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          if (!res.body) throw new Error("Response body is null");
+
+          const obs = AsyncObservable.from(res.body);
+          const decoder = new TextDecoder();
+
+          const sub = obs
+            .pipe(map((buffer) => decoder.decode(buffer)))
+            .subscribe((text) => {
+              sharedOutput.textContent += text + "\n";
+            });
+          await sub;
+        } catch (error) {
+          console.error("Error:", error);
+          sharedOutput.textContent = `Error: ${error.message}`;
+        }
+      })();
+
+      // Handle pushing messages to shared stream
+      pushButton.addEventListener('click', async () => {
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        try {
+          pushButton.disabled = true;
+          const res = await fetch("/stream", {
+            method: "POST",
+            body: message
+          });
+
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          messageInput.value = '';
+        } catch (error) {
+          console.error("Error:", error);
+          sharedOutput.textContent += `\nError pushing message: ${error.message}`;
+        } finally {
+          pushButton.disabled = false;
+        }
+      });
+
+      // Allow Enter key to push messages
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          pushButton.click();
+        }
+      });
+    </script>
+  </body>
+</html>
