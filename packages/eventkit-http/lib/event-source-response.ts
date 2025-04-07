@@ -44,6 +44,14 @@ export type EventSourceResponseInit<T> = ResponseInit & {
   sse?: EventSourceSerializerInit<T>;
 };
 
+const Response: typeof globalThis.Response =
+  globalThis.Response ??
+  class {
+    constructor() {
+      throw new Error("Response is not supported in this environment");
+    }
+  };
+
 /**
  * A Response subclass that subscribes to an {@link AsyncObservable} and streams the values yielded
  * by the observable to the client as [Server-Sent Events (SSE)](https://en.wikipedia.org/wiki/Server-sent_events).
