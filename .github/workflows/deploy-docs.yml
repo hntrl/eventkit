@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "packages/**"
       - "**/README.md"
 
   # Allows this workflow to be manually from the Actions tab
