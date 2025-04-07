@@ -15,6 +15,20 @@ afterEach(() => {
   wss.close();
 });
 
+describe.skipIf(shouldRun)("WebSocket (exported class)", () => {
+  describe("constructor should reject if WebSocket is not supported", () => {
+    it("should reject if WebSocket is not supported", () => {
+      try {
+        new WebSocket(`ws://localhost:${PORT}`);
+        expect(true).toBe(false);
+      } catch (error) {
+        expect(error).toBeDefined();
+        expect(error.message).toBe("WebSocket is not supported in this environment");
+      }
+    });
+  });
+});
+
 describe.skipIf(!shouldRun)("WebSocket functionality", () => {
   describe("WebSocket (exported class)", () => {
     describe("asObservable()", () => {

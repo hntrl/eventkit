@@ -11,6 +11,18 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterAll(() => server.close());
 afterEach(() => server.resetHandlers());
 
+describe.skipIf(shouldRun)("EventSource (exported class)", () => {
+  it("should reject if EventSource is not supported", () => {
+    try {
+      new EventSource("http://localhost/events");
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeDefined();
+      expect(error.message).toBe("EventSource is not supported in this environment");
+    }
+  });
+});
+
 describe.skipIf(!shouldRun)("SSE functionality", () => {
   describe("EventSource (exported class)", () => {
     describe("asObservable()", () => {
