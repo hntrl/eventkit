@@ -1,3 +1,7 @@
+---
+outline: [2, 3]
+---
+
 # HTTP Streaming
 
 HTTP has entrenched itself as the defacto standard for how we send data over the internet. Particularly with modern web applications and JavaScript, the transactional nature of an HTTP request/response is a powerful way to reason about how data moves between client and server. However, it's become common-place to treat the request/response objects as a single, atomic blob of data, even though HTTP was designed to be a protocol for streaming data. This departure from the original design has led to a lot of hacks and abstractions to try to emulate streaming behavior even when JavaScript already has the primitives needed to support it. We largely think this is because that the API's to support this, up until recently, have been hard to reason about and not very ergonomic.
