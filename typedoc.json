@@ -18,6 +18,7 @@
     "outline": [2, 3]
   },
   "disableSources": true,
+  "readme": "none",
   "out": "./docs/reference",
   "docsRoot": "./docs",
   "indexFormat": "table",
