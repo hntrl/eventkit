@@ -79,72 +79,13 @@ pnpm test
 pnpm test --projects packages/react-router-dom
 ```
 
+### Documenting changes
+
+We use [changesets](https://github.com/changesets/changesets) to manage the changelog and versioning of the packages. When you make any material changes to the codebase in a PR, you should document your changes by running `pnpm changeset` from the root directory. Follow the prompts to add a changelog entry, and the changelog's will be updated automatically come release time.
+
 ## New Releases
 
-When it's time to cut a new release, we follow a process based on our branching strategy depending on the type of release.
-
-### Major and Minor Releases
-
-For major and minor releases, we follow the following process:
-
-```bash
-# Start from the dev branch.
-git checkout dev
-
-# Merge the main branch into dev to ensure that any hotfixes and
-# docs updates are available in the release.
-git merge main
-
-# Create a new release branch from dev.
-git checkout -b release/v0.1.0
-
-# Create a new tag and update version references throughout the
-# codebase.
-pnpm run version [nextVersion]
-
-# Push the release branch along with the new release tag.
-git push origin release/v0.1.0 --follow-tags
-
-# Wait for GitHub actions to run all tests. If the tests pass, the
-# release is ready to go! Merge the release branch into main and dev.
-git checkout main
-git merge release/v0.1.0
-git checkout dev
-git merge release/v0.1.0
-
-# The release branch can now be deleted.
-git branch -D release/v0.1.0
-git push origin --delete release/v0.1.0
-
-# Now go to GitHub and create the release from the new tag. Let
-# GitHub Actions take care of the rest!
-```
-
-### Hot-fix Releases
-
-Sometimes we have a crucial bug that needs to be patched right away. If the bug affects the latest release, we can create a new version directly from `main` (or the relevant major release branch where the bug exists):
-
-```bash
-# From the main branch, make sure to run the build and all tests
-# before creating a new release.
-pnpm install && pnpm build && pnpm test
-
-# Assuming the tests pass, create the release tag and update
-# version references throughout the codebase.
-pnpm run version [nextVersion]
-
-# Push changes along with the new release tag.
-git push origin main --follow-tags
-
-# In GitHub, create the release from the new tag and it will be
-# published via GitHub actions
-
-# When the hot-fix is done, merge the changes into dev and clean
-# up conflicts as needed.
-git checkout dev
-git merge main
-git push origin dev
-```
+Releases are managed by changesets and are automatically created when a PR is merged into `main`. When code lands in `main`, a new PR will open that will update the changelog and version of the packages. Once that PR is merged, a new release will be created and published to npm.
 
 ---
 
