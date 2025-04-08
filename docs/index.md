@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "eventkit"
   text: "Declarative streams for Typescript"
-  tagline: Build powerful data streams without the baggage
+  tagline: Build powerful data streams without the headache
   actions:
     - theme: brand
       text: What is eventkit?
