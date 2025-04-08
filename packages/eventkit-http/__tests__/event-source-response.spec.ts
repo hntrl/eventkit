@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { AsyncObservable, QueueScheduler } from "eventkit";
+import { AsyncObservable, QueueScheduler } from "@eventkit/base";
 import { EventSourceResponse } from "../lib/event-source-response";
 
 async function consumeStream(stream: ReadableStream<Uint8Array>): Promise<Uint8Array[]> {

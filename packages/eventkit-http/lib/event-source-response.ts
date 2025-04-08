@@ -1,4 +1,9 @@
-import { QueueScheduler, type Subscriber, withScheduler, type AsyncObservable } from "eventkit";
+import {
+  QueueScheduler,
+  type Subscriber,
+  withScheduler,
+  type AsyncObservable,
+} from "@eventkit/base";
 
 type EventSourceSerializer<T> = (event: T, index: number) => Uint8Array;
 

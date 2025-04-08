@@ -1,4 +1,4 @@
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 import { type ErrorEvent } from "undici-types";
 
 import { addGlobalEventListener, parseMessageEvent } from "./utils";

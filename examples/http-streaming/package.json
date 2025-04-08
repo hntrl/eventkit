@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
-    "eventkit": "workspace:*",
+    "@eventkit/base": "workspace:*",
     "hono": "^4.7.5"
   },
   "devDependencies": {

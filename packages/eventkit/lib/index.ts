@@ -1,16 +1,16 @@
 /**
  * ::: code-group
  * ```sh [npm]
- * npm install eventkit
+ * npm install @eventkit/base
  * ```
  * ```sh [yarn]
- * yarn add eventkit
+ * yarn add @eventkit/base
  * ```
  * ```sh [pnpm]
- * pnpm add eventkit
+ * pnpm add @eventkit/base
  * ```
  * ```sh [bun]
- * bun add eventkit
+ * bun add @eventkit/base
  * ```
  * :::
  *

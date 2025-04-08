@@ -25,7 +25,7 @@ The best way to start using Eventkit is by checking out the [getting started](ht
 Here's a basic example of how to use an eventkit stream:
 
 ```typescript
-import { Stream, filter } from "eventkit";
+import { Stream, filter } from "@eventkit/base";
 
 // Create a stream of events
 const stream = new Stream<{ type: string; payload: any }>();

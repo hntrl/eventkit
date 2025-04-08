@@ -1,5 +1,5 @@
 {
-  "name": "eventkit",
+  "name": "@eventkit/base",
   "version": "0.1.0",
   "license": "MIT",
   "author": "Hunter Lovell <hunter@hntrl.io>",

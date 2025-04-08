@@ -57,7 +57,7 @@ With event sourcing, instead of mutating the state of your application directly,
 
 ```ts
 // Event sourcing application:
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 type CounterEvent = { type: "increment" | "decrement" };
 const stream = new Stream<CounterEvent>();
@@ -119,7 +119,7 @@ This pattern comes from the observation that, in most systems, there's a lot mor
 When used in conjunction with event sourcing as we detailed above, this separation of concerns is even more pronounced. When the unit of state is an event detailing a change to the state of an object, the read and write operations are naturally separated. And when used with an "event stream", we can completely separate different representations of the same state!
 
 ```ts
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 type CounterEvent = { type: "increment" | "decrement" };
 const stream = new Stream<CounterEvent>();

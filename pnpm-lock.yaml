@@ -68,12 +68,12 @@ importers:
 
   examples/http-streaming:
     dependencies:
+      '@eventkit/base':
+        specifier: workspace:*
+        version: link:../../packages/eventkit
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.14.0(hono@4.7.5)
-      eventkit:
-        specifier: workspace:*
-        version: link:../../packages/eventkit
       hono:
         specifier: ^4.7.5
         version: 4.7.5
@@ -118,7 +118,7 @@ importers:
 
   packages/eventkit-http:
     dependencies:
-      eventkit:
+      '@eventkit/base':
         specifier: workspace:*
         version: link:../eventkit
     devDependencies:

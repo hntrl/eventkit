@@ -44,7 +44,7 @@ The way that this gets tracked is through the implementation of a [Scheduler](#s
 One of the implementation details of the default scheduler is that when we add any work to a subscriber (the object returned by [`.subscribe()`](/reference/eventkit/AsyncObservable#subscribe)), we're adding the work to both the subscriber and the observable it comes from. This means that when we're waiting for an observable to finish, we're also implicitly waiting for all the work associated with the subscriber to finish.
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 // The usage of this observable means that we're implictly adding 4 work items:
 // - The execution of the generator function
@@ -98,7 +98,7 @@ Streams are a unique kind of AsyncObservable that will indefinitely yield values
 Since the stream's generator function will never complete on its own (and by extension any stream Subscriber's wont complete either), there will always be one piece of work that is pending (the generator function).
 
 ```ts
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 const stream = new Stream<number>();
 const sub = stream.subscribe(console.log);
@@ -113,7 +113,7 @@ What this means in practice is that we can't observe the side effects of a strea
 The implementation of Stream solves this by using an intermediary scheduler (called `StreamScheduler`) that intentionally ignores the generator function's completion. Instead, it only waits for the work that comes from the stream's Subscriber and any other side effects that may be added.
 
 ```ts
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 const stream = new Stream<number>();
 
@@ -146,7 +146,7 @@ More details on how this works and how work is handled can be found in the [Sche
 You can wait for all the work associated with a subscriber to finish by using `await` on the subscriber object.
 
 ```ts
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 const stream = new Stream<number>();
 
@@ -222,7 +222,7 @@ async function addSub() {
 Alternatively you can wait for all the subscribers that belong to an observable to finish by awaiting the observable's [`drain()`](/reference/eventkit/AsyncObservable#drain) method.
 
 ```ts
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 const stream = new Stream<number>();
 
@@ -244,7 +244,7 @@ console.log("done");
 If you need to do some work when an object has finished, you can add this work by calling the [`finally()`](/reference/eventkit/AsyncObservable#finally) method on either the subscriber or the observable.
 
 ```ts
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 const stream = new Stream<number>();
 
@@ -264,7 +264,7 @@ Note that when you register a [`finally`](/reference/eventkit/AsyncObservable#fi
 Also note that using [`finally`](/reference/eventkit/AsyncObservable#finally) will implicitly add the cleanup work to the subject, so awaiting the subject will also wait for the cleanup work to finish.
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;
@@ -287,7 +287,7 @@ console.log("after");
 A common misconception is that [`finally`](/reference/eventkit/AsyncObservable#finally) will wait for **all** cleanup work to finish before resolving. This is not the case. [`finally`](/reference/eventkit/AsyncObservable#finally) will only wait for the callback provided to finish, which will happen concurrently with the rest of the cleanup work when the subject is disposed of.
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;
@@ -320,7 +320,7 @@ Handling errors in eventkit takes on a bit of a unique shape from how errors are
 Let's take an example of an observable that doesn't error to give a baseline into how work is handled in eventkit.
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield* [1, 2];
@@ -379,7 +379,7 @@ DLQ stands for ["Dead Letter Queue"](https://en.wikipedia.org/wiki/Dead_letter_q
 The [`dlq()`](/reference/eventkit/dlq) operator takes an observable and returns a new observable that emits the errors that occur in the original observable's subscriber callbacks.
 
 ```ts
-import { AsyncObservable, dlq } from "eventkit";
+import { AsyncObservable, dlq } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield* [1, 2, 3];
@@ -421,7 +421,7 @@ Note that the [`dlq()`](/reference/eventkit/dlq) operator will **only** catch er
 Often times we want to handle callbacks in such a way that we can allow errors to occur, but still propagate them if they continue to occur. This is especially helpful in areas where errors are expected to occur (think network requests, database transactions, dom updates, etc.). The [`retry()`](/reference/eventkit/retry) operator is a standard way to handle this by retrying the callback using the specified strategy a certain number of times before eventually re-throwing the error.
 
 ```ts
-import { AsyncObservable, retry } from "eventkit";
+import { AsyncObservable, retry } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield* [1, 2, 3];
@@ -451,7 +451,7 @@ await myObservable.pipe(retry({ limit: 3 })).subscribe((value) => {
 You can use the native `try/catch` block in areas where you want to handle errors.
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 // in the generator function
 const myObservable = new AsyncObservable(async function* () {
@@ -487,7 +487,7 @@ await sub; // no errors will be thrown here
 Since the execution of an observable's generator is stable (it outputs values/errors exactly in the order they're yielded and can be observed in its own definition), we intentionally don't use the same error semantics as we do for subscriber callbacks as mentioned above. What this means is that errors thrown in the generator function will always be thrown immediately and will always cause any subsequent work to be left hanging, regardless if you impose a [`dlq`](/reference/eventkit/dlq) or [`retry`](/reference/eventkit/retry) operator on the observable. Because of this, it's important to use `try/catch` in the generator function to handle errors if you want to avoid work being left hanging.
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   try {
@@ -511,7 +511,7 @@ When calling [`AsyncObservable.drain()`](/reference/eventkit/AsyncObservable#dra
 ::: code-group
 
 ```ts [AsyncObservable]
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;
@@ -528,7 +528,7 @@ await myObservable.drain();
 ```
 
 ```ts [Subscriber]
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;
@@ -555,7 +555,7 @@ For instance, if we're waiting for the natural completion of a subscriber and we
 ::: code-group
 
 ```ts [try/finally]
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   try {
@@ -572,7 +572,7 @@ await sub;
 ```
 
 ```ts [finally()]
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;
@@ -592,7 +592,7 @@ Or if we do an early cancel of a subscriber, any errors that occur in the cleanu
 ::: code-group
 
 ```ts [try/finally]
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   try {
@@ -610,7 +610,7 @@ await sub.cancel();
 ```
 
 ```ts [finally()]
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;

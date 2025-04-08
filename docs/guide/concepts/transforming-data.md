@@ -15,7 +15,7 @@ For example, the [`map`](/reference/eventkit/map) operator is synonymous to the 
 ::: code-group
 
 ```ts [AsyncObservable]
-import { AsyncObservable, map } from "eventkit";
+import { AsyncObservable, map } from "@eventkit/base";
 
 // Array method
 [1, 2, 3].map((x) => x * x); // [1, 4, 9]
@@ -32,7 +32,7 @@ await AsyncObservable.from([1, 2, 3])
 ```
 
 ```ts [Stream]
-import { Stream, map } from "eventkit";
+import { Stream, map } from "@eventkit/base";
 
 // Array method
 [1, 2, 3].map((x) => x * x); // [1, 4, 9]
@@ -73,7 +73,7 @@ obs.pipe(op1(), op2(), op3(), op4());
 To give a practical example of what multiple operators chained together looks like, let's say we want to square all the numbers in an observable, filter out the odd numbers, and then sum them all up:
 
 ```ts
-import { AsyncObservable, map, filter, reduce } from "eventkit";
+import { AsyncObservable, map, filter, reduce } from "@eventkit/base";
 
 const obs = AsyncObservable.from([-1, 2, 3, 0, 5]);
 
@@ -126,7 +126,7 @@ When you use the pipe method, you should provide a type parameter to the first o
 While eventkit provides many built-in operators, you can also create your own custom operators to implement your own transformations. An operator is most commonly a function that takes a source observable and returns a new observable that performs some transformation on the data. You'll likely never need to do this as you can achieve just about any data transformation by chaining multiple of the built-in operators together.
 
 ```ts
-import { AsyncObservable, type OperatorFunction } from "eventkit";
+import { AsyncObservable, type OperatorFunction } from "@eventkit/base";
 
 // Custom operator that doubles even numbers and filters out odd numbers
 function doubleEvens<T extends number>(): OperatorFunction<T, T> {

@@ -7,19 +7,19 @@ In this guide, we'll walk through the fundamentals and tell you how to go from 0
 ::: code-group
 
 ```sh [npm]
-npm install eventkit
+npm install @eventkit/base
 ```
 
 ```sh [yarn]
-yarn add eventkit
+yarn add @eventkit/base
 ```
 
 ```sh [pnpm]
-pnpm add eventkit
+pnpm add @eventkit/base
 ```
 
 ```sh [bun]
-bun add eventkit
+bun add @eventkit/base
 ```
 
 :::
@@ -29,7 +29,7 @@ bun add eventkit
 Let's create a simple example to demonstrate how eventkit works. We'll create a stream of events and filter them based on a condition.
 
 ```typescript
-import { Stream, filter } from "eventkit";
+import { Stream, filter } from "@eventkit/base";
 
 // Create a stream of events
 const stream = new Stream<{ type: string; payload: any }>();

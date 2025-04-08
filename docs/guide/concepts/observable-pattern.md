@@ -58,7 +58,7 @@ Eventkit relies on the [async iterator/generator](https://developer.mozilla.org/
 The following example demonstrates an AsyncObservable that yields 3 numbers.
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;
@@ -88,7 +88,7 @@ It's worth noting that as a result of yielding values, the observable is not seq
 For instance, given the following example:
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

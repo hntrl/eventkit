@@ -57,7 +57,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "eventkit": "workspace:*"
+    "@eventkit/base": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.14",

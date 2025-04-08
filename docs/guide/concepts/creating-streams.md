@@ -7,7 +7,7 @@ outline: [2, 6]
 Streams are one of the most basic objects available in eventkit. They provide a powerful way to model asynchronous data that arrives when you decide it should be delivered.
 
 ```ts
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 // A stream of numbers
 const stream = new Stream<number>();
@@ -34,7 +34,7 @@ With Streams, you can transform, filter, and combine data as it flows through yo
 Say you wanted to selectively observe values from the stream like you would with an EventEmitter.
 
 ```ts
-import { Stream, filter } from "eventkit";
+import { Stream, filter } from "@eventkit/base";
 
 type Event = { type: "increment"; value: number } | { type: "decrement"; value: number };
 
@@ -86,7 +86,7 @@ You can provide a [`preprocess`](/reference/eventkit/StreamInit#preprocess) meth
 
 ```ts
 import { z } from "zod";
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 const eventSchema = z.union([
   z.object({ type: z.literal("increment"), value: z.number().min(0) }),
@@ -111,7 +111,7 @@ Scheduling is a more advanced concept that allows you to control how the stream'
 To give a basic example, say that you wanted to handle all of the callbacks in the stream sequentially:
 
 ```ts
-import { Stream, QueueScheduler } from "eventkit";
+import { Stream, QueueScheduler } from "@eventkit/base";
 
 const stream = new Stream({
   scheduler: new QueueScheduler(),
@@ -153,7 +153,7 @@ console.log("done");
 The [`AsyncObservable`](./observable-pattern#using-asyncobservable) object is a different, more abstractive way, to represent values over time. Whereas values can be pushed to a stream from anywhere in your code, the values that get emitted from an [`AsyncObservable`](./observable-pattern#using-asyncobservable) are produced by a self-contained generator function.
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;
@@ -182,7 +182,7 @@ One of the key facets of [`AsyncObservable`](./observable-pattern#using-asyncobs
 ::: code-group
 
 ```ts [AsyncObservable]
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;
@@ -210,7 +210,7 @@ await queryDatabase();
 ```
 
 ```ts [Stream]
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 const stream = new Stream();
 
@@ -244,7 +244,7 @@ We can also wait for a specific subset of those side effects to finish.
 ::: code-group
 
 ```ts [AsyncObservable]
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield 1;
@@ -276,7 +276,7 @@ await dbOps$.drain();
 ```
 
 ```ts [Stream]
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 
 const stream = new Stream<number>();
 

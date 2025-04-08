@@ -1,6 +1,6 @@
+import { AsyncObservable, Stream } from "@eventkit/base";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { AsyncObservable, Stream } from "eventkit";
 import { Hono } from "hono";
 
 const app = new Hono();

@@ -19,7 +19,7 @@ The examples dotted throughout this guide demonstrate how you can use eventkit p
 
 ```ts
 // server.ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 
 // create an observable that emits a number every second
 const obs = new AsyncObservable<number>(async function* () {
@@ -39,7 +39,7 @@ app.get("/stream", (req, res) => {
 
 ```ts
 // client.ts
-import { AsyncObservable, map } from "eventkit";
+import { AsyncObservable, map } from "@eventkit/base";
 
 const res = await fetch("/stream");
 // the body of the response is a ReadableStream which we can create
@@ -179,7 +179,7 @@ return new EventSourceResponse(obs, {
 Let's say we have a long-running job that we want to stream the updates of. We can represent the job as an [`AsyncObservable`](/reference/eventkit/AsyncObservable) and then use [`EventSourceResponse`](/reference/_eventkit/http/EventSourceResponse) to stream it using SSE:
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 import { EventSourceResponse } from "@eventkit/http";
 
 // a long-running job that emits the fibonacci sequence
@@ -222,7 +222,7 @@ data: 21
 Browsers know how to handle SSE responses, so you can either visit the endpoint directly, or embed it in your page like this:
 
 ```ts
-import { AsyncObservable } from "eventkit";
+import { AsyncObservable } from "@eventkit/base";
 import { EventSource } from "@eventkit/http";
 
 const eventSource = new EventSource("http://localhost/fibonacci");
@@ -245,7 +245,7 @@ obs.subscribe(({ id, event, data }) => {
 Using [`Stream`](/reference/eventkit/Stream) and [`EventSourceResponse`](/reference/_eventkit/http/EventSourceResponse), we can create a very basic chat application that employs SSE and standard requests to handle the interactions:
 
 ```ts
-import { Stream, filter } from "eventkit";
+import { Stream, filter } from "@eventkit/base";
 import { EventSourceResponse } from "@eventkit/http";
 
 type ChatEvent = { room: string; user: string; ts: number } & (
@@ -308,7 +308,7 @@ const obs = ws.asObservable({ dematerialize: true });
 Websockets "as an observable" only represent the receiving end of the connection. If you want to also be able to observe data as it's being sent, a common pattern is to use a [`Stream`](/reference/eventkit/Stream), add a subscription to handle the work of actually sending data through the websocket, and then push events to the [`Stream`](/reference/eventkit/Stream) instead of pushing them to the websocket directly.
 
 ```ts
-import { Stream } from "eventkit";
+import { Stream } from "@eventkit/base";
 import { WebSocket } from "@eventkit/http";
 
 const ws = new WebSocket("ws://localhost");

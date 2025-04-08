@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
   "changelog": ["@changesets/changelog-github", { "repo": "hntrl/eventkit" }],
   "commit": false,
-  "fixed": [["@eventkit/*", "eventkit"]],
+  "fixed": [["@eventkit/*"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",

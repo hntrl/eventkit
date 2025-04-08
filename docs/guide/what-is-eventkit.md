@@ -21,7 +21,7 @@ Want to try it out? Jump to [Getting Started](./getting-started.md).
 ## Basic Example
 
 ```ts
-import { Stream, filter } from "eventkit";
+import { Stream, filter } from "@eventkit/base";
 
 // Create a stream of events
 const stream = new Stream<{ type: string; payload: any }>();

@@ -224,7 +224,7 @@ The [`withScheduler`](/reference/eventkit/withScheduler) operator imposes a sche
 For instance, say we wanted to process values sequentially for a set of subscribers, but we still wanted to track the execution of the side effects upstream.
 
 ```ts
-import { AsyncObservable, QueueScheduler, withScheduler } from "eventkit";
+import { AsyncObservable, QueueScheduler, withScheduler } from "@eventkit/base";
 
 const source = AsyncObservable.from([1, 2, 3]);
 const subA = source.subscribe(console.log);
@@ -248,7 +248,7 @@ The [`withOwnScheduler`](/reference/eventkit/withOwnScheduler) operator sidestep
 ![composing-observables](/assets/images/observable-tree-with-own-scheduler-light.png){.light-only .reference-image}
 
 ```ts
-import { AsyncObservable, Scheduler, withOwnScheduler } from "eventkit";
+import { AsyncObservable, Scheduler, withOwnScheduler } from "@eventkit/base";
 
 const source = AsyncObservable.from([1, 2, 3]);
 const subA = source.subscribe(console.log);
@@ -272,7 +272,7 @@ This only decouples the side effects from the source observable, not the values.
 Say you wanted to process values from an observable in a sequential order. You would do so by imposing a [`QueueScheduler`](/reference/eventkit/QueueScheduler) on the observable.
 
 ```ts
-import { AsyncObservable, QueueScheduler, withScheduler } from "eventkit";
+import { AsyncObservable, QueueScheduler, withScheduler } from "@eventkit/base";
 
 const myObservable = new AsyncObservable(async function* () {
   yield* [1, 2, 3];
