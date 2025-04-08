@@ -41,7 +41,7 @@ Work is representative of anything that needs to be done in the future as a resu
 
 The way that this gets tracked is through the implementation of a [Scheduler](#scheduler). Each observable/subscriber has a scheduler that is responsible for tracking the work associated with it. By default, all eventkit objects use a default scheduler that handles the async behavior described in this guide, but you can also provide one of the standard schedulers that ship with eventkit, or implement your own to augment the behavior of the scheduler (More on that in the [Scheduling](./scheduling) section).
 
-One of the implementation details of the default scheduler is that when we add any work to a subscriber (the object returned by `.subscribe()`), we're adding the work to both the subscriber and the observable it comes from. This means that when we're waiting for an observable to finish, we're also implicitly waiting for all the work associated with the subscriber to finish.
+One of the implementation details of the default scheduler is that when we add any work to a subscriber (the object returned by [`.subscribe()`](/reference/eventkit/AsyncObservable#subscribe)), we're adding the work to both the subscriber and the observable it comes from. This means that when we're waiting for an observable to finish, we're also implicitly waiting for all the work associated with the subscriber to finish.
 
 ```ts
 import { AsyncObservable } from "eventkit";
@@ -93,7 +93,7 @@ await queryDatabase();
 
 ### How Streams are different {#streams-are-different}
 
-Streams are a unique kind of AsyncObservable that will indefinitely yield values that are sent to the stream using `push()` until the stream is cancelled. Internally, it does this by using a generator function that will wait for the next value to be pushed, and then yield it.
+Streams are a unique kind of AsyncObservable that will indefinitely yield values that are sent to the stream using [`push()`](/reference/eventkit/Stream#push) until the stream is cancelled. Internally, it does this by using a generator function that will wait for the next value to be pushed, and then yield it.
 
 Since the stream's generator function will never complete on its own (and by extension any stream Subscriber's wont complete either), there will always be one piece of work that is pending (the generator function).
 
@@ -133,7 +133,7 @@ console.log("done");
 
 ## Scheduler
 
-The concept of a scheduler in eventkit is largely what coordinates the tracking and execution of work. All units of work are represented by a promise-like object, and attached to a scheduler subject (which can be an AsyncObservable or Subscriber) through the scheduler. When you call `drain()` on an observable or `await` a subscriber, all that's happening is you are asking the scheduler for a promise that resolves when all the work associated with that subject has finished.
+The concept of a scheduler in eventkit is largely what coordinates the tracking and execution of work. All units of work are represented by a promise-like object, and attached to a scheduler subject (which can be an AsyncObservable or Subscriber) through the scheduler. When you call [`drain()`](/reference/eventkit/AsyncObservable#drain) on an observable or `await` a subscriber, all that's happening is you are asking the scheduler for a promise that resolves when all the work associated with that subject has finished.
 
 ::: tip Scheduling
 More details on how this works and how work is handled can be found in the [Scheduling](./scheduling) section.
@@ -219,7 +219,7 @@ async function addSub() {
 
 ### Using `AsyncObservable.drain()`
 
-Alternatively you can wait for all the subscribers that belong to an observable to finish by awaiting the observable's `drain()` method.
+Alternatively you can wait for all the subscribers that belong to an observable to finish by awaiting the observable's [`drain()`](/reference/eventkit/AsyncObservable#drain) method.
 
 ```ts
 import { Stream } from "eventkit";
@@ -241,7 +241,7 @@ console.log("done");
 
 ## Adding cleanup work
 
-If you need to do some work when an object has finished, you can add this work by calling the `.finally()` method on either the subscriber or the observable.
+If you need to do some work when an object has finished, you can add this work by calling the [`finally()`](/reference/eventkit/AsyncObservable#finally) method on either the subscriber or the observable.
 
 ```ts
 import { Stream } from "eventkit";
@@ -257,11 +257,11 @@ await sub.finally(() => console.log("done"));
 await stream.finally(() => console.log("done"));
 ```
 
-`finally` will add the callback that's provided to the scheduler and return a promise that resolves whenever that cleanup work has completed (which is at the discretion of the scheduler, but usually happens after all previous work has finished).
+[`finally`](/reference/eventkit/AsyncObservable#finally) will add the callback that's provided to the scheduler and return a promise that resolves whenever that cleanup work has completed (which is at the discretion of the scheduler, but usually happens after all previous work has finished).
 
-Note that when you register a `finally` callback against an observable (i.e. `stream.finally()`), that cleanup work will only be executed once you `drain()` or `cancel()` the observable (and when all pending subscribers have completed). This isn't the case for a subscriber's `finally` callback, which will execute whenever the subscriber is disposed of either by the observable's generator finishing or by the subscriber being cancelled.
+Note that when you register a [`finally`](/reference/eventkit/AsyncObservable#finally) callback against an observable (i.e. `stream.finally`), that cleanup work will only be executed once you [`drain`](/reference/eventkit/AsyncObservable#drain) or [`cancel`](/reference/eventkit/AsyncObservable#cancel) the observable (and when all pending subscribers have completed). This isn't the case for a subscriber's [`finally`](/reference/eventkit/AsyncObservable#finally) callback, which will execute whenever the subscriber is disposed of either by the observable's generator finishing or by the subscriber being cancelled.
 
-Also note that using `finally` will implicitly add the cleanup work to the subject, so awaiting the subject will also wait for the cleanup work to finish.
+Also note that using [`finally`](/reference/eventkit/AsyncObservable#finally) will implicitly add the cleanup work to the subject, so awaiting the subject will also wait for the cleanup work to finish.
 
 ```ts
 import { AsyncObservable } from "eventkit";
@@ -284,7 +284,7 @@ console.log("after");
 ```
 
 ::: warning
-A common misconception is that `finally` will wait for **all** cleanup work to finish before resolving. This is not the case. `finally` will only wait for the callback provided to finish, which will happen concurrently with the rest of the cleanup work when the subject is disposed of.
+A common misconception is that [`finally`](/reference/eventkit/AsyncObservable#finally) will wait for **all** cleanup work to finish before resolving. This is not the case. [`finally`](/reference/eventkit/AsyncObservable#finally) will only wait for the callback provided to finish, which will happen concurrently with the rest of the cleanup work when the subject is disposed of.
 
 ```ts
 import { AsyncObservable } from "eventkit";
@@ -376,7 +376,7 @@ With the observable pattern, we've established a really neat way to represent va
 
 DLQ stands for ["Dead Letter Queue"](https://en.wikipedia.org/wiki/Dead_letter_queue), and is often used in messaging systems to represent a queue of messages that couldn't be delivered. In eventkit, it's used to handle errors that occur in subscriber callbacks by sending them to a different observable.
 
-The `dlq()` operator takes an observable and returns a new observable that emits the errors that occur in the original observable's subscriber callbacks.
+The [`dlq()`](/reference/eventkit/dlq) operator takes an observable and returns a new observable that emits the errors that occur in the original observable's subscriber callbacks.
 
 ```ts
 import { AsyncObservable, dlq } from "eventkit";
@@ -413,12 +413,12 @@ We can represent how those error values get propagated like this:
 ![error-handling](/assets/images/error-handling-dlq-marble-light.png){.light-only .reference-image}
 
 ::: warning
-Note that the `dlq()` operator will **only** catch errors that occur in subscriber callbacks. If an error occurs during cleanup or in the generator function, the error will propagate in the same way as mentioned above. Because of this, it's important to recommended that you use `try/catch` in the generator or cleanup work to handle errors that occur in those areas.
+Note that the [`dlq()`](/reference/eventkit/dlq) operator will **only** catch errors that occur in subscriber callbacks. If an error occurs during cleanup or in the generator function, the error will propagate in the same way as mentioned above. Because of this, it's important to recommended that you use `try/catch` in the generator or cleanup work to handle errors that occur in those areas.
 :::
 
 #### Using the `retry()` operator
 
-Often times we want to handle callbacks in such a way that we can allow errors to occur, but still propagate them if they continue to occur. This is especially helpful in areas where errors are expected to occur (think network requests, database transactions, dom updates, etc.). The `retry()` operator is a standard way to handle this by retrying the callback using the specified strategy a certain number of times before eventually re-throwing the error.
+Often times we want to handle callbacks in such a way that we can allow errors to occur, but still propagate them if they continue to occur. This is especially helpful in areas where errors are expected to occur (think network requests, database transactions, dom updates, etc.). The [`retry()`](/reference/eventkit/retry) operator is a standard way to handle this by retrying the callback using the specified strategy a certain number of times before eventually re-throwing the error.
 
 ```ts
 import { AsyncObservable, retry } from "eventkit";
@@ -487,7 +487,7 @@ sub.finally(async () => {
 await sub; // no errors will be thrown here
 ```
 
-Since the execution of an observable's generator is stable (it outputs values/errors exactly in the order they're yielded and can be observed in its own definition), we intentionally don't use the same error semantics as we do for subscriber callbacks as mentioned above. What this means is that errors thrown in the generator function will always be thrown immediately and will always cause any subsequent work to be left hanging, regardless if you impose a `dlq` or `retry` operator on the observable. Because of this, it's important to use `try/catch` in the generator function to handle errors if you want to avoid work being left hanging.
+Since the execution of an observable's generator is stable (it outputs values/errors exactly in the order they're yielded and can be observed in its own definition), we intentionally don't use the same error semantics as we do for subscriber callbacks as mentioned above. What this means is that errors thrown in the generator function will always be thrown immediately and will always cause any subsequent work to be left hanging, regardless if you impose a [`dlq`](/reference/eventkit/dlq) or [`retry`](/reference/eventkit/retry) operator on the observable. Because of this, it's important to use `try/catch` in the generator function to handle errors if you want to avoid work being left hanging.
 
 ```ts
 import { AsyncObservable } from "eventkit";
@@ -509,7 +509,7 @@ await myObservable.subscribe((value) => console.log("value:", value));
 
 ### How errors propagate
 
-When calling `AsyncObservable.drain()` or awaiting a Subscriber, the promise that gets returned is representative of the current work thats being executed. Subsequently awaiting any promises after an error gets thrown won't yield the error rejection since the work that was rejected has already been discarded.
+When calling [`AsyncObservable.drain()`](/reference/eventkit/AsyncObservable#drain) or awaiting a Subscriber, the promise that gets returned is representative of the current work thats being executed. Subsequently awaiting any promises after an error gets thrown won't yield the error rejection since the work that was rejected has already been discarded.
 
 ::: code-group
 ```ts [AsyncObservable]
@@ -548,7 +548,7 @@ await sub;
 
 #### During cleanup
 
-If we define cleanup work either by adding a `finally` callback or using a `try/finally` block in the generator, any errors that occur in the cleanup work will be thrown to the promise that called for the cleanup work.
+If we define cleanup work either by adding a [`finally()`](/reference/eventkit/AsyncObservable#finally) callback or using a `try/finally` block in the generator, any errors that occur in the cleanup work will be thrown to the promise that called for the cleanup work.
 
 For instance, if we're waiting for the natural completion of a subscriber and we have cleanup work that throws an error, that error will be thrown to the promise that's awaiting the subscriber.
 
@@ -584,7 +584,7 @@ await sub;
 ```
 :::
 
-Or if we do an early cancel of a subscriber, any errors that occur in the cleanup work will be thrown to the promise returned by `cancel()`.
+Or if we do an early cancel of a subscriber, any errors that occur in the cleanup work will be thrown to the promise returned by [`cancel()`](/reference/eventkit/AsyncObservable#cancel).
 
 ::: code-group
 ```ts [try/finally]

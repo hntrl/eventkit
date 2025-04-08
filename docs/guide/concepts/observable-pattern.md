@@ -131,7 +131,7 @@ We can better control this execution in the following ways:
 
 1. Providing a different Scheduler to the AsyncObservable to control the behavior of the callbacks (an example of this in [Scheduling](./scheduling#queue-scheduler))
 2. Awaiting the subscriber, which will resolve when all the values in the observable have been yielded and all callbacks have finished executing
-3. Awaiting the `drain()` method of the AsyncObservable, which will resolve when all current subscribers have finished executing
+3. Awaiting the [`drain()`](/reference/eventkit/AsyncObservable#drain) method of the AsyncObservable, which will resolve when all current subscribers have finished executing
 
 For instance, if we wanted to wait for all the values to be yielded before logging "done", we could do so in the following ways:
 
@@ -199,7 +199,7 @@ The only notable exception to this is when you're subscribing to an observable i
 
 ### Disposing AsyncObservable Executions
 
-Because each execution is a new instance of the generator function, and since these executions may be infinite, it's possible to dispose of them when they're no longer needed. Since each execution is exclusive to each `subscribe()` call, we can control the execution lifecycle by calling `cancel()` on the subscriber.
+Because each execution is a new instance of the generator function, and since these executions may be infinite, it's possible to dispose of them when they're no longer needed. Since each execution is exclusive to each [`subscribe()`](/reference/eventkit/AsyncObservable#subscribe) call, we can control the execution lifecycle by calling [`cancel()`](/reference/eventkit/AsyncObservable#cancel) on the subscriber.
 
 ```ts
 const sub = observable.subscribe((x) => console.log(x));
@@ -254,7 +254,7 @@ for await (const value of myObservable) {
 // 🧹 cleaning up
 ```
 
-You can also use the `cancel()` method on the observable to dispose of all current executions.
+You can also use the [`cancel()`](/reference/eventkit/AsyncObservable#cancel) method on the observable to dispose of all current executions.
 
 ```ts
 myObservable.subscribe(console.log);

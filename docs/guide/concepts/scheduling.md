@@ -66,18 +66,18 @@ The implementation of Stream achieves this by using this unit of control and alt
 
 ### Every observable can control the execution of its side effects
 
-As described in the [Observable Pattern](./observable-pattern#push-vs-pull) guide, an observable is a push system that decides when to send data to its consumers. This is an important capability that lets us control the execution of its work (the **how**). In eventkit, we do this by providing a `Scheduler` object to the observable that manages the execution of its side effects.
+As described in the [Observable Pattern](./observable-pattern#push-vs-pull) guide, an observable is a push system that decides when to send data to its consumers. This is an important capability that lets us control the execution of its work (the **how**). In eventkit, we do this by providing a [`Scheduler`](/reference/eventkit/Scheduler) object to the observable that manages the execution of its side effects.
 
 (See an example of this [here](#queue-scheduler))
 
 ## The `Scheduler` object
 
-The `Scheduler` object is the logical unit that coordinates all work associated with a subject. Eventkit covers most of the types of scheduling you need to do by offering a range of out-of-the-box schedulers, but the idea is that you can provide your own implementation if needed. The idea of a scheduler is pretty simple:
+The [`Scheduler`](/reference/eventkit/Scheduler) object is the logical unit that coordinates all work associated with a subject. Eventkit covers most of the types of scheduling you need to do by offering a range of out-of-the-box schedulers, but the idea is that you can provide your own implementation if needed. The idea of a scheduler is pretty simple:
 
-- You can add work to a subject by calling `add()`
-- You can schedule work to be executed for a subject by calling `schedule()`
-- You can ask for the status of the completion of a subject (in the form of a Promise) by calling `promise()`
-- You can dispose of a subject by calling `dispose()`
+- You can add work to a subject by calling [`add()`](/reference/eventkit/Scheduler#add)
+- You can schedule work to be executed for a subject by calling [`schedule()`](/reference/eventkit/Scheduler#schedule)
+- You can ask for the status of the completion of a subject (in the form of a Promise) by calling [`promise()`](/reference/eventkit/Scheduler#promise)
+- You can dispose of a subject by calling [`dispose()`](/reference/eventkit/Scheduler#dispose)
 
 When you call:
 
@@ -111,32 +111,32 @@ There's a couple of important things to note here about how schedulers work:
 
 - All work is represented as promise-like objects, so we can assert that a subject is considered "complete" when all of those "work promises" have resolved.
 - Every observable has its own scheduler object that acts as its source of truth in regards to the work associated with it.
-- When `schedule()` is called, that doesn't implicitly mean that the work will be added to the subject. Typically the `schedule()` method will call `add()` internally to add the work, and orchestrate/defer/forward the work's execution if needed.
+- When [`schedule()`](/reference/eventkit/Scheduler#schedule) is called, that doesn't implicitly mean that the work will be added to the subject. Typically the [`schedule()`](/reference/eventkit/Scheduler#schedule) method will call [`add()`](/reference/eventkit/Scheduler#add) internally to add the work, and orchestrate/defer/forward the work's execution if needed.
 
 ::: info
-`Scheduler` is a class that's exported from eventkit that defines the default behavior (and is what a lot of schedulers extend), but the interface that's accepted by most objects is the `SchedulerLike` interface.
+[`Scheduler`](/reference/eventkit/Scheduler) is a class that's exported from eventkit that defines the default behavior (and is what a lot of schedulers extend), but the interface that's accepted by most objects is the [`SchedulerLike`](/reference/eventkit/SchedulerLike) interface.
 :::
 
 ### `ScheduledAction`
 
-One way that work is represented is through the `ScheduledAction` class. This is the base class that represents any work that is scheduled to be executed later for a subject, namely cleanup work and subscriber callbacks.
+One way that work is represented is through the [`ScheduledAction`](/reference/eventkit/ScheduledAction) class. This is the base class that represents any work that is scheduled to be executed later for a subject, namely cleanup work and subscriber callbacks.
 
-A `ScheduledAction` is a promise-like object with a two-phase lifecycle. When created, it can be awaited immediately, but it won't resolve until its `execute()` method is called and completes. The `execute()` method runs the action's callback and returns a promise that resolves when that callback finishes. This separation between creation and execution gives schedulers fine-grained control over when work actually happens.
+A [`ScheduledAction`](/reference/eventkit/ScheduledAction) is a promise-like object with a two-phase lifecycle. When created, it can be awaited immediately, but it won't resolve until its [`execute()`](/reference/eventkit/ScheduledAction#execute) method is called and completes. The [`execute()`](/reference/eventkit/ScheduledAction#execute) method runs the action's callback and returns a promise that resolves when that callback finishes. This separation between creation and execution gives schedulers fine-grained control over when work actually happens.
 
 ![scheduled-action-marble](/assets/images/scheduled-action-marble-dark.png){.dark-only .reference-image}
 ![scheduled-action-marble](/assets/images/scheduled-action-marble-light.png){.light-only .reference-image}
 
 #### `CallbackAction`
 
-`CallbackAction` is an extension of `ScheduledAction` which represents work that is issued to a subscriber that was created using the `subscribe()` method. This is the most common action as a new instance will hypothetically be created every time an observable emits a value, and is largely what we're interested in coordinating when we use custom schedulers as it represents a distinct side effect.
+[`CallbackAction`](/reference/eventkit/CallbackAction) is an extension of [`ScheduledAction`](/reference/eventkit/ScheduledAction) which represents work that is issued to a subscriber that was created using the [`subscribe()`](/reference/eventkit/AsyncObservable#subscribe) method. This is the most common action as a new instance will hypothetically be created every time an observable emits a value, and is largely what we're interested in coordinating when we use custom schedulers as it represents a distinct side effect.
 
 #### `CleanupAction`
 
-`CleanupAction` is an extension of `ScheduledAction` that represents work that should be executed when a subject is disposed of. While there's no difference in how it's implemented, it's useful to have a distinct type for this as it represents a different type of work. When scheduling, we typically handle these cleanup actions differently than other actions.
+[`CleanupAction`](/reference/eventkit/CleanupAction) is an extension of [`ScheduledAction`](/reference/eventkit/ScheduledAction) that represents work that should be executed when a subject is disposed of. While there's no difference in how it's implemented, it's useful to have a distinct type for this as it represents a different type of work. When scheduling, we typically handle these cleanup actions differently than other actions.
 
 ## Composing Observables
 
-When transforming the data of an observable, the transformations naturally fan out to be a tree-like structure with the root node being the source observable, the branches being the individual `pipe()` operations, and the leafs being the subscribers. This is because operator functions most typically return an _observable observing a different observable_. They yield values independent of its source, but typically yields them as a reaction to its source emitting a value.
+When transforming the data of an observable, the transformations naturally fan out to be a tree-like structure with the root node being the source observable, the branches being the individual [`pipe()`](/reference/eventkit/pipe) operations, and the leafs being the subscribers. This is because operator functions most typically return an _observable observing a different observable_. They yield values independent of its source, but typically yields them as a reaction to its source emitting a value.
 
 ![composing-observables](/assets/images/observable-tree-dark.png){.dark-only .reference-image}
 ![composing-observables](/assets/images/observable-tree-light.png){.light-only .reference-image}
@@ -183,17 +183,17 @@ So how do we fix this?
 
 ### The `PassthroughScheduler`
 
-Eventkit internally uses a `PassthroughScheduler` that will also "pass" any work assigned "through" to a parent scheduler object while also adding it to a different subject that we statically know about (the parent observable). This lets us control how side effects get added across the entire composition.
+Eventkit internally uses a [`PassthroughScheduler`](/reference/eventkit/PassthroughScheduler) that will also "pass" any work assigned "through" to a parent scheduler object while also adding it to a different subject that we statically know about (the parent observable). This lets us control how side effects get added across the entire composition.
 
 ![composing-observables](/assets/images/observable-tree-with-passthrough-dark.png){.dark-only .reference-image}
 ![composing-observables](/assets/images/observable-tree-with-passthrough-light.png){.light-only .reference-image}
 
-You may also notice that the `PassthroughScheduler` forwards the schedule call to the parent. This is intentional as it means that whatever execution dynamic the root scheduler imposes will be applied to the entire composition. (i.e. if we put a `QueueScheduler` on the root, all callbacks to A, B, C, D, and E will be processed sequentially.)
+You may also notice that the [`PassthroughScheduler`](/reference/eventkit/PassthroughScheduler) forwards the schedule call to the parent. This is intentional as it means that whatever execution dynamic the root scheduler imposes will be applied to the entire composition. (i.e. if we put a [`QueueScheduler`](/reference/eventkit/QueueScheduler) on the root, all callbacks to A, B, C, D, and E will be processed sequentially.)
 
 ::: info
-The base `AsyncObservable` class exposes an 'AsyncObservable' property that represents a "sub-class" of the current observable that, when constructed, will initialize with a `PassthroughScheduler` that will forward all work to the parent or source observable.
+The base [`AsyncObservable`](/reference/eventkit/AsyncObservable) class exposes an 'AsyncObservable' property that represents a "sub-class" of the current observable that, when constructed, will initialize with a [`PassthroughScheduler`](/reference/eventkit/PassthroughScheduler) that will forward all work to the parent or source observable.
 
-i.e. `new AsyncObservable` initializes with a generic `Scheduler`, `new source.AsyncObservable` initializes with a `PassthroughScheduler` that forwards to `source`
+i.e. `new AsyncObservable` initializes with a generic [`Scheduler`](/reference/eventkit/Scheduler), `new source.AsyncObservable` initializes with a [`PassthroughScheduler`](/reference/eventkit/PassthroughScheduler) that forwards to `source`
 
 Creating observables in this way is the standard way of how operators are implemented.
 :::
@@ -207,7 +207,7 @@ If we go back to our original example with the entire composition, simulate the 
 
 What this means in practice is that we can individually wait for the completion of any observable in the graph, and it will only wait for the work that is downstream of it.
 
-If for instance the D and E subscribers take callbacks that take a long time to process, we can wait for the completion of the `map()` observable and it will only wait for the work associated with A, B, and C and not be blocked by D and E.
+If for instance the D and E subscribers take callbacks that take a long time to process, we can wait for the completion of the [`map()`](/reference/eventkit/map) observable and it will only wait for the work associated with A, B, and C and not be blocked by D and E.
 
 ```ts
 // will wait for A, B, and C to complete
@@ -224,7 +224,7 @@ Eventkit provides a couple of different operators that let you further control s
 
 #### `withScheduler`
 
-The `withScheduler` operator imposes a scheduler that threads the side effects to a parent scheduler (like `PassthroughScheduler`), but instead of having the parent scheduler handle the execution, it lets a different scheduler handle the execution entirely. It does this by imposing a `DeferredPassthroughScheduler` that works similarly to `PassthroughScheduler`, but instead of calling `parent.schedule()` when it encounters a side effect, it calls `deferred.schedule()` instead.
+The [`withScheduler`](/reference/eventkit/withScheduler) operator imposes a scheduler that threads the side effects to a parent scheduler (like [`PassthroughScheduler`](/reference/eventkit/PassthroughScheduler)), but instead of having the parent scheduler handle the execution, it lets a different scheduler handle the execution entirely. It does this by imposing a [`DeferredPassthroughScheduler`](/reference/eventkit/DeferredPassthroughScheduler) that works similarly to [`PassthroughScheduler`](/reference/eventkit/PassthroughScheduler), but instead of calling `parent.schedule()` when it encounters a side effect, it calls `deferred.schedule()` instead.
 
 ![composing-observables](/assets/images/observable-tree-with-scheduler-dark.png){.dark-only .reference-image}
 ![composing-observables](/assets/images/observable-tree-with-scheduler-light.png){.light-only .reference-image}
@@ -250,7 +250,7 @@ await queued$.drain();
 
 #### `withOwnScheduler`
 
-The `withOwnScheduler` operator sidesteps the notion of a passthrough scheduler entirely and imposes the provided scheduler on the returned observable. This could be useful if you want to decouple side effects from the source observable entirely.
+The [`withOwnScheduler`](/reference/eventkit/withOwnScheduler) operator sidesteps the notion of a passthrough scheduler entirely and imposes the provided scheduler on the returned observable. This could be useful if you want to decouple side effects from the source observable entirely.
 
 ![composing-observables](/assets/images/observable-tree-with-own-scheduler-dark.png){.dark-only .reference-image}
 ![composing-observables](/assets/images/observable-tree-with-own-scheduler-light.png){.light-only .reference-image}
@@ -277,7 +277,7 @@ This only decouples the side effects from the source observable, not the values.
 
 ## Example: Queue Scheduler {#queue-scheduler}
 
-Say you wanted to process values from an observable in a sequential order. You would do so by imposing a `QueueScheduler` on the observable.
+Say you wanted to process values from an observable in a sequential order. You would do so by imposing a [`QueueScheduler`](/reference/eventkit/QueueScheduler) on the observable.
 
 ```ts
 import { AsyncObservable, QueueScheduler, withScheduler } from "eventkit";

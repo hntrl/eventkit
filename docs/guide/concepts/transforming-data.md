@@ -10,7 +10,7 @@ Transforming data is a core part of eventkit. It happens through the use of oper
 
 In eventkit, operators are functions that take an [observable](./observable-pattern) as input, and return a new observable that (most commonly) subscribes to the provided observable, transforms the data in some way, and yield that transformed data to the subscriber.
 
-For example, the `map` operator is synonymous to the Array method with the same name.
+For example, the [`map`](/reference/eventkit/map) operator is synonymous to the Array method with the same name.
 
 ::: code-group
 ```ts [AsyncObservable]

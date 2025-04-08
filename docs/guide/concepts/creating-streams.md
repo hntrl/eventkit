@@ -67,7 +67,7 @@ await stream.drain();
 console.log(value); // 4
 ```
 
-`.pipe()` and `filter()` are apart of a larger set of operators that allow you to express your stream logic in a declarative way (more on this in [Transforming Data](./transforming-data)).
+[`pipe()`](/reference/eventkit/pipe#function-pipe) and [`filter()`](/reference/eventkit/filter) are apart of a larger set of operators that allow you to express your stream logic in a declarative way (more on this in [Transforming Data](./transforming-data)).
 
 ### It's like an "EventEmitter"
 
@@ -81,11 +81,11 @@ Streams in eventkit also share some philosophical similarities with the Web Stre
 
 ## Basics of streams
 
-A Stream is a special type of [AsyncObservable](./observable-pattern#using-asyncobservable) that allows you to push values into it at any time. This makes it perfect for representing events that occur over time, like user interactions, network responses, or any other asynchronous data source.
+A Stream is a special type of [`AsyncObservable`](./observable-pattern#using-asyncobservable) that allows you to push values into it at any time. This makes it perfect for representing events that occur over time, like user interactions, network responses, or any other asynchronous data source.
 
 ### `preprocess()`
 
-You can provide a `preprocess` method in the stream's constructor to transform or validate the values that are pushed into the stream.
+You can provide a [`preprocess`](/reference/eventkit/StreamInit#preprocess) method in the stream's constructor to transform or validate the values that are pushed into the stream.
 
 ::: tip Example with Zod 💎
 [Zod](https://zod.dev/) is a powerful schema validation library that lets you validate any incoming data. If you wanted to validate that the values pushed into the stream are a specific shape, you could do so like this:
@@ -155,7 +155,7 @@ console.log("done");
 
 ## AsyncObservable
 
-The `AsyncObservable` object is a different, more abstractive way, to represent values over time. Whereas values can be pushed to a stream from anywhere in your code, the values that get emitted from an `AsyncObservable` are produced by a self-contained generator function.
+The [`AsyncObservable`](./observable-pattern#using-asyncobservable) object is a different, more abstractive way, to represent values over time. Whereas values can be pushed to a stream from anywhere in your code, the values that get emitted from an [`AsyncObservable`](./observable-pattern#using-asyncobservable) are produced by a self-contained generator function.
 
 ```ts
 import { AsyncObservable } from "eventkit";
@@ -176,13 +176,13 @@ await myObservable.subscribe((value) => {
 // 3
 ```
 
-`AsyncObservable` is perhaps the most basic building block of eventkit. Internally, Streams are just special types of observables that yield values that are pushed into them using the `push()` method.
+[`AsyncObservable`](./observable-pattern#using-asyncobservable) is perhaps the most basic building block of eventkit. Internally, Streams are just special types of observables that yield values that are pushed into them using the [`push()`](/reference/eventkit/Stream#push) method.
 
-If you're familiar with an [Observable](https://github.com/WICG/observable) or libraries like [RxJS](https://rxjs.dev/), then the concept of `AsyncObservable` will feel very familiar.
+If you're familiar with an [Observable](https://github.com/WICG/observable) or libraries like [RxJS](https://rxjs.dev/), then the concept of [`AsyncObservable`](./observable-pattern#using-asyncobservable) will feel very familiar.
 
 ### Waiting for work to finish
 
-One of the key facets of `AsyncObservable` is that it allows you to be strongly consistent in waiting for work associated with an observable to finish. When a value is yielded, the callbacks that get called as a result of that value being yielded are tracked as a [side effect](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). Eventkit allows you to wait for all or parts of those side effects to finish.
+One of the key facets of [`AsyncObservable`](./observable-pattern#using-asyncobservable) is that it allows you to be strongly consistent in waiting for work associated with an observable to finish. When a value is yielded, the callbacks that get called as a result of that value being yielded are tracked as a [side effect](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). Eventkit allows you to wait for all or parts of those side effects to finish.
 
 ::: code-group
 ```ts [AsyncObservable]
@@ -307,7 +307,5 @@ stream.push(1);
 await dbOps$.drain();
 ```
 :::
-
-This is especially useful when you need to enact stronger consistency guarantees (see [Event Sourcing](/examples/event-sourcing)).
 
 More can be read about how this works [here](./scheduling#composing-observables).
