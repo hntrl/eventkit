@@ -1,4 +1,4 @@
-# eventkit — [![GitHub license][license-badge]][license-url] [![npm][npm-badge]][npm-url] [![build][build-badge]][build-url] [![PRs Welcome][prs-badge]][prs-url]
+# [eventkit](https://hntrl.github.io/eventkit/) — [![GitHub license][license-badge]][license-url] [![npm][npm-badge]][npm-url] [![build][build-badge]][build-url] [![PRs Welcome][prs-badge]][prs-url]
 
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-url]: https://github.com/hntrl/eventkit/blob/main/LICENSE.md
