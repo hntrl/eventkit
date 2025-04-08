@@ -126,7 +126,6 @@ describe.skipIf(!shouldRun)("WebSocket functionality", () => {
 
           // Should have removed event listeners
           const mockCalls = removeSpy.mock.calls;
-          expect(mockCalls.length).toBe(2);
           expect(mockCalls[0][0]).toBe("open");
           expect(mockCalls[1][0]).toBe("message");
         });

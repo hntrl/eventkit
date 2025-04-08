@@ -1441,7 +1441,7 @@ describe("PassthroughScheduler", () => {
                 this.executionTimes.push(Date.now());
                 action.execute();
                 resolve();
-              }, 10);
+              }, 15);
             })
           );
 
