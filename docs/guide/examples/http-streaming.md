@@ -15,7 +15,7 @@ The examples dotted throughout this guide demonstrate how you can use eventkit p
 
 ### Example A: Using AsyncObservable + the fetch API
 
-`AsyncObservable` can be created from/used as a [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream), so we can use them to represent the body of an HTTP response, and consume it as an observable on the other end. Take an instance of a basic client/server interaction as an example:
+[`AsyncObservable`](/reference/eventkit/AsyncObservable) can be created from/used as a [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream), so we can use them to represent the body of an HTTP response, and consume it as an observable on the other end. Take an instance of a basic client/server interaction as an example:
 
 ```ts
 // server.ts
@@ -67,7 +67,7 @@ You can see the full example and test this out yourself [here](https://github.co
 
 ## HTTP Utilities
 
-In addition to HTTP being a streaming protocol, the HTTP protocol also maintains several standardized formats for representing streams of data. Things like [Server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) and WebSockets are examples of protocols that use HTTP as a transport mechanism. Eventkit provides the `@eventkit/http` package to help you interface with HTTP this way using observables.
+In addition to HTTP being a streaming protocol, the HTTP protocol also maintains several standardized formats for representing streams of data. Things like [Server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) and [WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) are examples of protocols that use HTTP as a transport mechanism. Eventkit provides the [`@eventkit/http`](/reference/_eventkit/http) package to help you interface with HTTP this way using observables.
 
 #### Installation
 
@@ -104,7 +104,7 @@ data: <next event data>
 ...etc
 ```
 
-[`@eventkit/http`](/reference/_eventkit/http) ships with a separate [`EventSource`](/reference/_eventkit/http/EventSource) class that allows you to represent the stream as an [`AsyncObservable`](/reference/eventkit/AsyncObservable). When you import [`EventSource`](/reference/_eventkit/_http/EventSource) from [`@eventkit/http`](/reference/_eventkit/http), all it's doing is extending the native `EventSource` class provided by the runtime and adding the `asObservable` method that allows you to represent the stream as an [`AsyncObservable`](/reference/eventkit/AsyncObservable).
+[`@eventkit/http`](/reference/_eventkit/http) ships with a separate [`EventSource`](/reference/_eventkit/http/EventSource) class that allows you to represent the stream as an [`AsyncObservable`](/reference/eventkit/AsyncObservable). When you import [`EventSource`](/reference/_eventkit/_http/EventSource) from [`@eventkit/http`](/reference/_eventkit/http), all it's doing is extending the native `EventSource` class provided by the runtime and adding the [`asObservable`](/reference/_eventkit/http/EventSource#asobservable) method that allows you to represent the stream as an [`AsyncObservable`](/reference/eventkit/AsyncObservable).
 
 ```ts
 import { EventSource } from "@eventkit/http";
