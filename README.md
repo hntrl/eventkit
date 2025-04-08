@@ -2,8 +2,8 @@
 
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-url]: https://github.com/hntrl/eventkit/blob/main/LICENSE.md
-[npm-badge]: https://img.shields.io/npm/v/eventkit
-[npm-url]: https://www.npmjs.com/package/eventkit
+[npm-badge]: https://img.shields.io/npm/v/@eventkit/base
+[npm-url]: https://www.npmjs.com/package/@eventkit/base
 [build-badge]: https://img.shields.io/github/actions/workflow/status/hntrl/eventkit/test.yml
 [build-url]: https://github.com/hntrl/eventkit/actions/workflows/test.yml
 [prs-badge]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
