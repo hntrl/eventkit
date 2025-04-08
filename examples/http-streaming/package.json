@@ -1,9 +1,8 @@
 {
-  "name": "worker-b",
+  "name": "http-streaming",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint ./src",
     "dev": "tsx src/server.ts"
   },
   "dependencies": {
