@@ -4,7 +4,7 @@ prev: false
 
 # Reactive Systems
 
-If it isn't already clear, we have a growing dependence on software, whether it be the devices we use or the products we use them with. Consequently that also means that there is similar growth in the amount of demand on the software we build. Today's software engineers often revel in the war stories of times where the sheer volume of requests or data was so high it often meant seconds of latency for the user, hours of downtime, nightmareish oncall/rollout schedules, or often times all of the above!
+If it isn't already abundantly clear, we have a growing dependence on software, whether it be the devices we use or the products we use them with. Consequently that also means that there is similar growth in the amount of demand on the software we build. Today's software engineers often revel in the war stories of times where the sheer volume of requests or data was so high it often meant seconds of latency for the user, hours of downtime, nightmareish oncall/rollout schedules, or often times all of the above!
 
 Despite these roadblocks, that doesn't mean the growth in demand has slowed down. Users expect milisecond response times and 100% uptime, and the amount of data we need to process is changed from gigabytes to terabytes to petabytes and beyond. So how have we managed to keep up?
 
@@ -27,7 +27,7 @@ At first glance, these concepts might seem like they belong exclusively to the w
 One of the driving motivations behind eventkit was the need to reconcile these patterns, but in a way that makes sense for the vast use cases of JavaScript. We believe that eventkit, which was partly built using these same principles, can provide a powerful foundation for building complex systems in JavaScript.
 
 ::: tip INFO
-Eventkit as a library is beholden to the single-threaded nature of JavaScript, which means that systems built using eventkit are lacking in some respects to the idea of a reactive system (see the [Reactive Manifesto](https://www.reactivemanifesto.org/)). This guide is meant to (1) introduce you to these principles, and (2) show how a reactive library like eventkit can be used to model them.
+Eventkit as a library is beholden to the single-threaded nature of JavaScript, which means that systems built using eventkit are lacking in some respects to the idea of a reactive system (see the [Reactive Manifesto](https://www.reactivemanifesto.org/)). This guide is meant to (1) introduce you to these principles, and (2) show how a reactive library like eventkit can be used to model them, but not assert that eventkit is the "silver bullet" for reactive systems.
 :::
 
 In the rest of this guide, we'll explore some of the related and fundamental concepts of reactive systems, and how to use eventkit to put those concepts into practice.
@@ -36,7 +36,7 @@ In the rest of this guide, we'll explore some of the related and fundamental con
 
 Event sourcing at it's most basic level is a way of persisting your application's state by storing the history that determines that state. Instead of mutating the state of your application directly, you record all the changes that happen to it as a sequence of events.
 
-If you think about how a traditional CRUD application (create, read, update, delete) works, when you modify the state of your application you do so by directly mutating state, like issuing an update statement for a specific record in a database. This record that you're updating becomes the source of truth--the only way to know the current state of the application is to query that record.
+If you think about how a traditional CRUD application (create, read, update, delete) works, when you modify the state of your application you do so by directly mutating state, like issuing an update statement for a specific record in a database. This record that you're updating becomes the source of truth—the only way to know the current state of the application is to query that record.
 
 ```ts
 // Traditional CRUD application:
@@ -102,7 +102,7 @@ There's a number of benefits that come with employing an event sourced state mod
 Within event sourcing, it's beneficial to make sure that your events follow certain heuristics:
 
 * Events are representative of things that have already happened in the past. For instance, "the table was booked", "the item was added to the cart", "the user was created" are all events that have already happened. Pay particular attention to how we describe these events using past tense.
-* Events are immutable and cannot be modified. Because they represent something that has already happened, they cannot be changed. However subsequent events may alter or negate the impact of previous events, such as "the reservation was cancelled" is the compensating action for "the table was booked".
+* Events are immutable and cannot be modified. Because they represent something that has already happened, they cannot be changed. Subsequent events may alter or negate the impact of previous events, such as "the reservation was cancelled" is the compensating action for "the table was booked".
 * Events are one-way messages. Events have a single source (the publisher) and many subscribers (the consumers).
 * Events most often include parameters that provide additional context about user intent. For example, "the table was booked" might include the number of guests, the date, and time of the reservation. Certain fields (like the number of guests) might not have any impact on the state of the application, but they are an all encompassing description of the transaction that occurred.
 
@@ -114,11 +114,7 @@ A lot of systems already employ CQS without realizing it. For example in a REST 
 
 Reactive systems take this a step further and suggest that the two operations should be handled by separate services (and by extension different data models) altogether. This is often referred to as a separate term called **C**ommand **Q**uery **R**esponsibility **S**egregation ([CQRS](https://en.wikipedia.org/wiki/Command%E2%80%93query_separation)). CQRS is a natural continuation of CQS, and the gist between the two is the same, but with the key distinction that the two operations are handled separately in more ways than just different entrypoints.
 
-This pattern comes from the observation that, in most systems, there's a lot more read traffic than write traffic. Rather than handling both operations in the same service/data model, it's often better to handle the read traffic in a more performant data model while the write traffic is handled in a more durable/consistent data model. This mitigates the risk that a write operation will fail due to the read traffic on the same instance.
-
-::: tip INFO
-It's for this same reason that a lot of modern database deployments involve "read replicas," which are separate database instances that are optimized for reading data!
-:::
+This pattern comes from the observation that, in most systems, there's a lot more read traffic than write traffic. Rather than handling both operations in the same service/data model, it's often better to handle the read traffic in a more performant data model while the write traffic is handled in a more durable/consistent data model. This mitigates the risk that a write operation will fail due to the read traffic on the same instance. It's for this same reason that a lot of modern database deployments involve "read replicas"—separate database instances that are optimized for reading data.
 
 When used in conjunction with event sourcing as we detailed above, this separation of concerns is even more pronounced. When the unit of state is an event detailing a change to the state of an object, the read and write operations are naturally separated. And when used with an "event stream", we can completely separate different representations of the same state!
 
