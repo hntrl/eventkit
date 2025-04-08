@@ -52,15 +52,15 @@
 
     <div class="stream-section">
       <h2>Observable</h2>
-      <p>This stream emits predefined messages with delays</p>
+      <p>This stream emits predefined messages with delays created from an AsyncObservable</p>
       <button id="startObservable">Start Stream</button>
       <div id="observableOutput" class="output"></div>
     </div>
 
     <div class="stream-section">
       <h2>Stream</h2>
-      <p>This stream can receive messages from multiple clients</p>
-      <p><em>hint: open this in a second tab and push messages</em></p>
+      <p>This stream emits messages that are pushed to it from any number of clients using a Stream object</p>
+      <p><em>hint: open this in a second tab and push messages. you should see them in both tabs!</em></p>
       <div class="input-group">
         <input type="text" id="messageInput" placeholder="Enter message to push">
         <button id="pushMessage">Push Message</button>
