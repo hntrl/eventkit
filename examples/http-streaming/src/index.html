@@ -137,7 +137,7 @@
 
         try {
           pushButton.disabled = true;
-          const res = await fetch("/stream", {
+          const res = await fetch("/shared-stream", {
             method: "POST",
             body: message
           });

@@ -39,7 +39,7 @@ app.get("/shared-stream", () => {
   return new Response(ReadableStream.from(stream));
 });
 
-app.post("/stream", async (c) => {
+app.post("/shared-stream", async (c) => {
   const body = await c.req.text();
   stream.push(body);
   return c.body(null, 204);
