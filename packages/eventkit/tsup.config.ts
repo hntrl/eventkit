@@ -1,6 +1,7 @@
 import { defineConfig } from "tsup";
 
-import { createBanner } from "../../scripts/utils";
+// @ts-expect-error - build tools are out of scope
+import { createBanner } from "../../scripts/banner";
 import pkg from "./package.json";
 
 export default defineConfig([
