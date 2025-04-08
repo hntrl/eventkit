@@ -1,21 +1,14 @@
-function createBanner(packageName, version) {
-  return `/**
- * ${packageName} v${version}
- *
- * Copyright (c) Hunter Lovell <hunter@hntrl.io>
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE.md file in the root directory of this source tree.
- *
- * @license MIT
- */`;
-}
+const fsp = require("fs").promises;
+const path = require("path");
+const { execSync } = require("child_process");
+const jsonfile = require("jsonfile");
+
+const { ROOT_DIR, EXAMPLES_DIR } = require("./constants");
 
 /**
  * @returns {void}
  */
 function ensureCleanWorkingDirectory() {
-  const { execSync } = require("node:child_process");
   let status = execSync(`git status --porcelain`).toString().trim();
   let lines = status.split("\n");
   invariant(
@@ -35,6 +28,25 @@ function invariant(cond, message) {
 
 /**
  * @param {string} packageName
+ * @param {string} [directory]
+ * @returns {string}
+ */
+function packageJson(packageName, directory) {
+  return path.join(ROOT_DIR, directory, packageName, "package.json");
+}
+
+/**
+ * @param {string} packageName
+ * @returns {Promise<string | undefined>}
+ */
+async function getPackageVersion(packageName) {
+  let file = packageJson(packageName, "packages");
+  let json = await jsonfile.readFile(file);
+  return json.version;
+}
+
+/**
+ * @param {string} packageName
  * @param {(json: import('type-fest').PackageJson) => any} transform
  */
 async function updatePackageConfig(packageName, transform) {
@@ -44,9 +56,39 @@ async function updatePackageConfig(packageName, transform) {
   await jsonfile.writeFile(file, json, { spaces: 2 });
 }
 
+/**
+ * @param {string} example
+ * @param {(json: import('type-fest').PackageJson) => any} transform
+ */
+async function updateExamplesPackageConfig(example, transform) {
+  let file = path.join(EXAMPLES_DIR, example, "package.json");
+  if (!(await fileExists(file))) return;
+
+  let json = await jsonfile.readFile(file);
+  transform(json);
+  await jsonfile.writeFile(file, json, { spaces: 2 });
+}
+
+/**
+ * @param {string} filePath
+ * @returns {Promise<boolean>}
+ */
+async function fileExists(filePath) {
+  try {
+    await fsp.stat(filePath);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 module.exports = {
   createBanner,
   ensureCleanWorkingDirectory,
   invariant,
+  packageJson,
+  getPackageVersion,
   updatePackageConfig,
+  updateExamplesPackageConfig,
+  fileExists,
 };
