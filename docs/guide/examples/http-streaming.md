@@ -243,13 +243,8 @@ import { Stream, filter } from "eventkit";
 import { EventSourceResponse } from "@eventkit/http";
 
 type ChatEvent = { room: string; user: string; ts: number } & (
-  | {
-      type: "join" | "leave";
-    }
-  | {
-      type: "message";
-      body: string;
-    }
+  | { type: "join"; }
+  | { type: "message"; body: string; }
 );
 
 const stream = new Stream<ChatEvent>();
@@ -264,7 +259,9 @@ app.post("/chat/:room", (req, res) => {
 
 app.get("/chat/:room", (req, res) => {
   const { room } = req.params;
+  const { user } = req.headers;
   const roomEvents$ = stream.pipe(filter((e) => e.room === room));
+  stream.push({ room, user, ts: Date.now(), type: "join" })
   return new EventSourceResponse(roomEvents$);
 });
 
