@@ -8,6 +8,7 @@ When it comes to open source, there are many different ways to contribute, all o
 
 * Make sure the bug wasn't already reported by searching on GitHub under [Issues](https://github.com/hntrl/eventkit/issues).
 * If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/hntrl/eventkit/issues/new). Be sure to include a title and clear description, as much relevant information as possible, and a code sample if applicable. If possible, use the relevant issue templates to create the issue.
+* If you've encountered a security issue, please see our [SECURITY.md](SECURITY.md) guide for info on how to report it.
 
 ## Proposing new or changing existing features?
 
