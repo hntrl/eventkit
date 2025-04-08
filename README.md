@@ -1,4 +1,4 @@
-# [eventkit](https://hntrl.github.io/eventkit/) — [![GitHub license][license-badge]][license-url] [![npm][npm-badge]][npm-url] [![build][build-badge]][build-url] [![PRs Welcome][prs-badge]][prs-url]
+# [eventkit](https://hntrl.github.io/eventkit) — [![GitHub license][license-badge]][license-url] [![npm][npm-badge]][npm-url] [![build][build-badge]][build-url] [![PRs Welcome][prs-badge]][prs-url]
 
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-url]: https://github.com/hntrl/eventkit/blob/main/LICENSE.md
@@ -16,11 +16,11 @@ Eventkit is a library for defining, composing, and observing asynchronous stream
 - **Batteries Included** 🔋: Super clean APIs, first-class TypeScript support with full type inference, and all the extras included
 - **Lightweight & Modular** 📦: Zero external dependencies and a modular design that lets you only import what you need
 
-You can learn more about the use cases and features of Eventkit in the [official documentation](https://hntrl.github.io/eventkit/guide/what-is-eventkit/).
+You can learn more about the use cases and features of Eventkit in the [official documentation](https://hntrl.github.io/eventkit/guide/what-is-eventkit).
 
 ## Basic Usage
 
-The best way to start using Eventkit is by checking out the [getting started](https://hntrl.github.io/eventkit/guide/getting-started/) guide.
+The best way to start using Eventkit is by checking out the [getting started](https://hntrl.github.io/eventkit/guide/getting-started) guide.
 
 Here's a basic example of how to use an eventkit stream:
 
@@ -50,7 +50,7 @@ await stream.drain();
 
 ## Documentation
 
-View the official eventkit documentation [here](https://hntrl.github.io/eventkit/).
+View the official eventkit documentation [here](https://hntrl.github.io/eventkit).
 
 ## Contributing
 
