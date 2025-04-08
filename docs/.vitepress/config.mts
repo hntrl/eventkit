@@ -9,6 +9,15 @@ export default defineConfig({
   title: "eventkit",
   description: "Declarative stream processing for Typescript",
   base: "/eventkit/",
+  head: [
+    [
+      "script",
+      {
+        defer: "true",
+        src: "https://assets.onedollarstats.com/stonks.js",
+      },
+    ],
+  ],
   lastUpdated: false,
   ignoreDeadLinks: true,
   cleanUrls: true,
