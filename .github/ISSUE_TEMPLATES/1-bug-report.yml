@@ -1,0 +1,35 @@
+name: 🐛 Bug Report
+description: Report an issue that should be fixed
+labels: [triage]
+type: Bug
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to file a bug report! Please fill out this form as completely as possible.
+
+  - type: input
+    attributes:
+      label: What version of eventkit are you using?
+      placeholder: 0.0.0
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Please provide a link to a minimal reproduction
+      placeholder: https://github.com/foobar-user/minimal-repro
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Describe the Bug
+      description: Please describe the bug in as much detail as possible, including steps to reproduce, the behaviour you're seeing, and the behaviour you expect.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Please provide any relevant error logs
+      description: Although not required, we often request logs to help troubleshoot the issue, so providing this up-front streamlines the process towards resolution. Please be careful to hide any sensitive information.
+    validations:
+      required: false
