@@ -37,7 +37,7 @@ export type UnaryFunction<T, R> = (value: T) => R;
  * @template T - The type of the source AsyncObservable's values
  * @template R - The type of the resulting AsyncObservable's values
  *
- * @see [Transforming Data](/concepts/transforming-data)
+ * @see [Transforming Data](/guide/concepts/transforming-data)
  */
 export type OperatorFunction<T, R> = UnaryFunction<AsyncObservable<T>, AsyncObservable<R>>;
 
@@ -50,7 +50,7 @@ export type OperatorFunction<T, R> = UnaryFunction<AsyncObservable<T>, AsyncObse
  *
  * @template T - The type of the source AsyncObservable's values
  *
- * @see [Transforming Data](/concepts/transforming-data)
+ * @see [Transforming Data](/guide/concepts/transforming-data)
  */
 export type MonoTypeOperatorFunction<T> = OperatorFunction<T, T>;
 

@@ -26,7 +26,7 @@ import {
  * ```
  *
  * @template T - The type of the values emitted by the AsyncObservable.
- * @see [Observable Pattern](/concepts/observable-pattern)
+ * @see [Observable Pattern](/guide/concepts/observable-pattern)
  * @hideconstructor
  */
 export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {

@@ -9,10 +9,10 @@ hero:
   actions:
     - theme: brand
       text: What is eventkit?
-      link: /what-is-eventkit
+      link: /guide/what-is-eventkit
     - theme: alt
       text: Quickstart
-      link: /getting-started
+      link: /guide/getting-started
     - theme: alt
       text: GitHub
       link: https://github.com/hntrl/eventkit

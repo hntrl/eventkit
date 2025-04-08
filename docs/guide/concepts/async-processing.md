@@ -4,7 +4,7 @@ outline: [2, 3]
 
 # Async Processing
 
-A big component of eventkit's design is in how it organizes and processes work. While existing implementations of the [Observable Pattern](/concepts/observable-pattern) in JavaScript largely assert that, by default, all work will happen synchronously in the main loop when an observable is called, eventkit takes the approach of treating all work as work that can be deferred to a later time.
+A big component of eventkit's design is in how it organizes and processes work. While existing implementations of the [Observable Pattern](./observable-pattern) in JavaScript largely assert that, by default, all work will happen synchronously in the main loop when an observable is called, eventkit takes the approach of treating all work as work that can be deferred to a later time.
 
 Losing that flexibility might seem like a big regression at first, but baking that assumption in as a primitive actually enables a lot more in terms of concurrency and observability which would otherwise be hard to replicate. Since eventkit handles that abstraction by using JavaScript's async/await primitives, it also allows us to still emulate that synchronous behavior in a way that's still fully async and non-blocking.
 
@@ -16,7 +16,7 @@ It's worth noting that we use the terms `async/await` and `Promise` pretty inter
 
 ## `async/await` represents completion
 
-The [Observable Pattern](/concepts/observable-pattern) takes a lot of care to distinguish itself from a standard `Promise`. The key difference being that a `Promise` represents a single value that will be available at some point in the future, while an observable represents any number of values that will be available at some point in the future.
+The [Observable Pattern](./observable-pattern) takes a lot of care to distinguish itself from a standard `Promise`. The key difference being that a `Promise` represents a single value that will be available at some point in the future, while an observable represents any number of values that will be available at some point in the future.
 
 That distinction is important because the very mechanism by which data flows through an observable is different than how data flows through a `Promise`. But even with that in mind, there's two questions that are important to answer that aren't solved by the observable model in itself:
 
@@ -39,7 +39,7 @@ Work is representative of anything that needs to be done in the future as a resu
 - Work that happens when an observable has finished (cleanup work)
 - Work that happens as a result of an error being thrown (error handling)
 
-The way that this gets tracked is through the implementation of a [Scheduler](#scheduler). Each observable/subscriber has a scheduler that is responsible for tracking the work associated with it. By default, all eventkit objects use a default scheduler that handles the async behavior described in this guide, but you can also provide one of the standard schedulers that ship with eventkit, or implement your own to augment the behavior of the scheduler (More on that in the [Scheduling](/concepts/scheduling) section).
+The way that this gets tracked is through the implementation of a [Scheduler](#scheduler). Each observable/subscriber has a scheduler that is responsible for tracking the work associated with it. By default, all eventkit objects use a default scheduler that handles the async behavior described in this guide, but you can also provide one of the standard schedulers that ship with eventkit, or implement your own to augment the behavior of the scheduler (More on that in the [Scheduling](./scheduling) section).
 
 One of the implementation details of the default scheduler is that when we add any work to a subscriber (the object returned by `.subscribe()`), we're adding the work to both the subscriber and the observable it comes from. This means that when we're waiting for an observable to finish, we're also implicitly waiting for all the work associated with the subscriber to finish.
 
@@ -136,7 +136,7 @@ console.log("done");
 The concept of a scheduler in eventkit is largely what coordinates the tracking and execution of work. All units of work are represented by a promise-like object, and attached to a scheduler subject (which can be an AsyncObservable or Subscriber) through the scheduler. When you call `drain()` on an observable or `await` a subscriber, all that's happening is you are asking the scheduler for a promise that resolves when all the work associated with that subject has finished.
 
 ::: tip Scheduling
-More details on how this works and how work is handled can be found in the [Scheduling](/concepts/scheduling) section.
+More details on how this works and how work is handled can be found in the [Scheduling](./scheduling) section.
 :::
 
 ## Waiting for completion
@@ -368,7 +368,7 @@ await myObservable.subscribe(async (value) => {
 
 **Why is this?** By default, eventkit objects use this behavior because it's the most intuitive way to handle errors using async/await. If an error occurs somewhere, we want to immediately know about it so that we can handle it appropriately rather than deferring it. While it might seem better to wait for all the work to complete and then collect any errors that occurred, this is problematic because we might either (1) be perpetuating bad application state since we can't take any corrective action against it until after the observable has completed, or (2) might never know about the error at all since observable executions can be indefinite.
 
-As mentioned in the [Observable Pattern](/concepts/observable-pattern) guide, async/await is prime for representing a single value that will be available at some point in the future (either as a resolved value or rejected error). It's how we represent completion in eventkit, but it's also the mechanism by which we raise errors as soon as they occur. Since we've asserted that multiple errors can occur in the execution of an observable, how do we appropriately handle a collection of errors over time?
+As mentioned in the [Observable Pattern](./observable-pattern) guide, async/await is prime for representing a single value that will be available at some point in the future (either as a resolved value or rejected error). It's how we represent completion in eventkit, but it's also the mechanism by which we raise errors as soon as they occur. Since we've asserted that multiple errors can occur in the execution of an observable, how do we appropriately handle a collection of errors over time?
 
 #### Using the `dlq()` operator
 

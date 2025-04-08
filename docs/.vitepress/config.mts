@@ -36,9 +36,14 @@ export default defineConfig({
 function nav(): DefaultTheme.NavItem[] {
   return [
     {
-      text: "Docs",
-      link: "/what-is-eventkit",
-      activeMatch: "/",
+      text: "Guide",
+      link: "/guide/what-is-eventkit",
+      activeMatch: "/guide/",
+    },
+    {
+      text: "Reference",
+      link: "/reference",
+      activeMatch: "/reference/",
     },
     {
       text: eventkitPkg.version,
@@ -61,6 +66,7 @@ function sidebar(): DefaultTheme.SidebarItem[] {
     {
       text: "Introduction",
       collapsed: false,
+      base: "/guide/",
       items: [
         { text: "What is eventkit?", link: "what-is-eventkit" },
         { text: "Getting Started", link: "getting-started" },
@@ -70,20 +76,22 @@ function sidebar(): DefaultTheme.SidebarItem[] {
     {
       text: "Concepts",
       collapsed: false,
+      base: "/guide/concepts/",
       items: [
-        { text: "Creating Streams", link: "concepts/creating-streams" },
-        { text: "Transforming Data", link: "concepts/transforming-data" },
-        { text: "Observable Pattern", link: "concepts/observable-pattern" },
-        { text: "Async Processing", link: "concepts/async-processing" },
-        { text: "Scheduling", link: "concepts/scheduling" },
+        { text: "Creating Streams", link: "creating-streams" },
+        { text: "Transforming Data", link: "transforming-data" },
+        { text: "Observable Pattern", link: "observable-pattern" },
+        { text: "Async Processing", link: "async-processing" },
+        { text: "Scheduling", link: "scheduling" },
       ],
     },
     {
       text: "Examples",
       collapsed: false,
+      base: "/guide/examples/",
       items: [
-        { text: "Reactive Systems", link: "examples/reactive-systems" },
-        { text: "HTTP Streaming", link: "examples/http-streaming" },
+        { text: "Reactive Systems", link: "reactive-systems" },
+        { text: "HTTP Streaming", link: "http-streaming" },
       ],
     },
     {

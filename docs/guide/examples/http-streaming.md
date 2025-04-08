@@ -1,5 +1,6 @@
 ---
 outline: [2, 3]
+next: false
 ---
 
 # HTTP Streaming

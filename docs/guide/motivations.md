@@ -19,7 +19,7 @@ By tackling these two problems together, eventkit provides a comprehensive solut
 
 ### History of the Observable pattern
 
-Eventkit does this by offering an alternative implementation of the [Observable Pattern](/concepts/observable-pattern) that's built on top of async generators. However, the Observable pattern is not a new concept and it's worth mentioning it's tenure in the JavaScript ecosystem.
+Eventkit does this by offering an alternative implementation of the [Observable Pattern](./concepts/observable-pattern) that's built on top of async generators. However, the Observable pattern is not a new concept and it's worth mentioning it's tenure in the JavaScript ecosystem.
 
 Observables have a history of being used within JavaScript, even going so far as to be proposed as a standard for the language by way of a [TC39 proposal](https://github.com/tc39/proposal-observable) in May of 2015. The TC39 proposal ultimately failed to gain traction in part due to some opposition that the API wasn't suitable to be a language-level primitive. The Observable pattern has still survived in the form of being implemented by libraries like RxJS, and has even made a reprisal to become a [web standard](https://github.com/wicg/observable).
 
@@ -59,7 +59,7 @@ The Observable pattern in RxJS relies heavily on its own implementation of the [
 
 Generators are excellent for managing the first higher-order problem of observing values over time, but they fall short when it comes to the second problem: observing the side effects that arise from its values. Generators do not inherently provide a mechanism to track or manage side effects, which can be a significant limitation in reactive programming. While they are similar, they're distinct from an observable because of this detail.
 
-This is explained more in the [Observable Pattern](/concepts/observable-pattern#async-iterators-generators) section.
+This is explained more in the [Observable Pattern](./concepts/observable-pattern#async-iterators-generators) section.
 
 #### Why is observing side effects important?
 
@@ -69,4 +69,4 @@ In a [CQRS](https://en.wikipedia.org/wiki/Command_Query_Responsibility_Segregati
 
 Similarly, in [event sourcing](https://en.wikipedia.org/wiki/Event-driven_architecture), side effects may be used to update projections or trigger additional events. By observing these side effects, you can ensure that your system remains reactive and that all necessary updates are applied.
 
-A more practical example of where this becomes important can be found in the [Event Sourcing](/examples/event-sourcing) example.
+A more detailed look into where this becomes important can be found in the [Reactive Systems](./examples/reactive-systems) example.

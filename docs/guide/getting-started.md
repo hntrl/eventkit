@@ -51,17 +51,17 @@ await stream.drain();
 
 Eventkit revolves around a few core concepts:
 
-- [**AsyncObservable**](/concepts/observable-pattern#using-asyncobservable): A powerful implementation of the observable pattern that handles asynchronous data streams, allowing you to process multiple values over time.
-- [**Stream**](/concepts/creating-streams): A specialized observable that can be pushed to indefinitely and provides fine-grained control over execution timing, perfect for real-time data and event-driven applications.
-- [**Operators**](/concepts/transforming-data): Composable functions that transform, filter, and combine data streams, enabling you to build complex data processing pipelines with clean, declarative code.
-- [**Schedulers**](/concepts/scheduling#the-scheduler-object): Components that coordinate work execution, giving you precise control over how and when side effects occur in your application.
+- [**AsyncObservable**](./concepts/observable-pattern#using-asyncobservable): A powerful implementation of the observable pattern that handles asynchronous data streams, allowing you to process multiple values over time.
+- [**Stream**](./concepts/creating-streams): A specialized observable that can be pushed to indefinitely and provides fine-grained control over execution timing, perfect for real-time data and event-driven applications.
+- [**Operators**](./concepts/transforming-data): Composable functions that transform, filter, and combine data streams, enabling you to build complex data processing pipelines with clean, declarative code.
+- [**Schedulers**](./concepts/scheduling#the-scheduler-object): Components that coordinate work execution, giving you precise control over how and when side effects occur in your application.
 
 ## Next Steps
 
 Now that you have a basic understanding of how to use Eventkit, you can explore more advanced features and concepts:
 
-- **[What is Eventkit?](/what-is-eventkit.md)**: Learn more about the library and its use cases.
-- **[Creating Streams](/concepts/creating-streams)**: Learn how to create and manipulate streams.
-- **[Transforming Data](/concepts/transforming-data)**: Learn how to transform data in streams.
-- **[Observable Pattern](/concepts/observable-pattern)**: Understand the core principles of eventkit.
+- **[What is Eventkit?](./what-is-eventkit.md)**: Learn more about the library and its use cases.
+- **[Creating Streams](./concepts/creating-streams)**: Learn how to create and manipulate streams.
+- **[Transforming Data](./concepts/transforming-data)**: Learn how to transform data in streams.
+- **[Observable Pattern](./concepts/observable-pattern)**: Understand the core principles of eventkit.
 

@@ -19,7 +19,7 @@ await mySubscription;
 await myObservable.drain();
 ```
 
-Most commonly, the **what** that belongs to an execution is any work thats associated with it (as described in [Async Processing](/concepts/async-processing#work-collection)), the **when** is the specific point in time in which all the relevant work associated with an execution is completed, and the **how** is the manner in which that work is executed.
+Most commonly, the **what** that belongs to an execution is any work thats associated with it (as described in [Async Processing](./async-processing#work-collection)), the **when** is the specific point in time in which all the relevant work associated with an execution is completed, and the **how** is the manner in which that work is executed.
 
 While this seems like an obscure detail, it becomes vitally important when differentiating between types of observables. For instance:
 
@@ -62,11 +62,11 @@ console.log("done");
 // done
 ```
 
-The implementation of Stream achieves this by using this unit of control and altering it's behavior ever so slightly (as described in [Async Processing](/concepts/async-processing#streams-are-different)).
+The implementation of Stream achieves this by using this unit of control and altering it's behavior ever so slightly (as described in [Async Processing](./async-processing#streams-are-different)).
 
 ### Every observable can control the execution of its side effects
 
-As described in the [Observable Pattern](/concepts/observable-pattern#push-vs-pull) guide, an observable is a push system that decides when to send data to its consumers. This is an important capability that lets us control the execution of its work (the **how**). In eventkit, we do this by providing a `Scheduler` object to the observable that manages the execution of its side effects.
+As described in the [Observable Pattern](./observable-pattern#push-vs-pull) guide, an observable is a push system that decides when to send data to its consumers. This is an important capability that lets us control the execution of its work (the **how**). In eventkit, we do this by providing a `Scheduler` object to the observable that manages the execution of its side effects.
 
 (See an example of this [here](#queue-scheduler))
 
