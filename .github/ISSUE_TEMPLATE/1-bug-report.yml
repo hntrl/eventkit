@@ -1,7 +1,6 @@
 name: 🐛 Bug Report
 description: Report an issue that should be fixed
 labels: [triage]
-type: Bug
 
 body:
   - type: markdown
@@ -13,6 +12,12 @@ body:
     attributes:
       label: What version of eventkit are you using?
       placeholder: 0.0.0
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: What runtime are you using with eventkit?
+      placeholder: Node.JS v22, Bun 1.2.8, etc.
     validations:
       required: true
   - type: input

@@ -1,7 +1,6 @@
 name: 📚 Documentation Issue
 description: Something is wrong with the eventkit docs
 labels: [docs]
-type: Docs
 
 body:
   - type: markdown

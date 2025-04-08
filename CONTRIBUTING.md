@@ -7,11 +7,11 @@ When it comes to open source, there are many different ways to contribute, all o
 ## Did you find a bug?
 
 * Make sure the bug wasn't already reported by searching on GitHub under [Issues](https://github.com/hntrl/eventkit/issues).
-* If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/hntrl/eventkit/issues/new). Be sure to include a title and clear description, as much relevant information as possible, and a code sample if applicable. If possible, use the relevant bug report templates to create the issue.
+* If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/hntrl/eventkit/issues/new). Be sure to include a title and clear description, as much relevant information as possible, and a code sample if applicable. If possible, use the relevant issue templates to create the issue.
 
 ## Proposing new or changing existing features?
 
-Please provide thoughtful comments and some sample code that show what you'd like to do with eventkit in your app. It helps the conversation if you can show us how you're limited by the current API first before jumping to a conclusion about what needs to be changed and/or added.
+Please provide thoughtful comments and some sample code that show what you'd like to do with eventkit. It helps the conversation if you can show us how you're limited by the current API first before jumping to a conclusion about what needs to be changed and/or added.
 
 ## Issue not getting attention?
 
