@@ -17,9 +17,6 @@ importers:
       '@types/semver':
         specifier: ^7.5.8
         version: 7.5.8
-      chalk:
-        specifier: ^4.1.2
-        version: 4.1.2
       eslint:
         specifier: ^9.20.1
         version: 9.22.0
@@ -35,18 +32,12 @@ importers:
       globals:
         specifier: ^16.0.0
         version: 16.0.0
-      jsonfile:
-        specifier: ^6.1.0
-        version: 6.1.0
       msw:
         specifier: ^2.7.3
         version: 2.7.3(@types/node@22.13.14)(typescript@5.7.3)
       prettier:
         specifier: ^3.5.1
         version: 3.5.1
-      semver:
-        specifier: ^7.7.1
-        version: 7.7.1
       typedoc:
         specifier: ^0.28.1
         version: 0.28.1(typescript@5.7.3)
@@ -112,28 +103,6 @@ importers:
         specifier: workspace:*
         version: link:../async-observable
     devDependencies:
-      tsup:
-        specifier: ^8.3.6
-        version: 8.3.6(postcss@8.5.3)(tsx@4.19.3)(typescript@5.7.3)(yaml@2.7.1)
-      typescript:
-        specifier: ^5.7.3
-        version: 5.7.3
-      wireit:
-        specifier: ^0.14.11
-        version: 0.14.11
-
-  packages/eventkit-cloudflare:
-    dependencies:
-      '@eventkit/async-observable':
-        specifier: workspace:*
-        version: link:../async-observable
-      eventkit:
-        specifier: workspace:*
-        version: link:../eventkit
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20250303.0
-        version: 4.20250303.0
       tsup:
         specifier: ^8.3.6
         version: 8.3.6(postcss@8.5.3)(tsx@4.19.3)(typescript@5.7.3)(yaml@2.7.1)
@@ -336,9 +305,6 @@ packages:
 
   '@changesets/write@0.4.0':
     resolution: {integrity: sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q==}
-
-  '@cloudflare/workers-types@4.20250303.0':
-    resolution: {integrity: sha512-O7F7nRT4bbmwHf3gkRBLfJ7R6vHIJ/oZzWdby6obOiw2yavUfp/AIwS7aO2POu5Cv8+h3TXS3oHs3kKCZLraUA==}
 
   '@csstools/color-helpers@5.0.2':
     resolution: {integrity: sha512-JqWH1vsgdGcw2RR6VliXXdA0/59LttzlU8UlRT/iUUsEeWfYq8I+K0yhihEUTTHLRm1EXvpsCx3083EU15ecsA==}
@@ -2267,9 +2233,6 @@ packages:
   jsonfile@4.0.0:
     resolution: {integrity: sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==}
 
-  jsonfile@6.1.0:
-    resolution: {integrity: sha512-5dgndWOriYSm5cnYaJNhalLNDKOqFwyDB/rr1E9ZsGciGvKPs8R2xYGCacuf3z6K1YKDz182fd+fY3cn3pMqXQ==}
-
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
@@ -3101,10 +3064,6 @@ packages:
     resolution: {integrity: sha512-CJ1QgKmNg3CwvAv/kOFmtnEN05f0D/cn9QntgNOQlQF9dgvVTHj3t+8JPdjqawCHk7V/KA+fbUqzZ9XWhcqPUg==}
     engines: {node: '>= 4.0.0'}
 
-  universalify@2.0.1:
-    resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
-    engines: {node: '>= 10.0.0'}
-
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
@@ -3648,8 +3607,6 @@ snapshots:
       fs-extra: 7.0.1
       human-id: 4.1.1
       prettier: 2.8.8
-
-  '@cloudflare/workers-types@4.20250303.0': {}
 
   '@csstools/color-helpers@5.0.2':
     optional: true
@@ -5605,12 +5562,6 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
-  jsonfile@6.1.0:
-    dependencies:
-      universalify: 2.0.1
-    optionalDependencies:
-      graceful-fs: 4.2.11
-
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
@@ -6486,8 +6437,6 @@ snapshots:
   universalify@0.1.2: {}
 
   universalify@0.2.0: {}
-
-  universalify@2.0.1: {}
 
   uri-js@4.4.1:
     dependencies:
