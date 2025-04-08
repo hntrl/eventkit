@@ -50,7 +50,7 @@ function nav(): DefaultTheme.NavItem[] {
       items: [
         {
           text: "Changelog",
-          link: "https://github.com/hntrl/eventkit/blob/main/CHANGELOG.md",
+          link: "https://github.com/hntrl/eventkit/blob/main/packages/eventkit/CHANGELOG.md",
         },
         {
           text: "Contributing",
