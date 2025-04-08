@@ -100,8 +100,8 @@ export function pipe<T, A, B, C, D, E, F, G, H, I>(
  * ```ts
  * // Create a custom operator that filters even numbers and doubles them
  * function doubleEvens() {
- *   return pipe<number>(
- *     filter((num) => num % 2 === 0),
+ *   return pipe(
+ *     filter((num: number) => num % 2 === 0),
  *     map((num) => num * 2)
  *   );
  * }
