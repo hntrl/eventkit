@@ -82,7 +82,7 @@ function sidebar(): DefaultTheme.SidebarItem[] {
       text: "Examples",
       collapsed: false,
       items: [
-        { text: "Event Sourcing", link: "examples/event-sourcing" },
+        { text: "Reactive Systems", link: "examples/reactive-systems" },
         { text: "HTTP Streaming", link: "examples/http-streaming" },
       ],
     },
