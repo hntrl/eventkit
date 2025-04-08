@@ -59,10 +59,17 @@
 
     <div class="stream-section">
       <h2>Stream</h2>
-      <p>This stream emits messages that are pushed to it from any number of clients using a Stream object</p>
-      <p><em>hint: open this in a second tab and push messages. you should see them in both tabs!</em></p>
+      <p>
+        This stream emits messages that are pushed to it from any number of clients using a Stream
+        object
+      </p>
+      <p>
+        <em
+          >hint: open this in a second tab and push messages. you should see them in both tabs!</em
+        >
+      </p>
       <div class="input-group">
-        <input type="text" id="messageInput" placeholder="Enter message to push">
+        <input type="text" id="messageInput" placeholder="Enter message to push" />
         <button id="pushMessage">Push Message</button>
       </div>
       <div id="sharedOutput" class="output"></div>
@@ -72,13 +79,13 @@
       import { AsyncObservable, map } from "./eventkit.js";
 
       // Observable Stream Section
-      const startButton = document.getElementById('startObservable');
-      const observableOutput = document.getElementById('observableOutput');
+      const startButton = document.getElementById("startObservable");
+      const observableOutput = document.getElementById("observableOutput");
 
-      startButton.addEventListener('click', async () => {
+      startButton.addEventListener("click", async () => {
         try {
           startButton.disabled = true;
-          observableOutput.textContent = '';
+          observableOutput.textContent = "";
 
           const res = await fetch("/observable-stream");
           if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -87,11 +94,9 @@
           const obs = AsyncObservable.from(res.body);
           const decoder = new TextDecoder();
 
-          const sub = obs
-            .pipe(map((buffer) => decoder.decode(buffer)))
-            .subscribe((text) => {
-              observableOutput.textContent += text;
-            });
+          const sub = obs.pipe(map((buffer) => decoder.decode(buffer))).subscribe((text) => {
+            observableOutput.textContent += text;
+          });
 
           await sub;
           observableOutput.textContent += "\nStream complete!";
@@ -104,9 +109,9 @@
       });
 
       // Shared Stream Section
-      const messageInput = document.getElementById('messageInput');
-      const pushButton = document.getElementById('pushMessage');
-      const sharedOutput = document.getElementById('sharedOutput');
+      const messageInput = document.getElementById("messageInput");
+      const pushButton = document.getElementById("pushMessage");
+      const sharedOutput = document.getElementById("sharedOutput");
 
       // Start listening to shared stream immediately
       (async () => {
@@ -118,11 +123,9 @@
           const obs = AsyncObservable.from(res.body);
           const decoder = new TextDecoder();
 
-          const sub = obs
-            .pipe(map((buffer) => decoder.decode(buffer)))
-            .subscribe((text) => {
-              sharedOutput.textContent += text + "\n";
-            });
+          const sub = obs.pipe(map((buffer) => decoder.decode(buffer))).subscribe((text) => {
+            sharedOutput.textContent += text + "\n";
+          });
           await sub;
         } catch (error) {
           console.error("Error:", error);
@@ -131,7 +134,7 @@
       })();
 
       // Handle pushing messages to shared stream
-      pushButton.addEventListener('click', async () => {
+      pushButton.addEventListener("click", async () => {
         const message = messageInput.value.trim();
         if (!message) return;
 
@@ -139,11 +142,11 @@
           pushButton.disabled = true;
           const res = await fetch("/shared-stream", {
             method: "POST",
-            body: message
+            body: message,
           });
 
           if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          messageInput.value = '';
+          messageInput.value = "";
         } catch (error) {
           console.error("Error:", error);
           sharedOutput.textContent += `\nError pushing message: ${error.message}`;
@@ -153,8 +156,8 @@
       });
 
       // Allow Enter key to push messages
-      messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+      messageInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
           pushButton.click();
         }
       });

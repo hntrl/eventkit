@@ -24,7 +24,7 @@ async function ensureBuildVersion(packageName, version) {
   let json = await jsonfile.readFile(file);
   invariant(
     json.version === version,
-    `Package ${packageName} is on version ${json.version}, but should be on ${version}`,
+    `Package ${packageName} is on version ${json.version}, but should be on ${version}`
   );
 }
 
@@ -46,7 +46,7 @@ function publishBuild(packageName, tag, releaseBranch) {
     args.push(`--publish-branch ${releaseBranch}`);
   } else {
     throw new Error(
-      "Expected a release branch name to be provided for non-experimental/nightly releases",
+      "Expected a release branch name to be provided for non-experimental/nightly releases"
     );
   }
   console.log();
@@ -63,17 +63,11 @@ function publishBuild(packageName, tag, releaseBranch) {
 async function run() {
   try {
     // 0. Ensure we are in CI. We don't do this manually
-    invariant(
-      process.env.CI,
-      `You should always run the publish script from the CI environment!`,
-    );
+    invariant(process.env.CI, `You should always run the publish script from the CI environment!`);
 
     // 1. Get the current tag, which has the release version number
     let version = getTaggedVersion();
-    invariant(
-      version !== "",
-      "Missing release version. Run the version script first.",
-    );
+    invariant(version !== "", "Missing release version. Run the version script first.");
 
     // 2. Determine the appropriate npm tag to use
     let releaseBranch;

@@ -6,9 +6,9 @@ When it comes to open source, there are many different ways to contribute, all o
 
 ## Did you find a bug?
 
-* Make sure the bug wasn't already reported by searching on GitHub under [Issues](https://github.com/hntrl/eventkit/issues).
-* If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/hntrl/eventkit/issues/new). Be sure to include a title and clear description, as much relevant information as possible, and a code sample if applicable. If possible, use the relevant issue templates to create the issue.
-* If you've encountered a security issue, please see our [SECURITY.md](SECURITY.md) guide for info on how to report it.
+- Make sure the bug wasn't already reported by searching on GitHub under [Issues](https://github.com/hntrl/eventkit/issues).
+- If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/hntrl/eventkit/issues/new). Be sure to include a title and clear description, as much relevant information as possible, and a code sample if applicable. If possible, use the relevant issue templates to create the issue.
+- If you've encountered a security issue, please see our [SECURITY.md](SECURITY.md) guide for info on how to report it.
 
 ## Proposing new or changing existing features?
 
@@ -26,8 +26,8 @@ When creating the PR in GitHub, make sure that you set the base to the correct b
 
 Before you can contribute, you'll need to fork the repo. This will look a bit different depending on what type of contribution you are making:
 
-* All new features, bug-fixes, or anything that touches material code should be branched off of and merged into the `dev` branch.
-* Changes that only touch documentation should be branched off of and merged into the `main` branch.
+- All new features, bug-fixes, or anything that touches material code should be branched off of and merged into the `dev` branch.
+- Changes that only touch documentation should be branched off of and merged into the `main` branch.
 
 The following steps will get you setup to start issuing commits:
 

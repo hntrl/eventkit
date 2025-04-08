@@ -5,18 +5,23 @@ In this guide, we'll walk through the fundamentals and tell you how to go from 0
 ## Installation
 
 ::: code-group
+
 ```sh [npm]
 npm install eventkit
 ```
+
 ```sh [yarn]
 yarn add eventkit
 ```
+
 ```sh [pnpm]
 pnpm add eventkit
 ```
+
 ```sh [bun]
 bun add eventkit
 ```
+
 :::
 
 ## A Simple Example
@@ -30,12 +35,10 @@ import { Stream, filter } from "eventkit";
 const stream = new Stream<{ type: string; payload: any }>();
 
 // Filter for specific event types
-const userEvents = stream.pipe(
-  filter(event => event.type.startsWith("user."))
-);
+const userEvents = stream.pipe(filter((event) => event.type.startsWith("user.")));
 
 // Subscribe to the filtered stream
-userEvents.subscribe(event => {
+userEvents.subscribe((event) => {
   console.log(`Received user event: ${event.type}`);
 });
 
@@ -64,4 +67,3 @@ Now that you have a basic understanding of how to use Eventkit, you can explore 
 - **[Creating Streams](./concepts/creating-streams)**: Learn how to create and manipulate streams.
 - **[Transforming Data](./concepts/transforming-data)**: Learn how to transform data in streams.
 - **[Observable Pattern](./concepts/observable-pattern)**: Understand the core principles of eventkit.
-

@@ -147,25 +147,17 @@ A representation of this in code might look like:
 const source = AsyncObservable.from([1, 2, 3]);
 
 // left side of the tree
-const mapped$ = source.pipe(
-  map((value) => value * 2),
-)
+const mapped$ = source.pipe(map((value) => value * 2));
 
-const filtered$ = mapped$.pipe(
-  filter((value) => value < 5),
-)
+const filtered$ = mapped$.pipe(filter((value) => value < 5));
 const subA = filtered$.subscribe(console.log);
 const subB = filtered$.subscribe(console.log);
 
-const reduced$ = mapped$.pipe(
-  reduce((acc, value) => acc + value, 0),
-)
+const reduced$ = mapped$.pipe(reduce((acc, value) => acc + value, 0));
 const subC = reduced$.subscribe(console.log);
 
 // right side of the tree
-const counted$ = reduced$.pipe(
-  count(),
-)
+const counted$ = reduced$.pipe(count());
 const subD = counted$.subscribe(console.log);
 const subE = counted$.subscribe(console.log);
 ```
@@ -301,9 +293,7 @@ await myObservable.subscribe(handleValue);
 
 // example 2: queue scheduler
 const scheduler = new QueueScheduler();
-await myObservable
-  .pipe(withScheduler(scheduler))
-  .subscribe(handleValue);
+await myObservable.pipe(withScheduler(scheduler)).subscribe(handleValue);
 // (values are processed in order, so it doesn't matter how long each callback takes)
 // output:
 // 1

@@ -1,7 +1,5 @@
 {
   "eslint.options": {
-    "flags": [
-      "unstable_config_lookup_from_file"
-    ]
+    "flags": ["unstable_config_lookup_from_file"]
   }
 }

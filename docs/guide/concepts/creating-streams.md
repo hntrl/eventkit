@@ -36,18 +36,12 @@ Say you wanted to selectively observe values from the stream like you would with
 ```ts
 import { Stream, filter } from "eventkit";
 
-type Event =
-  | { type: "increment"; value: number }
-  | { type: "decrement"; value: number };
+type Event = { type: "increment"; value: number } | { type: "decrement"; value: number };
 
 const stream = new Stream<Event>();
 
-const incrementEvents$ = stream.pipe(
-  filter((event) => event.type === "increment")
-);
-const decrementEvents$ = stream.pipe(
-  filter((event) => event.type === "decrement")
-);
+const incrementEvents$ = stream.pipe(filter((event) => event.type === "increment"));
+const decrementEvents$ = stream.pipe(filter((event) => event.type === "decrement"));
 
 let value = 0;
 
@@ -102,11 +96,12 @@ const eventSchema = z.union([
 const stream = new Stream({
   preprocess(value) {
     return eventSchema.parse(value);
-  }
-})
+  },
+});
 
 stream.push({ type: "increment", value: -1 }); // ZodError
 ```
+
 :::
 
 ### `scheduler`
@@ -119,8 +114,8 @@ To give a basic example, say that you wanted to handle all of the callbacks in t
 import { Stream, QueueScheduler } from "eventkit";
 
 const stream = new Stream({
-  scheduler: new QueueScheduler()
-})
+  scheduler: new QueueScheduler(),
+});
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -182,9 +177,10 @@ If you're familiar with an [Observable](https://github.com/WICG/observable) or l
 
 ### Waiting for work to finish
 
-One of the key facets of [`AsyncObservable`](./observable-pattern#using-asyncobservable) is that it allows you to be strongly consistent in waiting for work associated with an observable to finish. When a value is yielded, the callbacks that get called as a result of that value being yielded are tracked as a [side effect](https://en.wikipedia.org/wiki/Side_effect_(computer_science)). Eventkit allows you to wait for all or parts of those side effects to finish.
+One of the key facets of [`AsyncObservable`](./observable-pattern#using-asyncobservable) is that it allows you to be strongly consistent in waiting for work associated with an observable to finish. When a value is yielded, the callbacks that get called as a result of that value being yielded are tracked as a [side effect](<https://en.wikipedia.org/wiki/Side_effect_(computer_science)>). Eventkit allows you to wait for all or parts of those side effects to finish.
 
 ::: code-group
+
 ```ts [AsyncObservable]
 import { AsyncObservable } from "eventkit";
 
@@ -212,6 +208,7 @@ await persistenceSub;
 // blocked by the other callback
 await queryDatabase();
 ```
+
 ```ts [Stream]
 import { Stream } from "eventkit";
 
@@ -239,11 +236,13 @@ await persistenceSub;
 // blocked by the other callback
 await queryDatabase();
 ```
+
 :::
 
 We can also wait for a specific subset of those side effects to finish.
 
 ::: code-group
+
 ```ts [AsyncObservable]
 import { AsyncObservable } from "eventkit";
 
@@ -252,7 +251,7 @@ const myObservable = new AsyncObservable(async function* () {
 });
 
 // database callbacks
-const dbOps$ = myObservable.pipe()
+const dbOps$ = myObservable.pipe();
 
 const firstDatabaseSub = dbOps$.subscribe(async (value) => {
   console.log("db A:", value);
@@ -275,13 +274,14 @@ const otherExpensiveSub = myObservable.subscribe(async (value) => {
 // but not be blocked by the expensive operation
 await dbOps$.drain();
 ```
+
 ```ts [Stream]
 import { Stream } from "eventkit";
 
 const stream = new Stream<number>();
 
 // database callbacks
-const dbOps$ = stream.pipe()
+const dbOps$ = stream.pipe();
 
 const firstDatabaseSub = dbOps$.subscribe(async (value) => {
   console.log("db A:", value);
@@ -306,6 +306,7 @@ stream.push(1);
 // but not be blocked by the expensive operation
 await dbOps$.drain();
 ```
+
 :::
 
 More can be read about how this works [here](./scheduling#composing-observables).

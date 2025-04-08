@@ -31,12 +31,10 @@ import { Stream, filter } from "eventkit";
 const stream = new Stream<{ type: string; payload: any }>();
 
 // Filter for specific event types
-const userEvents = stream.pipe(
-  filter(event => event.type.startsWith("user."))
-);
+const userEvents = stream.pipe(filter((event) => event.type.startsWith("user.")));
 
 // Subscribe to the filtered stream
-userEvents.subscribe(event => {
+userEvents.subscribe((event) => {
   console.log(`Received user event: ${event.type}`);
 });
 

@@ -8,7 +8,7 @@ A big component of eventkit's design is in how it organizes and processes work. 
 
 Losing that flexibility might seem like a big regression at first, but baking that assumption in as a primitive actually enables a lot more in terms of concurrency and observability which would otherwise be hard to replicate. Since eventkit handles that abstraction by using JavaScript's async/await primitives, it also allows us to still emulate that synchronous behavior in a way that's still fully async and non-blocking.
 
-In reactive programming, you often hear the term "[side effects](https://en.wikipedia.org/wiki/Side_effect_(computer_science))" a lot. While that term often has a lot of different interpretations, in eventkit side effects are any work that is done as a result of a value being yielded by an observable (like the execution of a callback).
+In reactive programming, you often hear the term "[side effects](<https://en.wikipedia.org/wiki/Side_effect_(computer_science)>)" a lot. While that term often has a lot of different interpretations, in eventkit side effects are any work that is done as a result of a value being yielded by an observable (like the execution of a callback).
 
 ::: info
 It's worth noting that we use the terms `async/await` and `Promise` pretty interchangeably here. What's important to know is that when we bring either of these up, we're talking about the native methodolgy by which JavaScript handles deferred work. (A `Promise` represents a value that will be available at some point in the future, which can be created using an `async` function or the `Promise` constructor, and can block the call stack from continuing until that value is made available using `await`).
@@ -294,13 +294,13 @@ const myObservable = new AsyncObservable(async function* () {
 });
 
 myObservable.finally(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  console.log("longer cleanup")
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  console.log("longer cleanup");
 });
 await myObservable.finally(() => {
-  console.log("shorter cleanup")
+  console.log("shorter cleanup");
 });
-console.log("before drain")
+console.log("before drain");
 await myObservable.drain();
 console.log("done");
 
@@ -310,6 +310,7 @@ console.log("done");
 // longer cleanup
 // done
 ```
+
 :::
 
 ## Error handling
@@ -364,7 +365,6 @@ await myObservable.subscribe(async (value) => {
 
 ![error-handling](/assets/images/error-handling-unhandled-callback-marble-dark.png){.dark-only .reference-image}
 ![error-handling](/assets/images/error-handling-unhandled-callback-marble-light.png){.light-only .reference-image}
-
 
 **Why is this?** By default, eventkit objects use this behavior because it's the most intuitive way to handle errors using async/await. If an error occurs somewhere, we want to immediately know about it so that we can handle it appropriately rather than deferring it. While it might seem better to wait for all the work to complete and then collect any errors that occurred, this is problematic because we might either (1) be perpetuating bad application state since we can't take any corrective action against it until after the observable has completed, or (2) might never know about the error at all since observable executions can be indefinite.
 
@@ -427,16 +427,13 @@ const myObservable = new AsyncObservable(async function* () {
   yield* [1, 2, 3];
 });
 
-await myObservable
-  .pipe(retry({ limit: 3 }))
-  .subscribe((value) => {
-    if (Math.random() <= 0.5) {
-      console.log("whoops", value);
-      throw new Error(`oh no ${value}`);
-    }
-    console.log(value);
+await myObservable.pipe(retry({ limit: 3 })).subscribe((value) => {
+  if (Math.random() <= 0.5) {
+    console.log("whoops", value);
+    throw new Error(`oh no ${value}`);
   }
-);
+  console.log(value);
+});
 
 // example output:
 // 1
@@ -512,6 +509,7 @@ await myObservable.subscribe((value) => console.log("value:", value));
 When calling [`AsyncObservable.drain()`](/reference/eventkit/AsyncObservable#drain) or awaiting a Subscriber, the promise that gets returned is representative of the current work thats being executed. Subsequently awaiting any promises after an error gets thrown won't yield the error rejection since the work that was rejected has already been discarded.
 
 ::: code-group
+
 ```ts [AsyncObservable]
 import { AsyncObservable } from "eventkit";
 
@@ -528,6 +526,7 @@ await myObservable.drain();
 // undefined
 await myObservable.drain();
 ```
+
 ```ts [Subscriber]
 import { AsyncObservable } from "eventkit";
 
@@ -544,6 +543,7 @@ await sub;
 // undefined
 await sub;
 ```
+
 :::
 
 #### During cleanup
@@ -553,6 +553,7 @@ If we define cleanup work either by adding a [`finally()`](/reference/eventkit/A
 For instance, if we're waiting for the natural completion of a subscriber and we have cleanup work that throws an error, that error will be thrown to the promise that's awaiting the subscriber.
 
 ::: code-group
+
 ```ts [try/finally]
 import { AsyncObservable } from "eventkit";
 
@@ -569,6 +570,7 @@ const sub = myObservable.subscribe(console.log);
 // Error: oh no
 await sub;
 ```
+
 ```ts [finally()]
 import { AsyncObservable } from "eventkit";
 
@@ -582,11 +584,13 @@ sub.finally(() => throw new Error("oh no"));
 // Error: oh no
 await sub;
 ```
+
 :::
 
 Or if we do an early cancel of a subscriber, any errors that occur in the cleanup work will be thrown to the promise returned by [`cancel()`](/reference/eventkit/AsyncObservable#cancel).
 
 ::: code-group
+
 ```ts [try/finally]
 import { AsyncObservable } from "eventkit";
 
@@ -604,6 +608,7 @@ const sub = myObservable.subscribe(console.log);
 // Error: oh no
 await sub.cancel();
 ```
+
 ```ts [finally()]
 import { AsyncObservable } from "eventkit";
 
@@ -618,4 +623,5 @@ sub.finally(() => throw new Error("oh no"));
 // Error: oh no
 await sub.cancel();
 ```
+
 :::

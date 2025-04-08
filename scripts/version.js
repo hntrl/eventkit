@@ -3,11 +3,7 @@ const { execSync } = require("node:child_process");
 const chalk = require("chalk");
 const semver = require("semver");
 
-const {
-  ensureCleanWorkingDirectory,
-  invariant,
-  updatePackageConfig,
-} = require("./utils");
+const { ensureCleanWorkingDirectory, invariant, updatePackageConfig } = require("./utils");
 
 async function run() {
   try {
@@ -15,10 +11,7 @@ async function run() {
     let skipGit = args.includes("--skip-git");
 
     let givenVersion = args[0];
-    invariant(
-      givenVersion != null,
-      `Missing next version. Usage: node version.js [nextVersion]`,
-    );
+    invariant(givenVersion != null, `Missing next version. Usage: node version.js [nextVersion]`);
 
     // 0. Make sure the working directory is clean
     if (!skipGit) {
@@ -40,9 +33,7 @@ async function run() {
         packageName = pkg.name;
         pkg.version = version;
       });
-      console.log(
-        chalk.green(`  Updated ${packageName} to version ${version}`),
-      );
+      console.log(chalk.green(`  Updated ${packageName} to version ${version}`));
     }
 
     // 3. Commit and tag

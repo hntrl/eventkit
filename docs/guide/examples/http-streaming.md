@@ -36,6 +36,7 @@ app.get("/stream", (req, res) => {
   return new Response(stream);
 });
 ```
+
 ```ts
 // client.ts
 import { AsyncObservable, map } from "eventkit";
@@ -46,7 +47,7 @@ const res = await fetch("/stream");
 const obs = AsyncObservable.from(res.body);
 
 function appendElement(content: string) {
-  const p = document.createElement('p');
+  const p = document.createElement("p");
   p.textContent = content;
   document.body.appendChild(p);
 }
@@ -72,18 +73,23 @@ In addition to HTTP being a streaming protocol, the HTTP protocol also maintains
 #### Installation
 
 ::: code-group
+
 ```sh [npm]
 npm install @eventkit/http
 ```
+
 ```sh [yarn]
 yarn add @eventkit/http
 ```
+
 ```sh [pnpm]
 pnpm add @eventkit/http
 ```
+
 ```sh [bun]
 bun add @eventkit/http
 ```
+
 :::
 
 ### `EventSource`
@@ -140,7 +146,7 @@ app.get("/stream", (req, res) => {
   return new EventSourceResponse(obs, {
     headers: {
       "X-Custom-Header": "Hello",
-    }
+    },
   });
 });
 ```
@@ -153,8 +159,8 @@ return new EventSourceResponse(obs, {
     getId: (n) => (n * 2).toString(),
     getEvent: (n) => `increment`,
     getData: (n) => n.toString(),
-  }
-})
+  },
+});
 
 // will emit events like:
 // id: 0
@@ -192,7 +198,7 @@ app.get("/fibonacci", (req, res) => {
       getId: (n, index) => index.toString(),
       getEvent: (n) => `fibonacci`,
       getData: (n) => n.toString(),
-    }
+    },
   });
 });
 ```
@@ -223,14 +229,14 @@ const eventSource = new EventSource("http://localhost/fibonacci");
 const obs = eventSource.asObservable();
 
 function appendElement(content: string) {
-  const p = document.createElement('p');
+  const p = document.createElement("p");
   p.textContent = content;
   document.body.appendChild(p);
 }
 
 obs.subscribe(({ id, event, data }) => {
   console.log(`[${id}] ${event}: ${data}`);
-  appendElement(data.toString())
+  appendElement(data.toString());
 });
 ```
 
@@ -243,8 +249,8 @@ import { Stream, filter } from "eventkit";
 import { EventSourceResponse } from "@eventkit/http";
 
 type ChatEvent = { room: string; user: string; ts: number } & (
-  | { type: "join"; }
-  | { type: "message"; body: string; }
+  | { type: "join" }
+  | { type: "message"; body: string }
 );
 
 const stream = new Stream<ChatEvent>();
@@ -261,7 +267,7 @@ app.get("/chat/:room", (req, res) => {
   const { room } = req.params;
   const { user } = req.headers;
   const roomEvents$ = stream.pipe(filter((e) => e.room === room));
-  stream.push({ room, user, ts: Date.now(), type: "join" })
+  stream.push({ room, user, ts: Date.now(), type: "join" });
   return new EventSourceResponse(roomEvents$);
 });
 
@@ -315,7 +321,7 @@ tx.subscribe(ws.send);
 // completely separate subscriber that listens to whatever data is sent
 tx.subscribe((event) => {
   console.log(`sending: ${event}`);
-})
+});
 
 // subscriber that listens to whatever data is received
 rx.subscribe((event) => {
@@ -325,4 +331,5 @@ rx.subscribe((event) => {
 // push events to all tx subscribers and the websocket
 tx.push("hello");
 ```
+
 :::

@@ -13,6 +13,7 @@ In eventkit, operators are functions that take an [observable](./observable-patt
 For example, the [`map`](/reference/eventkit/map) operator is synonymous to the Array method with the same name.
 
 ::: code-group
+
 ```ts [AsyncObservable]
 import { AsyncObservable, map } from "eventkit";
 
@@ -29,6 +30,7 @@ await AsyncObservable.from([1, 2, 3])
 // squared 4
 // squared 9
 ```
+
 ```ts [Stream]
 import { Stream, map } from "eventkit";
 
@@ -37,9 +39,7 @@ import { Stream, map } from "eventkit";
 
 // Using operators
 const stream = new Stream<number>();
-stream
-  .pipe(map((x) => x * x))
-  .subscribe((x) => console.log("squared", x));
+stream.pipe(map((x) => x * x)).subscribe((x) => console.log("squared", x));
 
 stream.push(1);
 stream.push(2);
@@ -52,6 +52,7 @@ await stream.drain();
 // squared 4
 // squared 9
 ```
+
 :::
 
 ## Chaining Operators

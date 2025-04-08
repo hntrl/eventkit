@@ -5,6 +5,7 @@ Eventkit is a TypeScript library designed for defining, composing, and observing
 <div class="tip custom-block" style="padding-top: 8px">
 
 Want to try it out? Jump to [Getting Started](./getting-started.md).
+
 </div>
 
 ## Use Cases
@@ -26,11 +27,9 @@ import { Stream, filter } from "eventkit";
 const stream = new Stream<{ type: string; payload: any }>();
 
 // Filter for specific event types
-const userEvents = stream.pipe(
-  filter(event => event.type.startsWith("user."))
-);
+const userEvents = stream.pipe(filter((event) => event.type.startsWith("user.")));
 // Subscribe to the filtered stream
-userEvents.subscribe(event => {
+userEvents.subscribe((event) => {
   console.log(`Received user event: ${event.type}`);
 });
 
