@@ -57,7 +57,7 @@
     },
     "./package.json": "./package.json"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@eventkit/base": "workspace:*"
   },
   "devDependencies": {
