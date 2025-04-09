@@ -93,16 +93,16 @@ export class EventSourceResponse<T> extends Response {
    * @param observable - The source of events to stream
    * @param init - Configuration options for the response and SSE serialization
    */
-  constructor(observable: AsyncObservable<T>, init: EventSourceResponseInit<T>) {
+  constructor(observable: AsyncObservable<T>, init?: EventSourceResponseInit<T>) {
     const encoder = new TextEncoder();
-    const serializer = getSerializer(encoder, init.sse);
+    const serializer = getSerializer(encoder, init?.sse);
     const stream = getTransformStream(serializer, () => this.subscriber?.cancel());
     super(stream.readable, {
       ...init,
       headers: {
         "Content-Type": "text/event-stream",
         Connection: "keep-alive",
-        ...init.headers,
+        ...init?.headers,
       },
     });
     const scheduler = new QueueScheduler({ concurrency: 1 });
