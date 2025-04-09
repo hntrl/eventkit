@@ -351,4 +351,6 @@ function pipeReducer(prev: any, fn: UnaryFunction<any, any>) {
   return fn(prev);
 }
 
-Object.defineProperty(Symbol, "asyncObservable", { value: Symbol("asyncObservable") });
+if (!Symbol.asyncObservable) {
+  Object.defineProperty(Symbol, "asyncObservable", { value: Symbol("asyncObservable") });
+}
