@@ -1,5 +1,6 @@
 import {
   from,
+  Signal,
   type AsyncObservableInput,
   type ObservedValueOf,
   type OperatorFunction,
@@ -61,6 +62,8 @@ export function mergeAll<O extends AsyncObservableInput<any>>(
       const innerSubscribers = new Set<Subscriber<any>>();
       // Buffer for values from inner observables
       let valueBuffer: ObservedValueOf<O>[] = [];
+      // Signal that will interrupt the loop if there are no values in the buffer
+      let valueSignal: Signal<void> | null = null;
       // Track if the outer observable has completed
       let outerCompleted = false;
       // Track any errors
@@ -83,6 +86,9 @@ export function mergeAll<O extends AsyncObservableInput<any>>(
         const inner = from(innerSource);
         // Subscribe to the inner observable
         const innerSub = inner.subscribe((innerValue) => {
+          // If we're waiting for a value, resolve the signal
+          if (valueSignal) valueSignal.resolve();
+          // Push the value to the buffer
           valueBuffer.push(innerValue as ObservedValueOf<O>);
         });
         // Add the inner subscriber to the set
@@ -95,10 +101,16 @@ export function mergeAll<O extends AsyncObservableInput<any>>(
             if (observableBuffer.length > 0 && !error) {
               subscribeToInner(observableBuffer.shift()!);
             }
+            // If the outer observable has completed and there are no buffered inner observables,
+            // unblock the loop by resolving the signal
+            if (outerCompleted && observableBuffer.length === 0) {
+              if (valueSignal) valueSignal.resolve();
+            }
           })
           .catch((err) => {
-            // If the inner subscriber errors, set the error
+            // If the inner subscriber errors, set the error and unblock the loop
             error = err;
+            if (valueSignal) valueSignal.resolve();
           });
       }
 
@@ -121,10 +133,13 @@ export function mergeAll<O extends AsyncObservableInput<any>>(
             valueBuffer = [];
             yield* values;
           } else {
-            // Neat little trick to schedule the next iteration of the loop
-            // at the end of the call stack, which gives a chance for the inner
-            // observables to emit more values.
-            await new Promise((resolve) => setTimeout(resolve, 0));
+            // We impose a stop gap on the loop to prevent the call stack from blowing up
+            // if there are no values in the buffer. The idea is when we need to wait for a
+            // value, we'll wait for a value to be pushed to the buffer via waiting on a signal
+            // that gets resolved each time a value is pushed to the buffer.
+            if (!valueSignal) valueSignal = new Signal();
+            await valueSignal;
+            valueSignal = null;
           }
         }
       } finally {
