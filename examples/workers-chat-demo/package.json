@@ -1,0 +1,23 @@
+{
+  "name": "eventkit-edge-chat-demo",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "pnpm run wrangler:dev",
+    "wrangler:dev": "wrangler dev",
+    "wrangler:deploy": "wrangler deploy",
+    "wrangler:types": "wrangler types",
+    "wrangler:tail": "wrangler tail --format pretty"
+  },
+  "dependencies": {
+    "@eventkit/base": "workspace:*",
+    "@eventkit/http": "workspace:*",
+    "@hono/zod-validator": "^0.4.3",
+    "hono": "^4.7.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "wrangler": "^4.9.1"
+  }
+}
