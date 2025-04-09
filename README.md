@@ -22,7 +22,7 @@ You can learn more about the use cases and features of Eventkit in the [official
 
 The best way to start using Eventkit is by checking out the [getting started](https://hntrl.github.io/eventkit/guide/getting-started) guide.
 
-Here's a basic example of how to use an eventkit stream:
+Here's a basic example of how to use an eventkit stream— a common object used to represent data that will be emitted elsewhere in your application:
 
 ```typescript
 import { Stream, filter } from "@eventkit/base";
