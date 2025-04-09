@@ -25,6 +25,7 @@
       "command": "tsup",
       "files": [
         "lib/**",
+        "tsup.config.ts",
         "tsconfig.json",
         "package.json"
       ],
