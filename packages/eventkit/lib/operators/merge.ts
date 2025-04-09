@@ -91,27 +91,33 @@ export function mergeAll<O extends AsyncObservableInput<any>>(
           // Push the value to the buffer
           valueBuffer.push(innerValue as ObservedValueOf<O>);
         });
+        // Keep track of when the inner subscriber completes
+        const innerSubCompleted = new Signal();
         // Add the inner subscriber to the set
         innerSubscribers.add(innerSub);
-        // If the inner subscriber completes, remove it from the set
-        innerSub
-          .then(() => {
-            innerSubscribers.delete(innerSub);
-            // If there are buffered inner observables, subscribe to the next one
-            if (observableBuffer.length > 0 && !error) {
-              subscribeToInner(observableBuffer.shift()!);
-            }
-            // If the outer observable has completed and there are no buffered inner observables,
-            // unblock the loop by resolving the signal
-            if (outerCompleted && observableBuffer.length === 0) {
-              if (valueSignal) valueSignal.resolve();
-            }
-          })
-          .catch((err) => {
-            // If the inner subscriber errors, set the error and unblock the loop
+        // When the inner subscriber completes, resolve the signal
+        innerSub.finally(() => innerSubCompleted.resolve());
+
+        // We race against the inner subscriber cleaning up and when an error occurs. Either of
+        // these cases should unblock the loop
+        Promise.all([
+          innerSubCompleted.asPromise(),
+          innerSub.catch((err) => {
             error = err;
             if (valueSignal) valueSignal.resolve();
-          });
+          }),
+        ]).finally(() => {
+          innerSubscribers.delete(innerSub);
+          // If there are buffered inner observables, subscribe to the next one
+          if (observableBuffer.length > 0 && !error) {
+            subscribeToInner(observableBuffer.shift()!);
+          }
+          // If the outer observable has completed and there are no buffered inner
+          // observables, unblock the loop by resolving the signal
+          if (outerCompleted && observableBuffer.length === 0) {
+            if (valueSignal) valueSignal.resolve();
+          }
+        });
       }
 
       // Function to check if we should complete
