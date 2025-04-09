@@ -7,7 +7,7 @@
 [build-badge]: https://img.shields.io/github/actions/workflow/status/hntrl/eventkit/test.yml
 [build-url]: https://github.com/hntrl/eventkit/actions/workflows/test.yml
 [prs-badge]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
-[prs-url]: https://legacy.reactjs.org/docs/how-to-contribute.html#your-first-pull-request
+[prs-url]: https://github.com/hntrl/eventkit/blob/main/CONTRIBUTING.md#making-a-pull-request
 
 Eventkit is a library for defining, composing, and observing asynchronous streams of data.
 
