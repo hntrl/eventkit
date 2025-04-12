@@ -1,4 +1,10 @@
-import { type AsyncObservableInput } from "@eventkit/async-observable";
+import {
+  type UnaryFunction,
+  type AsyncObservable,
+  type AsyncObservableInput,
+} from "@eventkit/async-observable";
+
+import { type SingletonAsyncObservable } from "../singleton";
 
 /**
  * A simple type to represent a gamut of "falsy" values... with a notable exception:
@@ -12,3 +18,8 @@ export type TruthyTypesOf<T> = T extends Falsy ? never : T;
 export type AsyncObservableInputTuple<T> = {
   [K in keyof T]: AsyncObservableInput<T[K]>;
 };
+
+export type SingletonOperatorFunction<T, R> = UnaryFunction<
+  AsyncObservable<T>,
+  SingletonAsyncObservable<R>
+>;
