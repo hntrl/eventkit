@@ -1,5 +1,33 @@
 # eventkit
 
+## 0.2.0
+
+### Minor Changes
+
+- [#4](https://github.com/hntrl/eventkit/pull/4) [`1371b77`](https://github.com/hntrl/eventkit/commit/1371b774b5409b5aa45e56fb215b27ab7233bd9b) Thanks [@hntrl](https://github.com/hntrl)! - Introduces `SingletonAsyncObservable`; a utility class for observables that lets you access the value emitted by observables that emit one (and only one) value (like the observables returned from `reduce()`, `count()`, etc.) using native await syntax.
+
+  This makes the consumption of these single value operators a little bit more readable. For instance:
+
+  ```ts
+  const obs = AsyncObservable.from([1, 2, 3]);
+  const singleton = obs.pipe(first());
+
+  // instead of this:
+  let firstValue: number | undefined;
+  await obs.subscribe((value) => {
+    firstValue = value;
+  });
+  console.log(firstValue); // 1
+
+  // you can just do this:
+  console.log(await singleton); // 1
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`fa3aa52`](https://github.com/hntrl/eventkit/commit/fa3aa52410d95dbe79f093f6bd992b800d4768f2)]:
+  - @eventkit/async-observable@0.2.0
+
 ## 0.1.1
 
 ### Patch Changes
