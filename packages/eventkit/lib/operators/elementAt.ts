@@ -1,6 +1,6 @@
-import { type OperatorFunction } from "@eventkit/async-observable";
-
+import { singletonFrom } from "../singleton";
 import { ArgumentOutOfRangeError } from "../utils/errors";
+import { type SingletonOperatorFunction } from "../utils/types";
 
 /**
  * Emits the single value at the specified `index` in the source observable, or a default value
@@ -15,20 +15,25 @@ import { ArgumentOutOfRangeError } from "../utils/errors";
  * @param defaultValue The default value returned for missing indices.
  * @group Operators
  */
-export function elementAt<T, D = T>(index: number, defaultValue?: D): OperatorFunction<T, T | D> {
+export function elementAt<T, D = T>(
+  index: number,
+  defaultValue?: D
+): SingletonOperatorFunction<T, T | D> {
   if (index < 0) {
     throw new ArgumentOutOfRangeError();
   }
   return (source) =>
-    new source.AsyncObservable<T | D>(async function* () {
-      let i = 0;
-      for await (const value of source) {
-        if (i++ === index) {
-          yield value;
-          return;
+    singletonFrom(
+      new source.AsyncObservable<T | D>(async function* () {
+        let i = 0;
+        for await (const value of source) {
+          if (i++ === index) {
+            yield value;
+            return;
+          }
         }
-      }
-      if (defaultValue) yield defaultValue;
-      else throw new ArgumentOutOfRangeError();
-    });
+        if (defaultValue) yield defaultValue;
+        else throw new ArgumentOutOfRangeError();
+      })
+    );
 }

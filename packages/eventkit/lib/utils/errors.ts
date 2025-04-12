@@ -27,3 +27,16 @@ export class InvalidConcurrencyLimitError extends Error {
     this.name = "InvalidConcurrencyLimitError";
   }
 }
+
+/**
+ * An error thrown when an observable completes without emitting any values.
+ *
+ * @group Errors
+ */
+export class NoValuesError extends Error {
+  /** @internal */
+  constructor() {
+    super("no values");
+    this.name = "NoValuesError";
+  }
+}

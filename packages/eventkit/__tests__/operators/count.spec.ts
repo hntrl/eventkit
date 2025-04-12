@@ -27,6 +27,11 @@ describe("count", () => {
       await sub;
       expect(completionSpy).toHaveBeenCalledTimes(1);
     });
+
+    it("should emit final count using singleton object", async () => {
+      const source = AsyncObservable.from([1, 2, 3]);
+      expect(await source.pipe(count())).toEqual(3);
+    });
   });
 
   describe("when source emits no values", () => {
@@ -39,6 +44,11 @@ describe("count", () => {
       });
 
       expect(result).toEqual([0]);
+    });
+
+    it("should emit 0 using singleton object", async () => {
+      const source = AsyncObservable.from([]);
+      expect(await source.pipe(count())).toEqual(0);
     });
   });
 
@@ -71,6 +81,11 @@ describe("count", () => {
       expect(indexSpy).toHaveBeenNthCalledWith(1, 0);
       expect(indexSpy).toHaveBeenNthCalledWith(2, 1);
       expect(indexSpy).toHaveBeenNthCalledWith(3, 2);
+    });
+
+    it("should emit final count using singleton object", async () => {
+      const source = AsyncObservable.from(["a", "b", "c"]);
+      expect(await source.pipe(count())).toEqual(3);
     });
   });
 
@@ -116,6 +131,11 @@ describe("count", () => {
 
       expect(result).toEqual([0]); // No values counted
     });
+
+    it("should pass final count for values that satisfy predicate using singleton object", async () => {
+      const source = AsyncObservable.from([1, 2, 3, 4, 5]);
+      expect(await source.pipe(count((value) => value % 2 === 0))).toEqual(2);
+    });
   });
 
   describe("when source errors", () => {
@@ -135,6 +155,16 @@ describe("count", () => {
       }
 
       expect(capturedError).toBe(error);
+    });
+
+    it("should propagate error when using singleton object", async () => {
+      const error = new Error("test error");
+      const source = new AsyncObservable(async function* () {
+        yield 1;
+        await delay(5);
+        throw error;
+      });
+      await expect(source.pipe(count())).rejects.toThrow(error);
     });
   });
 });

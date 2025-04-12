@@ -4,6 +4,8 @@ export * from "./stream";
 
 export * from "./utils/errors";
 
+export { SingletonAsyncObservable } from "./singleton";
+
 export {
   // @eventkit/async-observable/from
   type AsyncObservableInputType,

@@ -1,4 +1,5 @@
-import { type OperatorFunction } from "@eventkit/async-observable";
+import { singletonFrom } from "../singleton";
+import { type SingletonOperatorFunction } from "../utils/types";
 
 /**
  * Applies an accumulator function over the source generator, and returns the
@@ -18,23 +19,25 @@ import { type OperatorFunction } from "@eventkit/async-observable";
 export function reduce<V, A>(
   accumulator: (acc: A, value: V, index: number) => A,
   seed: A
-): OperatorFunction<V, A>;
+): SingletonOperatorFunction<V, A>;
 export function reduce<V, A>(
   accumulator: (acc: A | undefined, value: V, index: number) => A,
   seed?: A
-): OperatorFunction<V, A>;
+): SingletonOperatorFunction<V, A>;
 export function reduce<V, A>(
   accumulator: (acc: A | undefined, value: V, index: number) => A,
   seed?: A
-): OperatorFunction<V, A> {
+): SingletonOperatorFunction<V, A> {
   const hasSeed = arguments.length >= 2;
   return (source) =>
-    new source.AsyncObservable<A>(async function* (this: any) {
-      let acc = hasSeed ? seed : undefined;
-      let index = 0;
-      for await (const value of source) {
-        acc = accumulator(acc as A | undefined, value, index++);
-      }
-      yield acc as A;
-    });
+    singletonFrom(
+      new source.AsyncObservable<A>(async function* (this: any) {
+        let acc = hasSeed ? seed : undefined;
+        let index = 0;
+        for await (const value of source) {
+          acc = accumulator(acc as A | undefined, value, index++);
+        }
+        yield acc as A;
+      })
+    );
 }

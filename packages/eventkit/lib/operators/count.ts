@@ -1,4 +1,5 @@
-import { type OperatorFunction } from "@eventkit/async-observable";
+import { singletonFrom } from "../singleton";
+import { type SingletonOperatorFunction } from "../utils/types";
 
 /**
  * Counts the number of items emitted by the source observable, and emits that
@@ -12,17 +13,19 @@ import { type OperatorFunction } from "@eventkit/async-observable";
  */
 export function count<T>(
   predicate?: (value: T, index: number) => boolean
-): OperatorFunction<T, number> {
+): SingletonOperatorFunction<T, number> {
   predicate = predicate ?? (() => true);
   return (source) =>
-    new source.AsyncObservable<number>(async function* () {
-      let index = 0;
-      let count = 0;
-      for await (const value of source) {
-        if (predicate(value, index++)) {
-          count++;
+    singletonFrom(
+      new source.AsyncObservable<number>(async function* () {
+        let index = 0;
+        let count = 0;
+        for await (const value of source) {
+          if (predicate(value, index++)) {
+            count++;
+          }
         }
-      }
-      yield count;
-    });
+        yield count;
+      })
+    );
 }

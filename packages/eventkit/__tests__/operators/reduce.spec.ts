@@ -27,6 +27,11 @@ describe("reduce", () => {
       await sub;
       expect(completionSpy).toHaveBeenCalledTimes(1);
     });
+
+    it("should emit final accumulated value using singleton object", async () => {
+      const source = AsyncObservable.from([1, 2, 3, 4]);
+      expect(await source.pipe(reduce((acc, value) => acc + value, 0))).toEqual(10);
+    });
   });
 
   describe("when seed value is provided", () => {
@@ -51,6 +56,11 @@ describe("reduce", () => {
 
       expect(accumulatorSpy).toHaveBeenCalledTimes(3);
       expect(accumulatorSpy).toHaveBeenNthCalledWith(1, 5, 1, 0);
+    });
+
+    it("should emit final accumulated value using singleton object", async () => {
+      const source = AsyncObservable.from([1, 2, 3]);
+      expect(await source.pipe(reduce((acc, value) => acc + value, 5))).toEqual(11);
     });
   });
 
@@ -80,6 +90,13 @@ describe("reduce", () => {
         });
 
       expect(result).toEqual(["abc"]);
+    });
+
+    it("should emit final accumulated value using singleton object", async () => {
+      const source = AsyncObservable.from(["a", "b", "c"]);
+      expect(
+        await source.pipe(reduce<string, string>((acc, value) => (acc || "") + value))
+      ).toEqual("abc");
     });
   });
 
@@ -121,6 +138,13 @@ describe("reduce", () => {
       expect(indexSpy).toHaveBeenNthCalledWith(2, 1);
       expect(indexSpy).toHaveBeenNthCalledWith(3, 2);
     });
+
+    it("should emit final accumulated value using singleton object", async () => {
+      const source = AsyncObservable.from(["a", "b", "c"]);
+      expect(
+        await source.pipe(reduce<string, string>((acc, value) => (acc || "") + value))
+      ).toEqual("abc");
+    });
   });
 
   describe("when source emits no values", () => {
@@ -142,6 +166,11 @@ describe("reduce", () => {
 
       await source.pipe(reduce(accumulatorSpy)).subscribe(() => {});
       expect(accumulatorSpy).not.toHaveBeenCalled();
+    });
+
+    it("should emit seed value using singleton object", async () => {
+      const source = AsyncObservable.from([]);
+      expect(await source.pipe(reduce((acc, value) => acc + value, 42))).toEqual(42);
     });
   });
 
@@ -187,6 +216,19 @@ describe("reduce", () => {
 
       expect(nextSpy).not.toHaveBeenCalled();
     });
+
+    it("should propagate error when using singleton object", async () => {
+      const source = AsyncObservable.from([1, 2, 3]);
+      const error = new Error("accumulator error");
+      await expect(
+        source.pipe(
+          reduce((acc, value) => {
+            if (value === 2) throw error;
+            return acc + value;
+          }, 0)
+        )
+      ).rejects.toThrow(error);
+    });
   });
 
   describe("when source errors", () => {
@@ -227,6 +269,17 @@ describe("reduce", () => {
 
       expect(nextSpy).not.toHaveBeenCalled();
     });
+
+    it("should propagate error when using singleton object", async () => {
+      const error = new Error("source error");
+      const source = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+        await delay(5);
+        throw error;
+      });
+      await expect(source.pipe(reduce((acc, value) => acc + value, 0))).rejects.toThrow(error);
+    });
   });
 
   describe("when accumulator returns undefined", () => {
@@ -251,6 +304,11 @@ describe("reduce", () => {
       expect(accumulatorSpy).toHaveBeenNthCalledWith(1, undefined, 1, 0);
       expect(accumulatorSpy).toHaveBeenNthCalledWith(2, undefined, 2, 1);
       expect(accumulatorSpy).toHaveBeenNthCalledWith(3, undefined, 3, 2);
+    });
+
+    it("should handle undefined as valid result using singleton object", async () => {
+      const source = AsyncObservable.from([1, 2, 3]);
+      expect(await source.pipe(reduce(() => undefined))).toEqual(undefined);
     });
   });
 });
