@@ -14,6 +14,7 @@ export default tseslint.config(
       "dist/**",
       ".wireit/**",
       "scripts/**",
+      "worker-configuration.d.ts",
       "eslint.config.mjs",
       "vitest.config.ts",
       "prettier.config.js",

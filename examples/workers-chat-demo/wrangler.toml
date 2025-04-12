@@ -1,0 +1,16 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "eventkit-edge-chat-demo"
+compatibility_date = "2024-01-01"
+main = "src/worker.ts"
+
+[durable_objects]
+bindings = [{ name = "rooms", class_name = "ChatRoom" }]
+
+[[rules]]
+type = "Data"
+globs = ["**/*.html"]
+fallthrough = false
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatRoom"]

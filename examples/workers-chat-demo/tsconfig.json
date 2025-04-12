@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    /* Projects */
+    "incremental": true,                                              /* Saves compilation info to .tsbuildinfo files for faster builds */
+		"disableSourceOfProjectReferenceRedirect": true,                  /* Disable preferring source files instead of declaration files when referencing composite projects */
+		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",    /* Specifies the file name for the incremental build information. */
+
+    /* Language and Environment */
+		"target": "esnext",   /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+		"lib": ["esnext"],    /* Specify a set of bundled library declaration files that describe the target runtime environment. */
+
+		/* Modules */
+		"module": "esnext",               /* Specify what module code is generated. */
+		"moduleResolution": "bundler",    /* Specify how TypeScript looks up a file from a given module specifier. */
+    "resolveJsonModule": true,        /* Enable importing .json files */
+		"pretty": true,                   /* Enable pretty-printing of errors and warnings. */
+    "paths": {                        /* Specifies custom module name mappings. */
+			"@/*": ["./src/*"]
+    },
+
+		/* Emit */
+		"declaration": false,     /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
+		"outDir": "./dist",       /* Specify an output folder for all emitted files. */
+		"removeComments": true,   /* Disable emitting comments. */
+		"noEmit": false,          /* Disable emitting files from a compilation. */
+		"importHelpers": true,    /* Allow importing helper functions from tslib once per project, instead of including them per-file. */
+		"noEmitHelpers": true,    /* Disable generating custom helper functions like `__extends` in compiled output. */
+		"stripInternal": true,    /* Disable emitting declarations that have `@internal` in their JSDoc comments. */
+
+		/* Interop Constraints */
+		"isolatedDeclarations": false,
+		"isolatedModules": false,                   /* Ensure that each file can be safely transpiled without relying on other imports. */
+		"preserveSymlinks": true,                   /* Preserve symlinks when resolving modules. */
+		"allowSyntheticDefaultImports": true,       /* Allow 'import x from y' when a module doesn't have a default export. */
+		"esModuleInterop": true, 								    /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables `allowSyntheticDefaultImports` for type compatibility. */
+		"forceConsistentCasingInFileNames": true,   /* Ensure that casing is correct in imports. */
+
+		/* Type Checking */
+		"strict": true ,                /* Enable all strict type-checking options. */
+		"strictNullChecks": true,       /* When type checking, take into account `null` and `undefined`. */
+		"strictBindCallApply": true,    /* Check that the arguments for `bind`, `call`, and `apply` methods match the original function. */
+
+		/* Completeness */
+		"skipLibCheck": true,   /* Skip type checking all .d.ts files. */
+  },
+  "include": [
+    "src/**/*",
+    "worker-configuration.d.ts"
+  ],
+  "exclude": ["**/*.test.ts"]
+}
