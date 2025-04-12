@@ -94,6 +94,35 @@ await processed$.subscribe(console.log);
 // -> 4 (after reduce, 4 + 0 = 4)
 ```
 
+## Singleton Operators
+
+The output of some operators is an observable that only emits a single value. For those special cases, the observable that is returned is what is known as a "singleton" observable. (See [SingletonAsyncObservable](/reference/_eventkit/base/SingletonAsyncObservable))
+
+All a singleton observable does is extend [AsyncObservable](/reference/_eventkit/base/AsyncObservable) class and implement the `PromiseLike` interface, which means that when it's used in an `await` statement (or with the `then` method) it will return a promise that will subscribe to the observable and resolve with the first (and only) value emitted.
+
+This means that when dealing with a singleton observable, all you need to do is `await` the observable to get the emitted value instead of calling `subscribe` and hoisting the value out of the callback.
+
+For example, the [`first`](/reference/_eventkit/base/first) operator is a singleton operator that emits the first value of an observable and then completes.
+
+```ts
+import { AsyncObservable, first } from "@eventkit/base";
+
+const obs = AsyncObservable.from([1, 2, 3]);
+const singleton = obs.pipe(first());
+
+// instead of this:
+let firstValue: number | undefined;
+await obs.subscribe((value) => {
+  firstValue = value;
+});
+console.log(firstValue); // 1
+
+// you can just do this:
+console.log(await singleton); // 1
+```
+
+Singleton observables are meant to provide a shorthand for dealing with observables that only emit a single value. They are still observables in every other way, so you can still use methods like `pipe`, `subscribe`, `drain`, etc.
+
 ## Available Operators
 
 Eventkit provides a variety of built-in operators to handle common transformations. A complete reference of all operators can be found [here](/reference/operators).
