@@ -38,6 +38,11 @@ describe("elementAt", () => {
       expect(nextSpy).toHaveBeenCalledTimes(1);
       expect(nextSpy).toHaveBeenCalledWith(30);
     });
+
+    it("should emit value at specified index using singleton object", async () => {
+      const source = AsyncObservable.from(["a", "b", "c", "d"]);
+      expect(await source.pipe(elementAt(2))).toEqual("c");
+    });
   });
 
   describe("when index is out of range", () => {
@@ -64,6 +69,11 @@ describe("elementAt", () => {
       }
 
       expect(capturedError).toBeInstanceOf(ArgumentOutOfRangeError);
+    });
+
+    it("should emit default value if no default value is provided using singleton object", async () => {
+      const source = AsyncObservable.from([1, 2, 3]);
+      await expect(source.pipe(elementAt(10))).rejects.toThrow(ArgumentOutOfRangeError);
     });
   });
 
@@ -102,6 +112,11 @@ describe("elementAt", () => {
 
       expect(capturedError).toBeInstanceOf(ArgumentOutOfRangeError);
     });
+
+    it("should emit default value if no default value is provided using singleton object", async () => {
+      const source = AsyncObservable.from([1, 2, 3]);
+      await expect(source.pipe(elementAt(5))).rejects.toThrow(ArgumentOutOfRangeError);
+    });
   });
 
   describe("when source errors", () => {
@@ -121,6 +136,17 @@ describe("elementAt", () => {
       }
 
       expect(capturedError).toBe(error);
+    });
+
+    it("should propagate error when using singleton object", async () => {
+      const error = new Error("source error");
+      const source = new AsyncObservable<number>(async function* () {
+        yield 1;
+        yield 2;
+        await delay(5);
+        throw error;
+      });
+      await expect(source.pipe(elementAt(3))).rejects.toThrow(error);
     });
   });
 
@@ -149,6 +175,11 @@ describe("elementAt", () => {
 
       expect(nextSpy).toHaveBeenCalledTimes(1);
       expect(nextSpy).toHaveBeenCalledWith("c");
+    });
+
+    it("should emit value at specified index using singleton object", async () => {
+      const source = AsyncObservable.from(["a", "b", "c", "d", "e"]);
+      expect(await source.pipe(elementAt(2))).toEqual("c");
     });
   });
 });
