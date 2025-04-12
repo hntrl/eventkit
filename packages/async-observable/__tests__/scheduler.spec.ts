@@ -140,7 +140,7 @@ describe("Scheduler", () => {
       }
 
       const scheduler = new Scheduler();
-      const mockObservable = { _scheduler: scheduler } as any;
+      const mockObservable = { _scheduler: scheduler, _subscribers: new Set() } as any;
       const subscriber = new MockSubscriber(mockObservable);
 
       // Add work to the subscriber
@@ -568,7 +568,7 @@ describe("Scheduler", () => {
       }
 
       const scheduler = new Scheduler();
-      const observable = { _scheduler: scheduler } as any;
+      const observable = { _scheduler: scheduler, _subscribers: new Set() } as any;
       const subscriber = new MockSubscriber(observable);
 
       // Add work to the subscriber
@@ -594,6 +594,7 @@ describe("Scheduler", () => {
       const observable = {
         _generator: async function* () {},
         _scheduler: scheduler,
+        _subscribers: new Set(),
       } as any;
 
       class MockSubscriber extends Subscriber<any> {
@@ -780,7 +781,7 @@ describe("Scheduler", () => {
     it("should handle actions scheduled for subscribers by adding to parent observable", async () => {
       // Create mock subscriber and observable
       const scheduler = new Scheduler();
-      const observable = { _scheduler: scheduler } as any;
+      const observable = { _scheduler: scheduler, _subscribers: new Set() } as any;
 
       class MockSubscriber extends Subscriber<any> {
         constructor(observable: any) {

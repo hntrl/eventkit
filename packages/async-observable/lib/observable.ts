@@ -129,11 +129,6 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   subscribe(callback?: SubscriberCallback<T>): Subscriber<T> {
     if (!callback) callback = () => {};
     const subscriber = new CallbackSubscriber(this, callback);
-    this._subscribers.add(subscriber);
-    this._scheduler.schedule(
-      subscriber,
-      new CleanupAction(() => this._subscribers.delete(subscriber))
-    );
     return subscriber;
   }
 
@@ -190,11 +185,6 @@ export class AsyncObservable<T> implements SubscriptionLike, AsyncIterable<T> {
   /** AsyncGenerator<T> @ignore */
   [Symbol.asyncIterator](): AsyncGenerator<T> {
     const subscriber = new Subscriber(this);
-    this._subscribers.add(subscriber);
-    this._scheduler.schedule(
-      subscriber,
-      new CleanupAction(() => this._subscribers.delete(subscriber))
-    );
     const iter = subscriber[Symbol.asyncIterator]();
     return {
       ...iter,

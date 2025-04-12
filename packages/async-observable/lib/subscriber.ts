@@ -58,6 +58,13 @@ export class Subscriber<T>
     this._observable = observable;
     this._returnSignal = new SubscriberReturnSignal();
     this._cancelSignal = new Signal<typeof kCancelSignal>();
+    // Add the subscriber to the observable's tracking.
+    this._observable._subscribers.add(this);
+    // Add a cleanup action to remove the subscriber from the observable's tracking.
+    this.scheduler.schedule(
+      this,
+      new CleanupAction(() => this._observable._subscribers.delete(this))
+    );
     // Add the return signal that's representative of the state of the generator.
     this.scheduler.add(this, this._returnSignal);
     // Add a cleanup action that resolves the cancel signal when the subscriber is disposed of.

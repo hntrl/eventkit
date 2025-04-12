@@ -66,12 +66,12 @@ describe("Subscriber", () => {
       const subscriber = new Subscriber<number>(observable);
 
       // Verify the subscriber was registered with the scheduler
-      expect(schedulerAddSpy).toHaveBeenCalledTimes(4);
+      expect(schedulerAddSpy).toHaveBeenCalledTimes(6);
       expect(schedulerAddSpy).toHaveBeenCalledWith(subscriber, expect.any(SubscriberReturnSignal));
       expect(schedulerAddSpy).toHaveBeenCalledWith(subscriber, expect.any(CleanupAction));
 
       // Verify the promise passed is the _returnSignal
-      const addCall = schedulerAddSpy.mock.calls[0];
+      const addCall = schedulerAddSpy.mock.calls[3];
       const promiseArg = addCall[1];
 
       // The promise should be from the return signal
@@ -149,6 +149,17 @@ describe("Subscriber", () => {
 
       // Verify work is cleaned up
       expect(scheduler._subjectPromises.has(subscriber)).toBe(false);
+    });
+
+    it("should add itself to the observable's subscribers set", async () => {
+      // Create an observable
+      const observable = new AsyncObservable<number>();
+
+      // Create a subscriber
+      const subscriber = new Subscriber<number>(observable);
+
+      // Verify the subscriber is in the observable's subscribers set
+      expect(observable._subscribers.has(subscriber)).toBe(true);
     });
   });
   describe("SubscriptionLike implementation", () => {
