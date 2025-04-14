@@ -15,3 +15,13 @@ export function not<T>(
 ): (value: T, index: number) => boolean {
   return (value: T, index: number) => !pred(value, index);
 }
+
+/**
+ * Immediately invokes a function and returns its result.
+ *
+ * @param fn - The function to invoke
+ * @returns The result of the function
+ */
+export function iife<T>(fn: () => T): T {
+  return fn();
+}

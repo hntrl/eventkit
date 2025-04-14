@@ -29,7 +29,7 @@ export class InvalidConcurrencyLimitError extends Error {
 }
 
 /**
- * An error thrown when an observable completes without emitting any values.
+ * An error thrown when an observable completes without emitting any valid values.
  *
  * @group Errors
  */
