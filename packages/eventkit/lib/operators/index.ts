@@ -7,6 +7,7 @@ export * from "./filter";
 export * from "./find";
 export * from "./findIndex";
 export * from "./first";
+export * from "./isEmpty";
 export * from "./map";
 export * from "./merge";
 export * from "./partition";
