@@ -12,6 +12,7 @@ export * from "./last";
 export * from "./map";
 export * from "./max";
 export * from "./merge";
+export * from "./min";
 export * from "./partition";
 export * from "./pipe";
 export * from "./reduce";
