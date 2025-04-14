@@ -18,5 +18,6 @@ export * from "./partition";
 export * from "./pipe";
 export * from "./reduce";
 export * from "./retry";
+export * from "./skip";
 export * from "./takeUntil";
 export * from "./withScheduler";
