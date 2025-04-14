@@ -10,6 +10,7 @@ export * from "./first";
 export * from "./isEmpty";
 export * from "./last";
 export * from "./map";
+export * from "./max";
 export * from "./merge";
 export * from "./partition";
 export * from "./pipe";
