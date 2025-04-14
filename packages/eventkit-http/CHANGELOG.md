@@ -1,5 +1,12 @@
 # @eventkit/http
 
+## 1.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`03fb5d1`](https://github.com/hntrl/eventkit/commit/03fb5d13a3370d5164cf81527710c25c4e67e3e5), [`7b6dbb1`](https://github.com/hntrl/eventkit/commit/7b6dbb1a1d96478fcc25c8325648c31d08e78467)]:
+  - @eventkit/base@1.0.0
+
 ## 0.2.0
 
 ### Patch Changes
