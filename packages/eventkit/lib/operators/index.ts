@@ -5,6 +5,7 @@ export * from "./dlq";
 export * from "./elementAt";
 export * from "./filter";
 export * from "./find";
+export * from "./findIndex";
 export * from "./map";
 export * from "./merge";
 export * from "./partition";
