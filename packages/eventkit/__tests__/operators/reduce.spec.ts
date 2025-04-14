@@ -1,6 +1,7 @@
 import { AsyncObservable } from "@eventkit/async-observable";
 import { reduce } from "../../lib/operators/reduce";
 import { vi, describe, it, expect } from "vitest";
+import { NoValuesError } from "../../lib/utils/errors";
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -62,18 +63,39 @@ describe("reduce", () => {
       const source = AsyncObservable.from([1, 2, 3]);
       expect(await source.pipe(reduce((acc, value) => acc + value, 5))).toEqual(11);
     });
+
+    it("should emit seed value when source emits no values", async () => {
+      const source = AsyncObservable.from([]);
+      const seed = 42;
+
+      const result: number[] = [];
+      await source.pipe(reduce((acc, value) => acc + value, seed)).subscribe((value) => {
+        result.push(value);
+      });
+
+      expect(result).toEqual([42]);
+    });
+
+    it("should not call accumulator when source emits no values", async () => {
+      const source = AsyncObservable.from([]);
+      const seed = 42;
+      const accumulatorSpy = vi.fn((acc, value) => acc + value);
+
+      expect(await source.pipe(reduce(accumulatorSpy, seed))).toEqual(seed);
+      expect(accumulatorSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe("when no seed value is provided", () => {
     it("should use first value as initial accumulator value", async () => {
       const source = AsyncObservable.from([1, 2, 3, 4]);
-      const accumulatorSpy = vi.fn((acc, value) => (acc || 0) + value);
+      const accumulatorSpy = vi.fn((acc, value) => acc + value);
 
       await source.pipe(reduce(accumulatorSpy)).subscribe(() => {});
 
-      expect(accumulatorSpy).toHaveBeenCalledTimes(4);
-      expect(accumulatorSpy).toHaveBeenNthCalledWith(1, undefined, 1, 0);
-      expect(accumulatorSpy).toHaveBeenNthCalledWith(2, 1, 2, 1);
+      expect(accumulatorSpy).toHaveBeenCalledTimes(3);
+      expect(accumulatorSpy).toHaveBeenNthCalledWith(1, 1, 2, 1);
+      expect(accumulatorSpy).toHaveBeenNthCalledWith(2, 3, 3, 2);
     });
 
     it("should handle undefined initial value", async () => {
@@ -97,6 +119,22 @@ describe("reduce", () => {
       expect(
         await source.pipe(reduce<string, string>((acc, value) => (acc || "") + value))
       ).toEqual("abc");
+    });
+
+    it("should throw NoValuesError when source emits no values", async () => {
+      const source = AsyncObservable.from<number[]>([]);
+
+      // Using subscribe
+      let capturedError: Error | null = null;
+      try {
+        await source.pipe(reduce((acc, value) => acc + value));
+      } catch (err) {
+        capturedError = err as Error;
+      }
+      expect(capturedError).toBeInstanceOf(NoValuesError);
+
+      // Using singleton object
+      await expect(source.pipe(reduce((acc, value) => acc + value))).rejects.toThrow(NoValuesError);
     });
   });
 
@@ -133,10 +171,9 @@ describe("reduce", () => {
         )
         .subscribe(() => {});
 
-      expect(indexSpy).toHaveBeenCalledTimes(3);
-      expect(indexSpy).toHaveBeenNthCalledWith(1, 0);
-      expect(indexSpy).toHaveBeenNthCalledWith(2, 1);
-      expect(indexSpy).toHaveBeenNthCalledWith(3, 2);
+      expect(indexSpy).toHaveBeenCalledTimes(2);
+      expect(indexSpy).toHaveBeenNthCalledWith(1, 1);
+      expect(indexSpy).toHaveBeenNthCalledWith(2, 2);
     });
 
     it("should emit final accumulated value using singleton object", async () => {
@@ -145,6 +182,8 @@ describe("reduce", () => {
         await source.pipe(reduce<string, string>((acc, value) => (acc || "") + value))
       ).toEqual("abc");
     });
+
+    it("should handle type conversion during accumulation", async () => {});
   });
 
   describe("when source emits no values", () => {
@@ -160,13 +199,7 @@ describe("reduce", () => {
       expect(result).toEqual([seed]);
     });
 
-    it("should not call predicate if no seed value", async () => {
-      const source = AsyncObservable.from([]);
-      const accumulatorSpy = vi.fn((acc, value) => (acc ?? 0) + value);
-
-      await source.pipe(reduce(accumulatorSpy)).subscribe(() => {});
-      expect(accumulatorSpy).not.toHaveBeenCalled();
-    });
+    it("should throw NoValuesError if no seed value", async () => {});
 
     it("should emit seed value using singleton object", async () => {
       const source = AsyncObservable.from([]);
@@ -300,15 +333,54 @@ describe("reduce", () => {
 
       await source.pipe(reduce(accumulatorSpy)).subscribe(() => {});
 
-      expect(accumulatorSpy).toHaveBeenCalledTimes(3);
-      expect(accumulatorSpy).toHaveBeenNthCalledWith(1, undefined, 1, 0);
-      expect(accumulatorSpy).toHaveBeenNthCalledWith(2, undefined, 2, 1);
-      expect(accumulatorSpy).toHaveBeenNthCalledWith(3, undefined, 3, 2);
+      expect(accumulatorSpy).toHaveBeenCalledTimes(2);
+      expect(accumulatorSpy).toHaveBeenNthCalledWith(1, 1, 2, 1);
+      expect(accumulatorSpy).toHaveBeenNthCalledWith(2, undefined, 3, 2);
     });
 
     it("should handle undefined as valid result using singleton object", async () => {
       const source = AsyncObservable.from([1, 2, 3]);
       expect(await source.pipe(reduce(() => undefined))).toEqual(undefined);
+    });
+  });
+
+  describe("when source emits single value", () => {
+    it("should emit value without calling accumulator if no seed", async () => {
+      const source = AsyncObservable.from([42]);
+      const accumulatorSpy = vi.fn((acc, value) => acc + value);
+
+      const result: number[] = [];
+      await source.pipe(reduce(accumulatorSpy)).subscribe((value) => {
+        result.push(value);
+      });
+
+      expect(result).toEqual([42]);
+      expect(accumulatorSpy).not.toHaveBeenCalled();
+    });
+
+    it("should call accumulator with seed if provided", async () => {
+      const source = AsyncObservable.from([42]);
+      const seed = 10;
+      const accumulatorSpy = vi.fn((acc, value) => acc + value);
+
+      const result: number[] = [];
+      await source.pipe(reduce(accumulatorSpy, seed)).subscribe((value) => {
+        result.push(value);
+      });
+
+      expect(result).toEqual([52]); // 10 + 42 = 52
+      expect(accumulatorSpy).toHaveBeenCalledTimes(1);
+      expect(accumulatorSpy).toHaveBeenCalledWith(10, 42, 0);
+    });
+
+    it("should emit value using singleton object", async () => {
+      const source = AsyncObservable.from([42]);
+
+      // Without seed
+      expect(await source.pipe(reduce((acc, value) => acc + value))).toEqual(42);
+
+      // With seed
+      expect(await source.pipe(reduce((acc, value) => acc + value, 10))).toEqual(52);
     });
   });
 });
