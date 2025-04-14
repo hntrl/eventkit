@@ -1,5 +1,18 @@
 # eventkit
 
+## 0.3.0
+
+### Minor Changes
+
+- [#6](https://github.com/hntrl/eventkit/pull/6) [`03fb5d1`](https://github.com/hntrl/eventkit/commit/03fb5d13a3370d5164cf81527710c25c4e67e3e5) Thanks [@hntrl](https://github.com/hntrl)! - Introduces **10** new operators into eventkit: `find`, `findIndex`, `first`, `isEmpty`, `last`, `max`, `min`, `pairwise`, `skip`, and `every`. See the [docs](https://hntrl.github.io/eventkit/guide/concepts/transforming-data#available-operators) for a complete reference.
+
+### Patch Changes
+
+- [#6](https://github.com/hntrl/eventkit/pull/6) [`7b6dbb1`](https://github.com/hntrl/eventkit/commit/7b6dbb1a1d96478fcc25c8325648c31d08e78467) Thanks [@hntrl](https://github.com/hntrl)! - Fixed some invariant behavior with the `reduce` operator where the chain of accumulator calls depending on the seed value wasn't consistent with the native array method
+
+- Updated dependencies []:
+  - @eventkit/async-observable@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

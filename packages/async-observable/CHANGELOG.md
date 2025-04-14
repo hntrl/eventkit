@@ -1,10 +1,14 @@
 # @eventkit/async-observable
 
+## 0.3.0
+
+Version bumped to match the version of `@eventkit/base`
+
 ## 0.2.0
 
 ### Patch Changes
 
-- [`fa3aa52`](https://github.com/hntrl/eventkit/commit/fa3aa52410d95dbe79f093f6bd992b800d4768f2) Thanks [@hntrl](https://github.com/hntrl)! - Fixes an issue where subscribers wouldn't be tracked by the observable when using constructor syntax
+- [`fa3aa52`](https://github.com/hntrl/eventkit/commit/fa3aa52410d95dbe79f093f6bd992b800d4768f2) - Fixes an issue where subscribers wouldn't be tracked by the observable when using constructor syntax
 
 ## 0.1.1
 

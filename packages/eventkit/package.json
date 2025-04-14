@@ -1,6 +1,6 @@
 {
   "name": "@eventkit/base",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "author": "Hunter Lovell <hunter@hntrl.io>",
   "description": "Declarative event stream processing library",
