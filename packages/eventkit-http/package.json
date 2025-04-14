@@ -1,6 +1,6 @@
 {
   "name": "@eventkit/http",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "MIT",
   "author": "Hunter Lovell <hunter@hntrl.io>",
   "description": "HTTP helpers for eventkit",
