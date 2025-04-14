@@ -3,6 +3,7 @@ export * from "./concat";
 export * from "./count";
 export * from "./dlq";
 export * from "./elementAt";
+export * from "./every";
 export * from "./filter";
 export * from "./find";
 export * from "./findIndex";
