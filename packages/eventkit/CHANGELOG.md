@@ -1,6 +1,6 @@
 # eventkit
 
-## 1.0.0
+## 0.3.0
 
 ### Minor Changes
 
@@ -11,7 +11,7 @@
 - [#6](https://github.com/hntrl/eventkit/pull/6) [`7b6dbb1`](https://github.com/hntrl/eventkit/commit/7b6dbb1a1d96478fcc25c8325648c31d08e78467) Thanks [@hntrl](https://github.com/hntrl)! - Fixed some invariant behavior with the `reduce` operator where the chain of accumulator calls depending on the seed value wasn't consistent with the native array method
 
 - Updated dependencies []:
-  - @eventkit/async-observable@1.0.0
+  - @eventkit/async-observable@0.3.0
 
 ## 0.2.0
 
