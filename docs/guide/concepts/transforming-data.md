@@ -125,7 +125,57 @@ Singleton observables are meant to provide a shorthand for dealing with observab
 
 ## Available Operators
 
-Eventkit provides a variety of built-in operators to handle common transformations. A complete reference of all operators can be found [here](/reference/operators).
+Eventkit provides a variety of built-in operators to handle common transformations. Below is a complete list of all the operators that ship as standard with eventkit.
+
+### Join Operators
+
+- [concat](/reference/_eventkit/base/concat)
+- [concatAll](/reference/_eventkit/base/concatAll)
+- [concatMap](/reference/_eventkit/base/concatMap)
+- [merge](/reference/_eventkit/base/merge)
+- [mergeAll](/reference/_eventkit/base/mergeAll)
+- [mergeMap](/reference/_eventkit/base/mergeMap)
+
+### Transformation Operators
+
+- [buffer](/reference/_eventkit/base/buffer)
+- [bufferCount](/reference/_eventkit/base/bufferCount)
+- [map](/reference/_eventkit/base/map)
+- [pairwise](/reference/_eventkit/base/pairwise)
+- [partition](/reference/_eventkit/base/partition)
+- [takeUntil](/reference/_eventkit/base/takeUntil)
+
+### Filtering Operators
+
+- [elementAt](/reference/_eventkit/base/elementAt)
+- [filter](/reference/_eventkit/base/filter)
+- [find](/reference/_eventkit/base/find)
+- [findIndex](/reference/_eventkit/base/findIndex)
+- [first](/reference/_eventkit/base/first)
+- [last](/reference/_eventkit/base/last)
+- [skip](/reference/_eventkit/base/skip)
+
+### Error Handling Operators
+
+- [dlq](/reference/_eventkit/base/dlq)
+- [retry](/reference/_eventkit/base/retry)
+
+### Scheduling Operators
+
+- [withOwnScheduler](/reference/_eventkit/base/withOwnScheduler)
+- [withScheduler](/reference/_eventkit/base/withScheduler)
+
+### Boolean Operators
+
+- [every](/reference/_eventkit/base/every)
+- [isEmpty](/reference/_eventkit/base/isEmpty)
+
+### Aggregation Operators
+
+- [max](/reference/_eventkit/base/max)
+- [min](/reference/_eventkit/base/min)
+- [count](/reference/_eventkit/base/count)
+- [reduce](/reference/_eventkit/base/reduce)
 
 ## Creating Custom Operators
 
