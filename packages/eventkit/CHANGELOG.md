@@ -1,5 +1,13 @@
 # eventkit
 
+## 0.3.1
+
+### Patch Changes
+
+- [#9](https://github.com/hntrl/eventkit/pull/9) [`3ea1105`](https://github.com/hntrl/eventkit/commit/3ea1105c73b96a5e26aa80f0795b6dbf55941fef) Thanks [@hntrl](https://github.com/hntrl)! - The bundle now inlines all types associated with async-observable. This fixes an issue where types would be missing when installing with certain package managers. There may be some conflict for projects that use both `@eventkit/async-observable` and `@eventkit/base` in the same project with this change, but this pattern should be avoided anyways.
+
+- [#10](https://github.com/hntrl/eventkit/pull/10) [`d1d5dca`](https://github.com/hntrl/eventkit/commit/d1d5dcace45730de1feabfbc81216a7fd034b29f) Thanks [@hntrl](https://github.com/hntrl)! - Gave some TLC to the bundling process for each package. Each package bundle now contains sourcemaps for both cjs & esm builds, as well as a new `index.global.js` and `index.global.min.js` that is intended to be used with browser targets.
+
 ## 0.3.0
 
 ### Minor Changes

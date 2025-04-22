@@ -1,5 +1,16 @@
 # @eventkit/http
 
+## 0.3.1
+
+### Patch Changes
+
+- [#9](https://github.com/hntrl/eventkit/pull/9) [`107dfd4`](https://github.com/hntrl/eventkit/commit/107dfd470a195c854d96436ba5c5d81236cb8898) Thanks [@hntrl](https://github.com/hntrl)! - Makes the `@eventkit/base` peer dep optional which silences errors in package managers if it's not being used.
+
+- [#10](https://github.com/hntrl/eventkit/pull/10) [`d1d5dca`](https://github.com/hntrl/eventkit/commit/d1d5dcace45730de1feabfbc81216a7fd034b29f) Thanks [@hntrl](https://github.com/hntrl)! - Gave some TLC to the bundling process for each package. Each package bundle now contains sourcemaps for both cjs & esm builds, as well as a new `index.global.js` and `index.global.min.js` that is intended to be used with browser targets.
+
+- Updated dependencies [[`3ea1105`](https://github.com/hntrl/eventkit/commit/3ea1105c73b96a5e26aa80f0795b6dbf55941fef), [`d1d5dca`](https://github.com/hntrl/eventkit/commit/d1d5dcace45730de1feabfbc81216a7fd034b29f)]:
+  - @eventkit/base@0.3.1
+
 ## 0.3.0
 
 ### Patch Changes
