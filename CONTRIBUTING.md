@@ -75,8 +75,8 @@ Running `pnpm test` from the root directory will run **every** package's tests. 
 # Test all packages
 pnpm test
 
-# Test only react-router-dom
-pnpm test --projects packages/react-router-dom
+# Test only the base package
+pnpm test --projects packages/eventkit
 ```
 
 ### Documenting changes
