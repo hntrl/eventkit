@@ -1,20 +1,25 @@
 import { defineConfig } from "tsup";
 
-// @ts-expect-error - build tools are out of scope
-import { createBanner } from "../../scripts/banner";
+import { getBuildConfig } from "../../scripts/build";
 import pkg from "./package.json";
 
-const banner = createBanner(pkg.name, pkg.version);
-
 export default defineConfig([
-  {
-    clean: true,
-    entry: ["lib/index.ts"],
-    format: ["cjs", "esm"],
-    outDir: "dist",
-    dts: { resolve: true, banner },
-    noExternal: [/(.*)/],
-    splitting: false,
-    banner: { js: banner },
-  },
+  ...getBuildConfig({
+    packageName: pkg.name,
+    packageVersion: pkg.version,
+    target: "neutral",
+    options: {
+      entry: ["lib/index.ts"],
+      noExternal: ["@eventkit/async-observable"],
+    },
+  }),
+  ...getBuildConfig({
+    packageName: pkg.name,
+    packageVersion: pkg.version,
+    target: "browser",
+    options: {
+      entry: ["lib/index.ts"],
+      noExternal: ["@eventkit/async-observable"],
+    },
+  }),
 ]);
