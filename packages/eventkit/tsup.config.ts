@@ -19,6 +19,7 @@ export default defineConfig([
     target: "browser",
     options: {
       entry: ["lib/index.ts"],
+      globalName: "eventkit",
       noExternal: ["@eventkit/async-observable"],
     },
   }),

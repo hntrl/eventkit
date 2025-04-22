@@ -30,7 +30,6 @@ export function getBuildConfig({ packageName, packageVersion, target, options })
     const commonOptions = {
       format: ["iife"],
       outDir: "dist",
-      globalName: "eventkit",
       sourcemap: true,
       dts: false,
       platform: "browser",
