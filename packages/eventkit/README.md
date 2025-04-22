@@ -6,6 +6,23 @@
 npm i @eventkit/base
 ```
 
+### Using a CDN
+
+This package also bundles a browser-friendly version that can be accessed using a CDN like [unpkg](https://unpkg.com/).
+
+```html
+<!-- Development -->
+<script src="https://unpkg.com/@eventkit/base/dist/index.global.js"></script>
+<!-- Minified -->
+<script src="https://unpkg.com/@eventkit/base/dist/index.global.min.js"></script>
+```
+
+When imported this way, all exports are available on the `eventkit` global variable.
+
+```js
+const { Stream, filter } = eventkit;
+```
+
 ## Basic Example
 
 This is a basic example of how to use an eventkit stream. To get started, you should check out the [Getting Started](https://hntrl.github.io/eventkit/guide/getting-started) guide.
