@@ -62,10 +62,8 @@
     "NOTICE.md",
     "README.md"
   ],
-  "dependencies": {
-    "@eventkit/async-observable": "workspace:*"
-  },
   "devDependencies": {
+    "@eventkit/async-observable": "workspace:*",
     "tsup": "^8.3.6",
     "typescript": "^5.7.3",
     "wireit": "^0.14.11"

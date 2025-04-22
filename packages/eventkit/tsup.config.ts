@@ -4,17 +4,17 @@ import { defineConfig } from "tsup";
 import { createBanner } from "../../scripts/banner";
 import pkg from "./package.json";
 
+const banner = createBanner(pkg.name, pkg.version);
+
 export default defineConfig([
   {
     clean: true,
     entry: ["lib/index.ts"],
     format: ["cjs", "esm"],
     outDir: "dist",
-    dts: true,
+    dts: { resolve: true, banner },
     noExternal: [/(.*)/],
     splitting: false,
-    banner: {
-      js: createBanner(pkg.name, pkg.version),
-    },
+    banner: { js: banner },
   },
 ]);
