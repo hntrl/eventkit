@@ -6,6 +6,23 @@
 npm i @eventkit/async-observable
 ```
 
+### Using a CDN
+
+This package also bundles a browser-friendly version that can be accessed using a CDN like [unpkg](https://unpkg.com/).
+
+```html
+<!-- Development -->
+<script src="https://unpkg.com/@eventkit/async-observable/dist/index.global.js"></script>
+<!-- Minified -->
+<script src="https://unpkg.com/@eventkit/async-observable/dist/index.global.min.js"></script>
+```
+
+When imported this way, all exports are available on the `eventkit.asyncObservable` global variable.
+
+```js
+const { AsyncObservable } = eventkit.asyncObservable;
+```
+
 ## Related Resources
 
 - [Observable Pattern](https://hntrl.github.io/eventkit/guide/concepts/observable-pattern)

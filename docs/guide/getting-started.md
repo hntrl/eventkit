@@ -24,6 +24,24 @@ bun add @eventkit/base
 
 :::
 
+### Using a CDN
+
+Eventkit also bundles a browser-friendly version of each package that can be accessed using a CDN like [unpkg](https://unpkg.com/).
+
+```html
+<!-- Development -->
+<script src="https://unpkg.com/@eventkit/base/dist/index.global.js"></script>
+<!-- Minified -->
+<script src="https://unpkg.com/@eventkit/base/dist/index.global.min.js"></script>
+```
+
+When imported this way, all exports are available on the `eventkit` global variable.
+
+```js
+const { map, filter, Stream } = eventkit;
+const stream = new Stream();
+```
+
 ## A Simple Example
 
 Let's create a simple example to demonstrate how eventkit works. We'll create a stream of events and filter them based on a condition.
